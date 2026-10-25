@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>MPPT & the Solar I-V Knee — Why a Panel Needs a Tracker to Give Its Best · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#C08A1E; --accent-ink:#FFFFFF; --accent-wash:#F7EDD4;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#E4C45E; --accent-ink:#241405; --accent-wash:#211A0C;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#E4C45E; --accent-ink:#241405; --accent-wash:#211A0C;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 08 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>MPPT &amp; the Solar I-V Knee: Why a Panel Needs a Tracker to Give Its Best</h1>
+    <p class="dek">A solar panel is not a battery &mdash; it&rsquo;s a current source with a cliff. Wire it straight to a load and you operate wherever the load happens to cross its I-V curve, almost never where the power peaks &mdash; and that peak keeps drifting all day with sun and temperature. Maximum Power Point Tracking is the servo that climbs to the top of the power hill and stays there as the hill shifts under it. It&rsquo;s the brain in every solar charge controller and inverter.</p>
+    <div class="meta">
+      <span>&approx; 18 min read</span>
+      <span>solar · MPPT · power electronics</span>
+      <span>companion to <b>The H-Bridge</b> and <b>Control Systems</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">A solar panel looks as though it ought to behave like a battery: two terminals, a voltage, current on demand. It does not. Plug a load into a battery and you get a fixed voltage with whatever current the load asks for; plug one into a panel and you get something far stranger &mdash; a <em>current source with a cliff</em>, pushing out a nearly constant current until, past a certain voltage, its output falls off a precipice to zero. Where on that curve you actually sit is decided entirely by the load you bolt on, almost never where the panel makes the most power, and that best point wanders all day with the sun and the temperature. So the naïve move &mdash; wire the panel straight to the battery &mdash; leaves <b>20&ndash;30&nbsp;%</b> of the available energy on the table, every day. The way out is a single reframe: stop trying to match a fixed load to a moving optimum, and instead insert a DC&ndash;DC converter whose duty cycle lets you place the panel&rsquo;s operating point <em>anywhere</em> you like, then servo that one knob to keep sitting on top of the power hill as it shifts. From that move the whole subject falls out &mdash; why the curve has a knee, why the peak sits exactly where the slope is zero, how you climb a hill whose top keeps moving, and the limit checks that read the curve at its ends. Then it turns to the half the textbooks skip: how you build a tracker, why it dithers, stalls or gets trapped under cloud, what to spec, and a 100&nbsp;W charge controller sized end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: a panel is a current source with a cliff, not a battery</h2>
+    <p>Start with exactly what you are handed. A battery is a stiff voltage source: connect anything and its terminals hold their voltage while it delivers whatever current the load draws. A solar panel is nothing like this. Over most of its range it behaves as a <b>current source</b> &mdash; it pushes out a nearly constant current, the photocurrent set by how much light falls on it, almost regardless of the voltage across it &mdash; until, past a certain voltage, the current falls off a <b>cliff</b> to zero. The panel has no fixed terminal voltage of its own; it will sit at whatever voltage the attached load forces on it, and its current then follows from the curve.</p>
+    <p>That one fact is the whole tension of the subject. Because the output depends violently on <em>what voltage you operate at</em>, and that voltage is set by whatever you bolt on, a panel wired straight to a 12&nbsp;V battery is simply dragged to roughly the battery&rsquo;s voltage &mdash; whether or not that is anywhere near where it makes the most power. Worse, the voltage where power actually peaks drifts with sunlight and temperature from dawn to dusk, so even a load you hand-picked at noon is wrong by mid-afternoon. The result is that a directly-connected panel almost never delivers its rated power and routinely throws away 20&ndash;30&nbsp;% of the available energy. You cannot get a panel&rsquo;s best by matching it to a fixed load &mdash; because the panel has no fixed operating point to match. The question the rest of this piece answers is: if no fixed load sits at the best point, how do you get there and stay there while it moves?</p>
+
+    <h2><span class="sn">2</span>Why the curve has a knee: a current source fighting a diode</h2>
+    <p>The shape of that curve is not arbitrary; it falls straight out of what a solar cell physically <em>is</em> &mdash; a <b>current source in parallel with a diode</b>. Light knocks loose a photocurrent <span class="m"><i>I</i><sub>ph</sub></span> (proportional to irradiance) that wants to flow out of the terminals. But the cell is also a large-area diode, and the output voltage forward-biases it. So the panel&rsquo;s terminal current is the photocurrent minus whatever that diode steals back:</p>
+    <div class="eq"><span class="m"><i>I</i> = <i>I</i><sub>ph</sub> &minus; <i>I</i><sub>0</sub>&middot;(<i>e</i><sup><i>V</i>/<i>n</i><i>V</i><sub>T</sub></sup> &minus; 1)</span><span class="lbl">a current source, minus the diode it forward-biases</span></div>
+    <p>Read it in two regions. At <b>low voltage</b> the diode&rsquo;s exponential term is negligible, so <span class="m"><i>I</i> &approx; <i>I</i><sub>ph</sub></span> &mdash; a flat, almost voltage-independent current, the current-source plateau. As <span class="m"><i>V</i></span> climbs toward the diode&rsquo;s turn-on, the exponential wakes up and the diode begins eating the photocurrent; the output current plunges &mdash; that is the <b>knee</b>. At <b>open circuit</b> (<span class="m"><i>V</i><sub>oc</sub></span>) the diode swallows <em>all</em> of <span class="m"><i>I</i><sub>ph</sub></span> and the terminal current is zero. Now form the power, <span class="m"><i>P</i> = <i>V</i>&middot;<i>I</i></span>:</p>
+    <div class="eq"><span class="m"><i>P</i> = <i>V</i>&middot;<i>I</i></span><span class="lbl">zero at both ends &mdash; so it must peak in between</span></div>
+    <p>It is zero at <em>both</em> ends &mdash; at <span class="m"><i>V</i> = 0</span> there is current but no voltage, and at <span class="m"><i>V</i><sub>oc</sub></span> there is voltage but no current &mdash; so somewhere in between the power must rise to a peak. That peak is the <b>Maximum Power Point (MPP)</b>, at <span class="m">(<i>V</i><sub>mp</sub>, <i>I</i><sub>mp</sub>)</span>, and it sits right at the knee. How &ldquo;square&rdquo; the curve is &mdash; how close the MPP gets to the corner <span class="m"><i>V</i><sub>oc</sub>&middot;<i>I</i><sub>sc</sub></span> &mdash; is captured in the <b>fill factor</b>:</p>
+    <div class="eq"><span class="m">FF = <span class="frac"><span class="nu"><i>V</i><sub>mp</sub>&middot;<i>I</i><sub>mp</sub></span><span><i>V</i><sub>oc</sub>&middot;<i>I</i><sub>sc</sub></span></span></span><span class="lbl">about 0.7&ndash;0.8 for good silicon</span></div>
+
+    <div class="simwrap">
+      <div class="simcap">Drag the operating voltage — power peaks at the knee, and the knee moves</div>
+      <canvas class="sim" data-sim="ivknee" data-c="#C08A1E" aria-label="solar panel I-V curve and P-V curve; power is zero at short circuit and open circuit and peaks at the maximum power point, which moves with irradiance and temperature"></canvas>
+      <div class="ctrls" data-sim="ivknee"></div>
+    </div>
+    <p class="simnote">Drag the operating voltage along the curve and watch the two readouts move together: the <span class="m"><i>I</i></span>-<span class="m"><i>V</i></span> curve holds its current flat, then drops off the knee toward <span class="m"><i>V</i><sub>oc</sub></span>, while the power <span class="m"><i>P</i> = <i>V</i>&middot;<i>I</i></span> rises from zero, crests at the knee, and collapses again &mdash; the peak is the MPP. Now turn up the <em>irradiance</em> and the whole current plateau lifts, carrying the MPP up almost straight (more light, more current); turn up the <em>temperature</em> and the knee slides <em>left</em> as <span class="m"><i>V</i><sub>oc</sub></span> and <span class="m"><i>V</i><sub>mp</sub></span> fall away. The peak you have to track never holds still &mdash; which is the whole reason a tracker exists.</p>
+
+    <h2><span class="sn">3</span>The reframe: don&rsquo;t match the load &mdash; servo the operating point</h2>
+    <p>Since no fixed load sits at the MPP, stop trying to find one. Insert a <b>DC&ndash;DC converter</b> between the panel and the battery and use it as an adjustable transformer: by changing its <b>duty cycle</b> you change the effective resistance the panel &ldquo;sees,&rdquo; and so you can place the panel&rsquo;s operating point <em>anywhere on its I-V curve you like</em>, entirely independent of what the battery happens to want. A buck converter, for instance, relates its output and input voltages through the duty cycle alone:</p>
+    <div class="eq"><span class="m"><i>V</i><sub>out</sub> = <i>D</i>&middot;<i>V</i><sub>in</sub></span><span class="lbl">one knob &mdash; the duty &mdash; sets where the panel sits</span></div>
+    <p>So the converter delivers the extracted power to the battery at whatever voltage it needs, while you are free to steer the panel side to the MPP. That is the entire idea of <b>Maximum Power Point Tracking</b>: we have turned &ldquo;match a fixed load to a moving optimum,&rdquo; which is impossible, into &ldquo;servo one knob &mdash; the duty cycle &mdash; to keep sitting on top of the power hill,&rdquo; which is just a control loop.</p>
+    <p>The beautiful part is you never need to know the curve. The MPP is simply the <em>top of the power hill</em>, the one place where the slope is zero:</p>
+    <div class="eq"><span class="m"><span class="frac"><span class="nu">d<i>P</i></span><span>d<i>V</i></span></span> = 0</span><span class="lbl">the hilltop, wherever it has wandered to</span></div>
+    <p>So you climb it blind: nudge the voltage a little, see whether power went up or down, and keep stepping in the uphill direction. That is <b>Perturb-and-Observe (P&amp;O)</b>, the workhorse algorithm. An equivalent form, <b>Incremental Conductance</b>, just expands the derivative &mdash; <span class="m">d<i>P</i>/d<i>V</i> = d(<i>VI</i>)/d<i>V</i> = <i>I</i> + <i>V</i>&middot;(d<i>I</i>/d<i>V</i>) = 0</span> &mdash; and reads off the test</p>
+    <div class="eq"><span class="m"><span class="frac"><span class="nu">d<i>I</i></span><span>d<i>V</i></span></span> = &minus;<span class="frac"><span class="nu"><i>I</i></span><span><i>V</i></span></span></span><span class="lbl">Incremental Conductance: the same hilltop, found by comparing conductances</span></div>
+    <p>Same peak, found by comparing the incremental conductance to the instantaneous one. Either way the job is identical: hill-climb a curve whose summit keeps moving.</p>
+    <div class="key">
+      <span class="kl">The whole payoff in one line</span>
+      <div class="eq"><span class="m">at the MPP, &nbsp;<span class="frac"><span class="nu">d<i>P</i></span><span>d<i>V</i></span></span> = 0</span></div>
+      <p>A panel&rsquo;s power is zero at both ends of its I-V curve and peaks at the knee, where <span class="m">d<i>P</i>/d<i>V</i> = 0</span>. MPPT is a <b>one-knob servo</b> &mdash; the converter&rsquo;s duty cycle &mdash; that hill-climbs to that peak and tracks it as sun and temperature move it, recovering the <b>20&ndash;30&nbsp;%</b> a fixed load throws away. You do not control the panel; you control where you stand on it.</p>
+    </div>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read the I-V curve at its ends, and as it moves</h2>
+    <p>The curve earns its keep by behaving sensibly at every extreme, and the MPP&rsquo;s drift is not a nuisance to design around &mdash; it <em>is</em> the design. Read the curve at its ends and then watch it move.</p>
+    <div class="limit">
+      <b>Limit check — read the I-V curve at its ends</b>
+      <b>Short circuit</b> (<span class="m"><i>V</i> = 0</span>): current is maximum, <span class="m"><i>I</i><sub>sc</sub></span>, but power is zero &mdash; there is no voltage to work with. <b>Open circuit</b> (<span class="m"><i>V</i> = <i>V</i><sub>oc</sub></span>): voltage is maximum but current is zero &mdash; power is zero again. The MPP lives between them, typically at <span class="m"><i>V</i><sub>mp</sub> &approx; 0.76&ndash;0.8&middot;<i>V</i><sub>oc</sub></span> &mdash; a genuinely useful first guess for a fast initial jump. <b>More sun</b> (higher irradiance): <span class="m"><i>I</i><sub>ph</sub></span> scales roughly <em>linearly</em> with light, so the whole curve lifts and <span class="m"><i>I</i><sub>mp</sub></span> tracks irradiance almost proportionally, while <span class="m"><i>V</i><sub>mp</sub></span> barely stirs &mdash; power at the MPP is set mostly by how much light you get. <b>Hotter panel</b> (temperature up): <span class="m"><i>V</i><sub>oc</sub></span> and <span class="m"><i>V</i><sub>mp</sub></span> <em>fall</em>, about <span class="m">&minus;0.3&nbsp;%/&deg;C</span>, while <span class="m"><i>I</i><sub>sc</sub></span> creeps up a touch &mdash; net, a hot panel makes <em>less</em> power, and it loses it mostly through <b>voltage</b>. This is the whole reason <span class="m"><i>V</i><sub>mp</sub></span> is not a fixed number: a cold bright morning and a hot afternoon put the MPP at very different voltages. <b>Push past the knee</b> (operate left of <span class="m"><i>V</i><sub>mp</sub></span>, into the current-source region): you try to pull more current than the light provides, so the panel <b>voltage collapses</b> and the converter can stall or hiccup. Do not track into the cliff.
+    </div>
+    <p>Three consequences follow, and they are what the rest of the design is really about. The first is <b>dither</b>. A hill-climber must <em>perturb to know where it is</em> &mdash; it changes the voltage specifically to see which way the power moved &mdash; so at steady state it never sits perfectly still; it jitters back and forth around the MPP. That is a small permanent loss, the price of not knowing the curve, and the perturbation <b>step size</b> is the knob that trades it against tracking speed: big steps chase a moving peak fast but waste power jittering wide; small steps are calm and efficient but slow to catch a cloud clearing.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Perturb, observe, climb — and dither at the top</div>
+      <canvas class="sim" data-sim="mpptrack" data-c="#C08A1E" aria-label="Perturb-and-Observe tracker climbing the P-V curve to the maximum power point and dithering around it; a larger step tracks faster but dithers wider"></canvas>
+      <div class="ctrls" data-sim="mpptrack"></div>
+    </div>
+    <p class="simnote">Watch the tracker perturb, observe, and climb: it nudges the voltage, checks whether power rose, and keeps stepping uphill until it reaches the peak &mdash; where it cannot stop, so it <b>dithers</b> back and forth across the top forever. Drag the <em>step size</em> and feel the trade directly: a big step races up the hill but dithers in a wide, lossy band around the summit; a small step settles into a tight, calm wobble but crawls. Then trigger a <em>cloud</em> &mdash; the whole P-V hill drops and shifts &mdash; and watch it re-track: the big step re-locks fast, the small step labours up the new hill. There is no setting that is both quick and quiet; that is the whole tuning problem in one picture.</p>
+
+    <p>The second consequence is <b>partial shading</b>. Shade one cell-group in a series string and the bypass diodes that protect it carve the P-V curve into <em>several</em> local maxima instead of one clean hill. A naïve hill-climber, which only ever walks uphill from where it is, can get trapped on a lesser peak and report, truthfully, that it is &ldquo;at a maximum&rdquo; while leaving most of the power unclaimed. The cure is not a cleverer local step but a periodic <b>full-curve sweep</b> that hunts the <em>global</em> MPP across the whole carved-up curve. The third consequence is the payoff that justifies the whole apparatus: compared with a cheap controller that just clamps the panel to the battery voltage &mdash; operating well off the MPP &mdash; true MPPT typically harvests <b>15&ndash;30&nbsp;% more energy</b>, and far more on a cold day when <span class="m"><i>V</i><sub>mp</sub></span> sits well above the battery and a clamp throws all that extra voltage away.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: building a tracker, and how it misbehaves</h2>
+    <p>MPPT is the brain of every solar <b>charge controller</b>, every <b>grid-tie, string and micro-inverter</b>, and every serious solar-powered device. And real design is a fixed sequence, not a flash of insight: pick the <b>converter topology</b> by comparing <span class="m"><i>V</i><sub>mp</sub></span> to the battery voltage (buck if <span class="m"><i>V</i><sub>mp</sub></span> is above it, boost if below, buck-boost to span both); choose the <b>algorithm</b> (P&amp;O or IncCond, plus a periodic global sweep if shading is likely); set the <b>perturbation step and rate</b>; size the <b>input capacitor</b> to hold the panel voltage steady so your <span class="m"><i>V</i>&middot;<i>I</i></span> sensing isn&rsquo;t corrupted by the switching; and build the <b>voltage and current sensing</b> the algorithm feeds on. When a tracker underperforms it does so in a short, recognisable vocabulary &mdash; and almost every entry is really &ldquo;the loop isn&rsquo;t sitting where you think&rdquo;:</p>
+    <dl class="speclist">
+      <dt>Harvesting less than the panel&rsquo;s rating</dt><dd>Either stuck off the MPP (wrong step direction, or the step is too coarse to settle on the peak), or MPPT is being <em>overridden</em> because the battery is full and the charge stage has clamped it. Check which is limiting before you blame the tracker.</dd>
+      <dt>Output or voltage oscillating</dt><dd>P&amp;O <b>step too large</b>: it overshoots the peak every cycle and jitters. Shrink the step, or make it adaptive &mdash; big far from the peak, small near it.</dd>
+      <dt>Slow to react when a cloud clears</dt><dd>Step too small or the loop too slow; it crawls up the new, higher hill while energy goes uncollected. This is the opposite failure to the one above &mdash; the same knob, the other way.</dd>
+      <dt>Stuck at low power on a partly-shaded array</dt><dd>Trapped on a <b>local maximum</b> carved out by the bypass diodes. No local step escapes it; you need a periodic full-curve sweep to find the global MPP.</dd>
+      <dt>Panel voltage collapses / converter hiccups</dt><dd>Tracking <b>past the knee</b> into the current-source region, pulling more current than the light supports. Back off toward <span class="m"><i>V</i><sub>mp</sub></span> &mdash; stay on the voltage side of the knee when in doubt.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How the knee shapes the whole system</h2>
+    <p>The I-V curve&rsquo;s shape and motion set every big design choice at once, which is why &ldquo;what topology and what algorithm&rdquo; is most of the job. The <b>sharpness of the knee</b> &mdash; the fill factor &mdash; decides how much MPP <em>precision</em> is worth: a square curve punishes being a little off far more than a soft one does, so a high-FF panel rewards a tighter tracker. The <b>range of <span class="m"><i>V</i><sub>mp</sub></span> over temperature and irradiance</b> sets the converter&rsquo;s <b>input-voltage window and topology</b>, and &mdash; critically &mdash; the worst-case cold-morning <span class="m"><i>V</i><sub>oc</sub></span> sets the voltage your input must <em>survive</em> at startup with no load. The <b>perturbation step</b> sets the permanent steady-state dither loss against tracking speed. And the headline number is a product: <b>MPPT efficiency</b> (how close to the true MPP the tracker holds, including under moving light) <span class="m">&times;</span> <b>converter efficiency</b> (how little the DC-DC stage wastes) equals the fraction of available sun you actually bank. You can run a perfect tracker on a lossy converter and still lose; both must be good, and neither rescues the other.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>The same idea runs solar charge controllers, string and micro-inverters, portable solar chargers, satellites and solar cars &mdash; and <em>any</em> source with an internal-resistance-defined optimum: wind turbines, thermoelectric generators, even piezo energy harvesters all have an MPP and are tracked the same way. When you choose or size a tracker, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Input voltage range (startup &rarr; max)</dt><dd>Must cover <span class="m"><i>V</i><sub>mp</sub></span> across temperature <em>and</em> survive cold <span class="m"><i>V</i><sub>oc</sub></span>; the startup voltage sets when it begins harvesting at dawn.</dd>
+      <dt>Max power / max input current</dt><dd>The converter must handle full MPP power with margin &mdash; and more on a cold bright day, when the panel can briefly exceed its nameplate.</dd>
+      <dt>MPPT (tracking) efficiency</dt><dd>How close to the true MPP it holds, including under moving light. This is the spec that separates a good tracker from a cheap one.</dd>
+      <dt>Conversion efficiency</dt><dd>The DC-DC stage&rsquo;s own loss; it multiplies the tracking efficiency, so a lossy converter caps your whole harvest.</dd>
+      <dt>Number of MPPT channels</dt><dd>Independent tracking per string or panel rescues partial shading and mismatched orientations; one channel for a whole mismatched array loses badly.</dd>
+      <dt>Global-sweep / shade capability</dt><dd>Does it periodically hunt the global peak, or will it sit on a local maximum the first time a vent pipe shadows a string?</dd>
+      <dt>MPPT vs PWM (for charge controllers)</dt><dd>PWM just ties the panel to the battery (off-MPP); MPPT is the 15&ndash;30&nbsp;% upgrade, biggest when <span class="m"><i>V</i><sub>mp</sub> &gt;&gt; <i>V</i><sub>battery</sub></span>.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the clean derivation won&rsquo;t tell you</span>
+      <ul>
+        <li><b><span class="m"><i>V</i><sub>mp</sub> &approx; 0.76&ndash;0.8&middot;<i>V</i><sub>oc</sub></span> is a great opening move.</b> Measure <span class="m"><i>V</i><sub>oc</sub></span> briefly, jump to about 0.8 of it, <em>then</em> fine-tune with hill-climbing &mdash; far faster than crawling up from zero every time the light changes.</li>
+        <li><b>Temperature moves <span class="m"><i>V</i><sub>mp</sub></span> more than irradiance does.</b> Size the input for the <em>cold</em> worst case: a cold, bright morning can push <span class="m"><i>V</i><sub>oc</sub></span> <em>above</em> the nameplate and over-volt an input sized for &ldquo;typical.&rdquo; Design to cold <span class="m"><i>V</i><sub>oc</sub></span>, not to the sticker.</li>
+        <li><b>P&amp;O gets fooled by fast-changing light.</b> If a cloud changes the power between your perturbation and your measurement, the algorithm blames its own step and walks the wrong way &mdash; &ldquo;P&amp;O confusion.&rdquo; Sample faster, or use an irradiance-aware variant, under broken cloud.</li>
+        <li><b>MPPT vs PWM is real money.</b> A PWM controller clamps an 18&nbsp;V panel to a 14&nbsp;V battery and loses the difference; MPPT converts it, recovering 15&ndash;30&nbsp;%, and far more in the cold when <span class="m"><i>V</i><sub>mp</sub></span> is high. The feature pays for itself.</li>
+        <li><b>One shaded cell drags a whole series string.</b> Bypass diodes stop it from pulling the string to zero, but they carve local maxima into the P-V curve; a periodic full sweep is how you avoid getting stuck below the global peak.</li>
+        <li><b>The tracker always dithers &mdash; that jitter is a permanent tax.</b> It must perturb to see the slope, so it can never sit perfectly on the MPP. Choose the step to balance that steady-state loss against how fast the clouds move where you actually are.</li>
+        <li><b>Don&rsquo;t track into the cliff.</b> Left of the knee the voltage is soft; pull a hair too much current and the panel voltage crashes and the converter can stall. Keep the operating point on the voltage side of <span class="m"><i>V</i><sub>mp</sub></span> when in doubt.</li>
+        <li><b>Oversizing the array against the converter (DC/AC ratio &gt; 1) is a deliberate lever.</b> You clip a little at solar noon but harvest more across the whole day &mdash; often the right economic call, not a mistake.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">a 100 W MPPT charge controller</span></div>
+
+    <h2><span class="sn">9</span>Build it: a 100 W MPPT charge controller for a 12 V battery</h2>
+    <p>Enough principle &mdash; here is a real controller sized end to end, so you can copy the shape and reuse it. The job: harvest a 100&nbsp;W, &ldquo;12&nbsp;V-class&rdquo; panel into a 12&nbsp;V lead-acid or LiFePO&#8324; battery with genuine MPPT. Every line below is one formula or comparison you plug into; the derivation already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a 100 W MPPT charge controller</span>
+      <dl class="speclist">
+        <dt>Know the panel</dt><dd>A typical &ldquo;12&nbsp;V&rdquo; 100&nbsp;W panel: <span class="m"><i>V</i><sub>oc</sub> &approx; 22&nbsp;V</span>, <span class="m"><i>I</i><sub>sc</sub> &approx; 6.0&nbsp;A</span>, <b><span class="m"><i>V</i><sub>mp</sub> &approx; 18&nbsp;V</span>, <span class="m"><i>I</i><sub>mp</sub> &approx; 5.5&nbsp;A</span></b>, <span class="m"><i>P</i><sub>mp</sub> &approx; 100&nbsp;W</span>, fill factor <span class="m">&approx; 0.76</span>. The battery needs about <b>14.4&nbsp;V</b> to charge.</dd>
+        <dt>Pick the topology</dt><dd><span class="m"><i>V</i><sub>mp</sub></span> (18&nbsp;V) is <em>above</em> the charge voltage (14.4&nbsp;V), so you must step <b>down</b>: a <b>buck</b> converter. (A 24&nbsp;V battery would need a boost; a wide range would need buck-boost.)</dd>
+        <dt>Find the duty</dt><dd>Buck: <span class="m"><i>V</i><sub>batt</sub> = <i>D</i>&middot;<i>V</i><sub>mp</sub></span> &rarr; <span class="m"><i>D</i> = 14.4/18 = <b>0.8</b></span>. The converter takes 18&nbsp;V / 5.5&nbsp;A (&approx;&nbsp;100&nbsp;W) in and delivers 14.4&nbsp;V / ~6.7&nbsp;A out, minus losses.</dd>
+        <dt>Input voltage window</dt><dd><span class="m"><i>V</i><sub>mp</sub></span> drifts with temperature: hot (+60&nbsp;&deg;C) &rarr; <span class="m"><i>V</i><sub>mp</sub></span> ~15&nbsp;V; cold (&minus;10&nbsp;&deg;C) &rarr; <span class="m"><i>V</i><sub>mp</sub></span> ~21&nbsp;V and <span class="m"><i>V</i><sub>oc</sub></span> ~25&nbsp;V+. So track over ~15&ndash;21&nbsp;V, but the input must <em>survive</em> the cold open-circuit <span class="m">&ge; 25&nbsp;V</span> at dawn before it starts loading &mdash; size the input FET and caps for <b><span class="m">&ge; 30&nbsp;V</span></b>.</dd>
+        <dt>The algorithm</dt><dd><b>P&amp;O</b>: measure <span class="m"><i>V</i><sub>panel</sub></span> and <span class="m"><i>I</i><sub>panel</sub></span>, compute <span class="m"><i>P</i> = <i>V</i>&middot;<i>I</i></span>; if <span class="m"><i>P</i></span> rose, step the voltage the same way again; if it fell, reverse. Step <span class="m">&Delta;<i>V</i> &approx; 0.1&ndash;0.5&nbsp;V</span>, update at tens of Hz. Optionally jump to <span class="m">0.8&middot;<i>V</i><sub>oc</sub></span> first for a fast initial lock.</dd>
+        <dt>Size the converter</dt><dd>Choose <span class="m"><i>f</i><sub>sw</sub></span> (say 100&nbsp;kHz), an inductor for acceptable ripple, synchronous FETs rated <span class="m">&ge; 30&nbsp;V / &ge; 8&nbsp;A</span>, and an <b>input capacitor big enough to hold the panel steady</b> against the switching so the MPP sensing stays clean. (This is exactly where Deep Dive&nbsp;#07&rsquo;s bridge and switching-loss sizing plugs straight in.)</dd>
+        <dt>The payoff</dt><dd>A PWM controller would clamp the 18&nbsp;V panel to 14.4&nbsp;V and lose both the voltage gap and the <span class="m"><i>I</i><sub>mp</sub></span> mismatch; MPPT recovers it &mdash; <b>~15&ndash;30&nbsp;% more harvest</b>, most of it on cold bright days.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a panel&rsquo;s four nameplate numbers, a battery voltage and a temperature range hand you the topology, the duty, the input window, the algorithm and the parts &mdash; and they tell you, loudly, that the real risk isn&rsquo;t making power but <em>surviving the cold open-circuit volts</em> and <em>sensing cleanly</em> enough to climb the hill. The plug-in set is small: panel current <span class="m"><i>I</i> = <i>I</i><sub>ph</sub> &minus; <i>I</i><sub>0</sub>(<i>e</i><sup><i>V</i>/<i>n</i><i>V</i><sub>T</sub></sup> &minus; 1)</span> and power <span class="m"><i>P</i> = <i>V</i>&middot;<i>I</i></span>; the MPP condition <span class="m">d<i>P</i>/d<i>V</i> = 0</span> (equivalently Incremental Conductance <span class="m">d<i>I</i>/d<i>V</i> = &minus;<i>I</i>/<i>V</i></span>); the first-guess MPP <span class="m"><i>V</i><sub>mp</sub> &approx; 0.76&ndash;0.8&middot;<i>V</i><sub>oc</sub></span>, <span class="m"><i>I</i><sub>mp</sub> &approx; 0.9&middot;<i>I</i><sub>sc</sub></span>; the converter duty <span class="m"><i>V</i><sub>out</sub> = <i>D</i>&middot;<i>V</i><sub>in</sub></span> (buck) or <span class="m"><i>V</i><sub>out</sub> = <i>V</i><sub>in</sub>/(1&minus;<i>D</i>)</span> (boost); the temperature shift <span class="m"><i>V</i><sub>oc</sub>(<i>T</i>) &approx; <i>V</i><sub>oc</sub>(25&deg;)&middot;[1 &minus; 0.003&middot;(<i>T</i>&minus;25)]</span> &mdash; size the input for the coldest <span class="m"><i>T</i></span>; and the harvest gain over PWM, which scales roughly with <span class="m"><i>V</i><sub>mp</sub>/<i>V</i><sub>batt</sub></span> times tracking efficiency and is biggest when <span class="m"><i>V</i><sub>mp</sub> &gt;&gt; <i>V</i><sub>batt</sub></span>.</p>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment the panel voltage collapses or the input over-volts:</p>
+    <ol class="recipe">
+      <li><b>Sweep the panel by hand.</b> With a variable load (or a logged resistive sweep), plot <span class="m"><i>I</i></span> against <span class="m"><i>V</i></span> in real sun; confirm the knee and read the <em>actual</em> <span class="m"><i>V</i><sub>mp</sub></span> and <span class="m"><i>I</i><sub>mp</sub></span>. This is your ground truth, not the sticker.</li>
+      <li><b>Run the converter open-loop.</b> Fix a duty cycle, confirm the panel sits where you predict on its curve and the output is sane &mdash; before you close any loop.</li>
+      <li><b>Enable P&amp;O.</b> Watch the panel voltage on a scope climb to <span class="m"><i>V</i><sub>mp</sub></span> and then <b>dither</b> around it; confirm the logged power <span class="m">&approx; <i>P</i><sub>mp</sub></span>.</li>
+      <li><b>Perturb the light.</b> Shade and un-shade the panel; confirm it re-tracks promptly without losing lock or stalling into the cliff.</li>
+      <li><b>Cold-start / open-circuit check.</b> Power up at open circuit (no load) and confirm the input survives <span class="m"><i>V</i><sub>oc</sub></span> without over-volting anything; verify the startup voltage behaves at low light.</li>
+      <li><b>Hand off to charging.</b> Confirm the battery stages (bulk &rarr; absorption &rarr; float, with temperature compensation) correctly <em>override</em> MPPT as the battery fills &mdash; MPPT harvests, the charge profile protects the battery.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>MPPT vs PWM controller</dt><dd>PWM is cheaper and fine when <span class="m"><i>V</i><sub>mp</sub></span> is close to <span class="m"><i>V</i><sub>batt</sub></span>; MPPT wins 15&ndash;30&nbsp;% whenever <span class="m"><i>V</i><sub>mp</sub> &gt;&gt; <i>V</i><sub>batt</sub></span> &mdash; high-<span class="m"><i>V</i><sub>oc</sub></span> panels, cold climates, series strings. Pay for MPPT where the voltage gap is real.</dd>
+      <dt>Buck vs boost vs buck-boost</dt><dd>Set by <span class="m"><i>V</i><sub>mp</sub></span> relative to the battery: step down, step up, or span both. Buck-boost costs efficiency and parts for the range &mdash; buy it only if you truly need it.</dd>
+      <dt>P&amp;O vs IncCond vs constant-voltage (0.8&middot;<span class="m"><i>V</i><sub>oc</sub></span>)</dt><dd>P&amp;O is simplest and ubiquitous; IncCond handles fast irradiance changes a little better; constant-voltage is crude but cheap and a fine <em>initializer</em> to jump to before the fine hunt.</dd>
+      <dt>Single vs multi-channel MPPT</dt><dd>One tracker for a whole array is cheapest but loses hard under shading and mismatch; per-string or per-panel (micro-inverter or optimizer) rescues it at higher cost.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do with real sun</b>
+      This page gets you the right topology, the input window, the algorithm, and sizing numbers that are right to well within a factor of two &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% is real sun and real weather, and it is where a controller actually lives or dies. <b>Sweep real I-V curves</b> under <em>your</em> irradiance and temperature with a curve tracer (or a bench load and a datalogger) &mdash; nameplate numbers are STC lab conditions you will rarely see outdoors. <b>Tune the P&amp;O step and rate</b> to your panel and your cloud behaviour &mdash; the right dither-versus-speed trade in foggy San Francisco is not the one for the clear high desert. <b>Handle partial shading</b> with a periodic global sweep if anything ever shadows the array &mdash; a vent pipe, a tree, a neighbouring row. And <b>wrap proper battery management around it</b> &mdash; bulk, absorption and float, temperature compensation, and protection &mdash; because the harvester and the charger are two jobs, and the charger has the final say. Tools to reach for: an <b>I-V curve tracer</b> (or a programmable load plus logging), a <b>datalogger</b>, the <b>charge-controller IC datasheet</b> and its reference design, and a <b>PV simulator</b> for repeatable bring-up. The physics of the knee never changes; the last mile is tracking it fast and stably in weather, and charging a battery safely on top of it.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">On a cold, brilliantly clear winter morning your MPPT controller harvests far more than a PWM one would &mdash; a bigger gap than on a hot summer noon. Why does the <em>cold</em> help MPPT specifically?</p><span class="a">Because <span class="m"><i>V</i><sub>oc</sub></span> and <span class="m"><i>V</i><sub>mp</sub></span> rise as the temperature falls (about <span class="m">&minus;0.3&nbsp;%/&deg;C</span>, so colder means higher voltage), the panel&rsquo;s MPP voltage sits well <em>above</em> the 14.4&nbsp;V battery. A PWM controller clamps the panel to the battery, so it simply throws that whole extra voltage away; MPPT <em>converts</em> it down through the buck stage and keeps the current. The harvest gain scales with how far <span class="m"><i>V</i><sub>mp</sub></span> exceeds <span class="m"><i>V</i><sub>batt</sub></span> &mdash; which is largest exactly when the panel is cold. On a hot noon <span class="m"><i>V</i><sub>mp</sub></span> has sagged toward the battery, the gap shrinks, and MPPT&rsquo;s edge over PWM narrows with it.</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">Your P&amp;O tracker holds rock-steady power in still sunlight but loses noticeable energy under fast-moving broken cloud. You <em>increase</em> the perturbation step and it gets better, not worse. Explain both the steady-state behaviour and why a bigger step helped here.</p><span class="a">In steady light the only cost is the permanent <b>dither</b>, and a small step minimizes it &mdash; so there the tracker is calm and efficient, and a bigger step would only widen the jitter. Under fast broken cloud the binding problem is different: it is tracking <em>speed</em> plus <b>P&amp;O confusion</b> &mdash; if the light changes between your perturbation and your measurement, the algorithm misreads the slope and can walk the wrong way. A bigger step climbs the fast-moving hill quicker and is less easily fooled by irradiance shifting mid-perturbation, so it recovers more energy despite dithering wider. The step is fundamentally a speed-versus-dither trade, and the right value depends on how fast the light moves where you are &mdash; which is why adaptive step size (big far from the peak, small near it) is the usual answer.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">A partly-shaded array has your tracker stuck delivering far less than the sun should allow, even though the algorithm reports it is &ldquo;at a maximum.&rdquo; What is it sitting on, and what single action finds the real peak?</p><span class="a">It is parked on a <b>local</b> maximum &mdash; one of several bumps the bypass diodes around the shaded cells carve into the P-V curve. The algorithm is telling the truth about its own neighbourhood: locally the slope really is zero, so a pure uphill hill-climber has nowhere to step. But the <em>global</em> MPP is a taller peak elsewhere on the carved-up curve. The one action that finds it is a periodic <b>full-curve sweep</b> (global MPPT): scan the whole voltage range, locate the highest-power point across all the bumps, and jump the operating point there before resuming the local hunt.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-hbridge.html"><b>&larr; Prev:</b> The H-Bridge, Gate Drive &amp; Dead-Time</a>
+      <a class="nextpill" href="index.html">Back to the Deep Dives index &rarr;</a>
+    </div>
+    <p class="footnote"><b>MPPT &amp; the Solar I-V Knee — Why a Panel Needs a Tracker to Give Its Best.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (a panel is a current source with a cliff, not a battery, so a fixed load almost never sits where it makes the most power) and the one reframe (insert a DC&ndash;DC converter and servo its duty cycle instead of matching a load) from which the panel equation <span class="m"><i>I</i> = <i>I</i><sub>ph</sub> &minus; <i>I</i><sub>0</sub>(<i>e</i><sup><i>V</i>/<i>n</i><i>V</i><sub>T</sub></sup> &minus; 1)</span>, the power <span class="m"><i>P</i> = <i>V</i>&middot;<i>I</i></span> that is zero at both ends and peaks at the knee, the hill-climb condition <span class="m">d<i>P</i>/d<i>V</i> = 0</span> (and its Incremental-Conductance twin <span class="m">d<i>I</i>/d<i>V</i> = &minus;<i>I</i>/<i>V</i></span>), and the one-knob duty <span class="m"><i>V</i><sub>out</sub> = <i>D</i>&middot;<i>V</i><sub>in</sub></span> all fall out &mdash; then the practitioner&rsquo;s half: how you build a tracker, why it dithers, stalls, or gets trapped on a shaded local peak, what to spec, and a 100&nbsp;W charge controller sized end to end. With live simulations of the I-V knee and its MPP moving under sun and heat, and of a Perturb-and-Observe tracker climbing the hill and dithering at the top. The honest truth of it: this gets you the right topology, input window, algorithm and sane sizing &mdash; real I-V sweeps, P&amp;O tuning, shading, and battery management are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The H-Bridge / Power Switching</b> and <b>Control Systems</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* ivknee — the panel I-V curve, the P-V hump, and the moving MPP. Voltage on x (0..26 V, fixed so
+     V_oc visibly moves). Two curves share it: I-V (current, left axis 0..7 A) in PAL.cool — flat then a
+     knee to zero at V_oc; P-V (power, right axis 0..110 W) in s.accent — the hump, zero at both ends.
+     Gold dot + dashed guide mark the MPP (dP/dV = 0); the operating point at s.p.volt shows V, I, P and
+     % of MPP. Drop irradiance and both curves fall; raise temperature and V_oc + the whole curve slide
+     LEFT. Panel model lives in ._model (no globals). s.accent = hero P-V/MPP, unicode literals only. */
+  SIMS.ivknee={
+    controls:[
+      {k:'volt',label:'Operating voltage',min:0,max:24,step:0.2,val:18,unit:' V'},
+      {k:'irr',label:'Irradiance',min:10,max:100,step:5,val:100,unit:' %'},
+      {k:'temp',label:'Cell temperature',min:-10,max:70,step:5,val:25,unit:' °C'}
+    ],
+    _model:function(g,T){
+      var Voc0=22, Isc0=6.0;
+      var Iph=Isc0*g*(1+0.0005*(T-25));
+      var Voc=Voc0*(1-0.003*(T-25));
+      if(!(Voc>1)) Voc=1;
+      if(!(Iph>0)) Iph=0.0001;
+      var a=Voc/12;
+      var denom=Math.exp(clamp(Voc/a,-40,40))-1;   // = e^12 - 1, constant & nonzero
+      function cur(V){
+        var e=Math.exp(clamp(V/a,-40,40));
+        var i=Iph*(1-(e-1)/denom);
+        return i>0?i:0;
+      }
+      var Vmp=0,Imp=0,Pmp=0;
+      for(var k=0;k<=200;k++){
+        var V=Voc*k/200;
+        var ii=cur(V);
+        var P=V*ii;
+        if(P>Pmp){ Pmp=P; Vmp=V; Imp=ii; }
+      }
+      return {Iph:Iph,Voc:Voc,a:a,cur:cur,Vmp:Vmp,Imp:Imp,Pmp:Pmp};
+    },
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var R=SIMS.ivknee;
+      var g=clamp(s.p.irr,10,100)/100;
+      var T=clamp(s.p.temp,-10,70);
+      var m=R._model(g,T);
+      var Vop=clamp(s.p.volt,0,24);
+      var Iop=m.cur(Vop);
+      var Pop=Vop*Iop;
+      var pct=m.Pmp>0?100*Pop/m.Pmp:0;
+
+      var Vmax=26, Imax=7, Pmax=110;
+      var mL=28,mR=34,mT=34,mB=34;
+      var x0=mL, x1=Math.max(mL+20,w-mR), yTop=mT, yBot=Math.max(mT+20,h-mB);
+      function xOf(V){ return clamp(x0+clamp(V,0,Vmax)/Vmax*(x1-x0),x0,x1); }
+      function yI(I){ return clamp(yBot-clamp(I,0,Imax)/Imax*(yBot-yTop),yTop,yBot); }
+      function yP(P){ return clamp(yBot-clamp(P,0,Pmax)/Pmax*(yBot-yTop),yTop,yBot); }
+
+      // frame + vertical grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,yTop,x1-x0,yBot-yTop);
+      ctx.globalAlpha=0.5;
+      for(var gv=5;gv<Vmax;gv+=5){ var gx=xOf(gv);
+        ctx.beginPath(); ctx.moveTo(gx,yTop); ctx.lineTo(gx,yBot); ctx.stroke(); }
+      ctx.globalAlpha=1;
+
+      // axis mini-labels + ticks
+      txt(ctx,'I (A)',x0+2,yTop-3,PAL.cool,8.5,'left');
+      txt(ctx,'P (W)',x1-2,yTop-3,s.accent,8.5,'right');
+      for(var tv=0;tv<=Vmax;tv+=5){ var txx=xOf(tv);
+        ctx.strokeStyle=PAL.line; ctx.beginPath(); ctx.moveTo(txx,yBot); ctx.lineTo(txx,yBot+3); ctx.stroke();
+        txt(ctx,tv+'',txx,yBot+12,PAL.faint,7.5,'center'); }
+      txt(ctx,'V',x1,yBot+12,PAL.muted,8,'right');
+      for(var ta=0;ta<=Imax;ta+=1){ txt(ctx,ta+'',x0-3,yI(ta)+3,PAL.faint,7,'right'); }
+      for(var tp=0;tp<=Pmax;tp+=22){ txt(ctx,Math.round(tp)+'',x1+3,yP(tp)+3,PAL.faint,7,'left'); }
+
+      // I-V curve (PAL.cool): flat then knee to zero at V_oc
+      var N=120, started=false, i;
+      ctx.strokeStyle=PAL.cool; ctx.lineWidth=2;
+      ctx.beginPath();
+      for(i=0;i<=N;i++){ var Va=Vmax*i/N;
+        if(!started){ ctx.moveTo(xOf(Va),yI(m.cur(Va))); started=true; } else ctx.lineTo(xOf(Va),yI(m.cur(Va))); }
+      ctx.stroke();
+      // P-V curve (accent): the hump, zero at both ends
+      started=false;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.2;
+      ctx.beginPath();
+      for(i=0;i<=N;i++){ var Vb=Vmax*i/N;
+        if(!started){ ctx.moveTo(xOf(Vb),yP(Vb*m.cur(Vb))); started=true; } else ctx.lineTo(xOf(Vb),yP(Vb*m.cur(Vb))); }
+      ctx.stroke();
+
+      // V_oc guide on the axis
+      var ocx=xOf(m.Voc);
+      ctx.strokeStyle=PAL.muted; ctx.globalAlpha=0.5; ctx.setLineDash([2,2]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(ocx,yTop); ctx.lineTo(ocx,yBot); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'V_oc '+m.Voc.toFixed(1),clamp(ocx,x0+16,x1-6),yTop+9,PAL.muted,8,'center');
+
+      // MPP: gold dashed guide to the V-axis + gold dot
+      var mx=xOf(m.Vmp), my=yP(m.Pmp);
+      ctx.strokeStyle=PAL.gold; ctx.globalAlpha=0.6; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx,yBot); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      dot(ctx,mx,my,3.4,PAL.gold);
+      txt(ctx,'MPP '+m.Pmp.toFixed(0)+' W',clamp(mx,x0+22,x1-22),clamp(my-6,yTop+8,yBot),PAL.gold,8.5,'center');
+      txt(ctx,'V_mp '+m.Vmp.toFixed(1),clamp(mx,x0+16,x1-16),yBot-4,PAL.gold,8,'center');
+
+      // operating point at s.p.volt: vertical line + dot on each curve
+      var opx=xOf(Vop);
+      ctx.strokeStyle=PAL.ink; ctx.globalAlpha=0.32; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(opx,yTop); ctx.lineTo(opx,yBot); ctx.stroke(); ctx.globalAlpha=1;
+      dot(ctx,opx,yI(Iop),3,PAL.cool);
+      dot(ctx,opx,yP(Pop),3,s.accent);
+
+      // title + operating readout + caption
+      txt(ctx,'I-V & P-V curves',8,13,PAL.muted,10,'left');
+      txt(ctx,'op  V '+Vop.toFixed(1)+' · I '+Iop.toFixed(1)+' · P '+Pop.toFixed(0)+'W · '+pct.toFixed(0)+'% MPP',
+          w-8,13,PAL.ink,8.5,'right');
+      txt(ctx,'power is zero at both ends — it peaks at the knee (dP/dV = 0)',w/2,h-4,PAL.faint,8,'center');
+    }
+  };
+
+  /* mpptrack — Perturb-and-Observe hill-climbing. The tracker holds an operating voltage s.Vop. Every
+     ~0.25 s it runs one P&O step: remember last power, nudge Vop by ±s.p.step, recompute P from the model
+     at the current cloud (temp fixed 25 °C); power up → keep the direction, power down → flip it. So the
+     point climbs the P-V hill then dithers ±step around the MPP forever. A LARGE step climbs fast but
+     swings wide (lower average %); a SMALL step sits tight near 100% but crawls. Change the cloud and the
+     whole P-V curve jumps up/down and the dot re-settles. s.accent = P-V hero, gold = true MPP. */
+  SIMS.mpptrack={
+    controls:[
+      {k:'step',label:'Perturb step ΔV',min:0.1,max:2.0,step:0.1,val:0.5,unit:' V'},
+      {k:'cloud',label:'Irradiance',min:30,max:100,step:5,val:100,unit:' %'}
+    ],
+    _model:function(g,T){
+      var Voc0=22, Isc0=6.0;
+      var Iph=Isc0*g*(1+0.0005*(T-25));
+      var Voc=Voc0*(1-0.003*(T-25));
+      if(!(Voc>1)) Voc=1;
+      if(!(Iph>0)) Iph=0.0001;
+      var a=Voc/12;
+      var denom=Math.exp(clamp(Voc/a,-40,40))-1;
+      function cur(V){
+        var e=Math.exp(clamp(V/a,-40,40));
+        var i=Iph*(1-(e-1)/denom);
+        return i>0?i:0;
+      }
+      var Vmp=0,Imp=0,Pmp=0;
+      for(var k=0;k<=200;k++){
+        var V=Voc*k/200;
+        var ii=cur(V);
+        var P=V*ii;
+        if(P>Pmp){ Pmp=P; Vmp=V; Imp=ii; }
+      }
+      return {Iph:Iph,Voc:Voc,a:a,cur:cur,Vmp:Vmp,Imp:Imp,Pmp:Pmp};
+    },
+    init:function(s,w,h){
+      s.Vop=3; s.dir=1; s.lastP=-1; s.trail=[]; s.acc=0;
+    },
+    step:function(s,dt){
+      if(s.Vop===undefined){ s.Vop=3; s.dir=1; s.lastP=-1; s.trail=[]; s.acc=0; }
+      var g=clamp(s.p.cloud,30,100)/100;
+      var m=SIMS.mpptrack._model(g,25);
+      var dv=clamp(s.p.step,0.1,2.0);
+      s.acc+=dt;
+      var guard=0;
+      while(s.acc>=0.25 && guard<12){
+        s.acc-=0.25; guard++;
+        var P=s.Vop*m.cur(s.Vop);           // observe power at current operating point
+        if(P<s.lastP){ s.dir=-s.dir; }       // dropped -> reverse the perturbation
+        s.lastP=P;
+        s.Vop=clamp(s.Vop+s.dir*dv,0.3,m.Voc-0.3);   // perturb, stay inside (0, V_oc)
+        s.trail.push({V:s.Vop,P:s.Vop*m.cur(s.Vop)});
+        if(s.trail.length>22) s.trail.shift();
+      }
+    },
+    draw:function(ctx,w,h,s){
+      var R=SIMS.mpptrack;
+      if(s.Vop===undefined){ s.Vop=3; s.dir=1; s.lastP=-1; s.trail=[]; s.acc=0; }
+      var g=clamp(s.p.cloud,30,100)/100;
+      var m=R._model(g,25);
+      var Vop=clamp(s.Vop,0,26);
+      var Pop=Vop*m.cur(Vop);
+      var pct=m.Pmp>0?100*Pop/m.Pmp:0;
+      var dv=clamp(s.p.step,0.1,2.0);
+
+      var Vmax=26, Pmax=110;
+      var mL=28,mR=14,mT=34,mB=34;
+      var x0=mL, x1=Math.max(mL+20,w-mR), yTop=mT, yBot=Math.max(mT+20,h-mB);
+      function xOf(V){ return clamp(x0+clamp(V,0,Vmax)/Vmax*(x1-x0),x0,x1); }
+      function yP(P){ return clamp(yBot-clamp(P,0,Pmax)/Pmax*(yBot-yTop),yTop,yBot); }
+
+      // frame + grid + axes
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,yTop,x1-x0,yBot-yTop);
+      ctx.globalAlpha=0.5;
+      for(var gv=5;gv<Vmax;gv+=5){ var gx=xOf(gv);
+        ctx.beginPath(); ctx.moveTo(gx,yTop); ctx.lineTo(gx,yBot); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      txt(ctx,'P (W)',x0+2,yTop-3,s.accent,8.5,'left');
+      var tv,tp;
+      for(tv=0;tv<=Vmax;tv+=5){ var txx=xOf(tv);
+        ctx.strokeStyle=PAL.line; ctx.beginPath(); ctx.moveTo(txx,yBot); ctx.lineTo(txx,yBot+3); ctx.stroke();
+        txt(ctx,tv+'',txx,yBot+12,PAL.faint,7.5,'center'); }
+      txt(ctx,'V',x1,yBot+12,PAL.muted,8,'right');
+      for(tp=0;tp<=Pmax;tp+=22){ txt(ctx,Math.round(tp)+'',x0-3,yP(tp)+3,PAL.faint,7,'right'); }
+
+      // P-V curve (accent) for the current cloud
+      var N=120, started=false, i;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.2;
+      ctx.beginPath();
+      for(i=0;i<=N;i++){ var V=Vmax*i/N;
+        if(!started){ ctx.moveTo(xOf(V),yP(V*m.cur(V))); started=true; } else ctx.lineTo(xOf(V),yP(V*m.cur(V))); }
+      ctx.stroke();
+
+      // true MPP: gold dashed guide + dot
+      var mx=xOf(m.Vmp), my=yP(m.Pmp);
+      ctx.strokeStyle=PAL.gold; ctx.globalAlpha=0.6; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(mx,yTop); ctx.lineTo(mx,yBot); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      dot(ctx,mx,my,3.2,PAL.gold);
+      txt(ctx,'true MPP',clamp(mx,x0+24,x1-24),clamp(my-6,yTop+8,yBot),PAL.gold,8,'center');
+
+      // fading trail of recent operating points
+      var trail=s.trail||[];
+      for(i=0;i<trail.length;i++){
+        var al=clamp((i+1)/Math.max(1,trail.length)*0.8,0.08,0.8);
+        ctx.globalAlpha=al;
+        dot(ctx,xOf(trail[i].V),yP(trail[i].P),2.2,PAL.sky);
+      }
+      ctx.globalAlpha=1;
+
+      // current operating point (dark, stands out against accent + gold)
+      var opx=xOf(Vop), opy=yP(Pop);
+      ctx.strokeStyle=PAL.ink; ctx.globalAlpha=0.3; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(opx,opy); ctx.lineTo(opx,yBot); ctx.stroke(); ctx.globalAlpha=1;
+      dot(ctx,opx,opy,3.6,PAL.ink);
+
+      // title + readouts + caption
+      txt(ctx,'perturb & observe tracker',8,13,PAL.muted,10,'left');
+      txt(ctx,'V '+Vop.toFixed(1)+' · P '+Pop.toFixed(0)+'W · '+pct.toFixed(0)+'% MPP · ΔV '+dv.toFixed(1)+'V',
+          w-8,13,PAL.ink,8.5,'right');
+      txt(ctx,'perturb · observe · climb — big step tracks fast but dithers; small step sits tight',
+          w/2,h-4,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

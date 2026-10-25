@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>How to Measure a Nanosecond — FMCW Ranging · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#2F6EA8; --accent-ink:#FFFFFF; --accent-wash:#E2ECF6;
+    --amber:#B5791F; --amber-wash:#F6EEDD; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(20,30,40,.05), 0 8px 24px -14px rgba(20,30,40,.18);
+    --shadow-lift:0 2px 6px rgba(20,30,40,.08), 0 18px 40px -18px rgba(20,30,40,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#6BA6E0; --accent-ink:#061826; --accent-wash:#12283A;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#6BA6E0; --accent-ink:#061826; --accent-wash:#12283A;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  /* ---- theme toggle ---- */
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  /* ---- masthead ---- */
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5.2vw,2.7rem);line-height:1.1;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  /* ---- article prose ---- */
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+  a.inl{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  a.inl:hover{border-bottom-color:var(--accent)}
+
+  /* ---- math ---- */
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.3rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  /* ---- callouts ---- */
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- sims ---- */
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  /* ---- self-check ---- */
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  /* ---- footer ---- */
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 01 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>How to Measure a Nanosecond Without a Nanosecond Stopwatch</h1>
+    <p class="dek">FMCW ranging is the trick that lets a cheap chip measure a car&rsquo;s distance to the centimetre <em>and</em> its speed at the same instant &mdash; by refusing to time the echo at all, and listening for a tone instead.</p>
+    <div class="meta">
+      <span>≈ 16 min read</span>
+      <span>radar · LiDAR · signal physics</span>
+      <span>companion to <b>Sensors &amp; Perception</b> and <b>DSA in Embedded/Space</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">Point a radar at a car 150 metres away and ask the obvious question: how far? The textbook answer is a stopwatch. Send a pulse, time the echo, multiply by the speed of light. It is correct, it is how sonar and the first radars worked &mdash; and for a cheap, high-resolution automotive sensor it is almost unusable. This piece is about the sidestep that every modern car radar and a new generation of LiDAR make instead. Like the best engineering tricks, it looks like cheating until you see that the constraints left no other move. We will build it from the one hard fact that makes the stopwatch impossible, and by the end you will have re-derived why resolution is bandwidth, why you get the target&rsquo;s velocity for free, and why the sample rate of a five-dollar converter is literally your maximum range.</p>
+
+    <h2><span class="sn">1</span>The constraint: distance is time, and time is too fast</h2>
+    <p>Ranging by time-of-flight is one equation. A pulse leaves, reflects, returns; if the round trip took <span class="m"><i>Δt</i></span>, the target is</p>
+    <div class="eq"><span class="m"><i>R</i> = <span class="frac"><span class="nu"><i>c</i> · <i>Δt</i></span><span><span>2</span></span></span></span></div>
+    <p>because the light covers the distance twice. The trouble is entirely in the numbers. Light and radio travel about <b>30 centimetres per nanosecond</b>, so our 150-metre target returns its echo in <span class="m">2<i>R</i>/<i>c</i> ≈ 1&nbsp;µs</span>. That part is fine. The problem is <em>resolution</em>: to tell two reflectors 4&nbsp;cm apart from one another, you must measure <span class="m"><i>Δt</i></span> to about a quarter of a nanosecond.</p>
+    <p>Think about what that demands. You need a transmitter that can emit a clean pulse only a fraction of a nanosecond wide (which means enormous instantaneous bandwidth and high peak power), a receiver that can resolve sub-nanosecond arrival times, and an analogue-to-digital converter sampling in the <em>many-gigahertz</em> range to catch the edge. Each of those is expensive, power-hungry, and awkward to put on a commodity CMOS chip bolted behind a bumper. The binding constraint isn&rsquo;t the physics of light &mdash; it&rsquo;s that <b>the natural variable, time, ticks far too fast to measure cheaply at the precision we want</b>.</p>
+    <p>So hold that thought the way a good optimiser holds a bottleneck: we are not allowed a fast clock. Everything that follows is forced by trying to get range <em>without</em> one.</p>
+
+    <h2><span class="sn">2</span>The reframe: if the clock won&rsquo;t slow down, put the time in the frequency</h2>
+    <p>Here is the move. Instead of a pulse, transmit a continuous tone whose frequency climbs steadily &mdash; a <b>chirp</b>. Over a sweep of duration <span class="m"><i>T</i></span> the frequency rises linearly across a band <span class="m"><i>B</i></span>, so at time <span class="m"><i>t</i></span> you are transmitting</p>
+    <div class="eq"><span class="m"><i>f</i><sub>tx</sub>(<i>t</i>) = <i>f</i><sub>0</sub> + <i>S</i> · <i>t</i>,&nbsp;&nbsp;&nbsp;&nbsp;<i>S</i> = <span class="frac"><span class="nu"><i>B</i></span><span><i>T</i></span></span></span><span class="lbl">the chirp · slope S</span></div>
+    <p>where <span class="m"><i>S</i></span> is the sweep rate, or slope, in hertz per second. Now the frequency you are emitting is a running clock in disguise: each instant has its own frequency stamped on it. An echo that comes back is a faithful copy of what you sent a moment ago &mdash; so it carries the frequency of that <em>earlier</em> moment, which is lower than what you are transmitting <em>now</em>. The delay in time has become a <b>gap in frequency</b>. And a frequency gap is something we can measure without any fast clock at all: we can hear it.</p>
+
+    <div class="simwrap">
+      <div class="simcap">The chirp and its echo — the delay becomes a constant frequency gap</div>
+      <canvas class="sim" data-sim="ddchirp" data-c="#2F6EA8" aria-label="FMCW chirp and echo beat-frequency simulation"></canvas>
+      <div class="ctrls" data-sim="ddchirp"></div>
+    </div>
+    <p class="simnote">The upper ramp is what you&rsquo;re transmitting; the lower, shifted ramp is the echo, delayed by <span class="m"><i>τ</i> = 2<i>R</i>/<i>c</i></span>. Slide the target further out and watch the echo slide right &mdash; and the vertical gap between the two ramps, the <b>beat</b>, grow in proportion. Notice the gap stays <em>constant</em> for the whole overlap of the sweep. That constant is the whole game.</p>
+
+    <h2><span class="sn">3</span>The one equation: the beat <em>is</em> the range</h2>
+    <p>Put a number on the gap. The echo left the antenna <span class="m"><i>τ</i> = 2<i>R</i>/<i>c</i></span> seconds ago, so its instantaneous frequency lags the transmitter&rsquo;s by the slope times that delay. Multiply the received signal by the one you&rsquo;re currently transmitting &mdash; that&rsquo;s what a <b>mixer</b> does, and its output contains the difference of the two frequencies &mdash; and low-pass away the sum. What&rsquo;s left is a single steady tone at the <b>beat frequency</b>:</p>
+    <div class="key">
+      <span class="kl">The result everything rests on</span>
+      <div class="eq"><span class="m"><i>f</i><sub>b</sub> = <i>S</i> · <i>τ</i> = <span class="frac"><span class="nu">2<i>S</i> <i>R</i></span><span><i>c</i></span></span>&nbsp;&nbsp;&nbsp;⟹&nbsp;&nbsp;&nbsp;<i>R</i> = <span class="frac"><span class="nu"><i>c</i> · <i>f</i><sub>b</sub></span><span>2<i>S</i></span></span></span></div>
+      <p>Range is no longer a time you must catch on a stopwatch. It is a <em>frequency</em> you can measure at leisure &mdash; and a low one. For a 4-GHz sweep over 40&nbsp;µs, a 150-metre target produces a beat of only tens of megahertz; gentler sweeps put it in the kilohertz &ldquo;audio&rdquo; range. A slow, cheap converter digitises it comfortably, and a single Fourier transform reads off the range.</p>
+    </div>
+    <p>That is the sleight of hand in full. We never measured the nanosecond. We turned the impossible timing problem into an easy spectral one by making the transmitter&rsquo;s own frequency the ruler. Everything from here is consequences.</p>
+    <div class="limit">
+      <b>Limit check — turn off the chirp</b>
+      Let the slope <span class="m"><i>S</i> → 0</span>: a flat, unchanging tone. Then <span class="m"><i>f</i><sub>b</sub> → 0</span> and the range information vanishes completely. You haven&rsquo;t broken anything &mdash; you&rsquo;ve built a different, older instrument. A constant-frequency radar can still see a <em>moving</em> target through its Doppler shift, which is exactly a police speed gun: it reads velocity and is blind to distance. All of the range lives in the slope. That&rsquo;s a reassuring sign the equation is telling the truth.</p>
+    </div>
+
+    <h2><span class="sn">4</span>Resolution is bandwidth, and nothing else</h2>
+    <p>Two reflectors at slightly different ranges produce two beat tones. You separate them the way you separate any two tones &mdash; with a Fourier transform over the chirp. And here the Fourier transform hands you a hard limit: a measurement that lasts <span class="m"><i>T</i></span> seconds can only distinguish frequencies that differ by at least one bin, <span class="m">1/<i>T</i></span>. Convert that minimum frequency gap back into a range gap through the equation we just derived:</p>
+    <div class="eq"><span class="m"><i>ΔR</i> = <span class="frac"><span class="nu"><i>c</i></span><span>2<i>S</i></span></span> · <span class="frac"><span class="nu">1</span><span><i>T</i></span></span> = <span class="frac"><span class="nu"><i>c</i></span><span>2<i>S T</i></span></span> = <span class="frac"><span class="nu"><i>c</i></span><span>2<i>B</i></span></span></span><span class="lbl">range resolution</span></div>
+    <p>The slope and the chirp time cancel, because <span class="m"><i>S T</i> = <i>B</i></span>. What is left is startling in its simplicity: <b>range resolution depends only on the total swept bandwidth</b> <span class="m"><i>B</i></span>. Not on power, not on how long the chirp is, not on the carrier frequency, not on how far away the target is. Want to tell two things 4&nbsp;cm apart? Sweep 3.75&nbsp;GHz. Want a metre? A 150-MHz sweep is plenty. Resolution is something you <em>buy</em>, and the only currency is bandwidth.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Two targets, one knob — resolution is c / 2B</div>
+      <canvas class="sim" data-sim="ddres" data-c="#2F6EA8" aria-label="FMCW range resolution versus bandwidth simulation"></canvas>
+      <div class="ctrls" data-sim="ddres"></div>
+    </div>
+    <p class="simnote">Two reflectors sit a fixed distance apart; the spectrum shows their two beat peaks (plotted directly in range). Widen the bandwidth and the peaks sharpen and split apart; narrow it and they blur into a single blob you can no longer resolve. The crossover sits exactly at <span class="m"><i>ΔR</i> = <i>c</i>/2<i>B</i></span>.</p>
+
+    <p>This single fact explains a visible piece of the world. Automotive radars migrated into the <b>76&ndash;81&nbsp;GHz</b> band not because 77&nbsp;GHz is magic, but because that is where regulators freed up as much as <b>4&nbsp;GHz</b> of contiguous bandwidth &mdash; and 4&nbsp;GHz is centimetre resolution. The older 24-GHz band had a fraction of that, and could never paint the fine picture a modern imaging radar does. The resolution you can legally buy is set by the band you&rsquo;re allowed to sweep.</p>
+
+    <h2><span class="sn">5</span>Velocity comes for free</h2>
+    <p>Now let the target move. A closing target compresses the returning wave &mdash; a Doppler shift that adds a frequency</p>
+    <div class="eq"><span class="m"><i>f</i><sub>d</sub> = <span class="frac"><span class="nu">2<i>v</i></span><span><i>λ</i></span></span>,&nbsp;&nbsp;&nbsp;&nbsp;<i>λ</i> = <i>c</i>/<i>f</i><sub>carrier</sub></span><span class="lbl">Doppler</span></div>
+    <p>on top of the range beat. So a single up-chirp actually measures <span class="m"><i>f</i><sub>b</sub> = 2<i>S R</i>/<i>c</i> + 2<i>v</i>/<i>λ</i></span> &mdash; range and velocity, tangled together. From one slope you can&rsquo;t say how much of the beat is distance and how much is motion. That coupling is the one wrinkle, and there are two clean ways to iron it out.</p>
+    <ul>
+      <li><b>Sweep both ways.</b> Chirp up, then down. The Doppler term keeps its sign while the range term flips, so the up-beat and down-beat differ. Their <em>average</em> gives range, their <em>difference</em> gives velocity. Two measurements, two unknowns, solved.</li>
+      <li><b>Fire a burst of fast chirps.</b> The modern approach: send a rapid sequence of identical short chirps. Within each chirp an FFT gives range (&ldquo;fast time&rdquo;). From one chirp to the next, a moving target&rsquo;s echo advances in phase by a tiny, constant step; a second FFT <em>across</em> the chirps (&ldquo;slow time&rdquo;) turns that phase ramp into velocity. The output is a 2-D <b>range&ndash;Doppler map</b> with every target as a bright spot at its own distance and speed.</li>
+    </ul>
+
+    <div class="simwrap">
+      <div class="simcap">The range–Doppler map — distance down, speed across</div>
+      <canvas class="sim" data-sim="ddrd" data-c="#2F6EA8" aria-label="FMCW range-Doppler map simulation"></canvas>
+      <div class="ctrls" data-sim="ddrd"></div>
+    </div>
+    <p class="simnote">Range comes from the FFT within a chirp; velocity from the FFT across the chirp sequence. Move the target in distance and in speed and watch its spot track both axes independently &mdash; one frame, two measurements.</p>
+
+    <p>This is why an automotive radar reports, for every object, both its distance and its closing speed in a single frame &mdash; the raw material for adaptive cruise and automatic braking. And it is the headline feature of <b>FMCW LiDAR</b>: run the same chirp trick on a <span class="m">~1550&nbsp;nm</span> laser and mix each return against a copy of the outgoing light, and you get a <em>per-point</em> velocity that ordinary time-of-flight LiDAR simply cannot produce. Aeva and ZF put the first FMCW LiDAR into automotive production, and NVIDIA&rsquo;s Drive platform integrates it; the industry name for &ldquo;range plus instantaneous velocity at every pixel&rdquo; is <b>4-D LiDAR</b>.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">applying it, and why each number matters</span></div>
+
+    <h2><span class="sn">6</span>When is it actually better? The hardware tells you</h2>
+    <p>FMCW isn&rsquo;t free magic; it is a specific trade that happens to fit cheap silicon beautifully. Set it against pulsed time-of-flight:</p>
+    <ul>
+      <li><b>Low power, continuous, integrable.</b> A pulsed system needs a high peak-power transmitter and a picosecond receiver. FMCW transmits a modest continuous signal and reads a slow beat, so the whole thing fits in low-power CMOS &mdash; which is exactly why every modern car radar is FMCW.</li>
+      <li><b>You earn sensitivity by patience.</b> Because you integrate the entire chirp, the signal-to-noise ratio after the FFT grows with the time&ndash;bandwidth product <span class="m"><i>B T</i></span>. You buy range not with a brutal pulse but with a long, cheap sweep &mdash; this is called processing gain.</li>
+      <li><b>Your converter&rsquo;s speed <em>is</em> your maximum range.</b> The beat must stay below the Nyquist limit of the ADC, <span class="m"><i>f</i><sub>b,max</sub> ≤ <i>f</i><sub>s</sub>/2</span>. Translate it: <span class="m"><i>R</i><sub>max</sub> = <i>c</i> <i>f</i><sub>s</sub> / 4<i>S</i></span>. A faster sampler sees further; a steeper slope pulls that ceiling in. The data sheet of a jelly-bean ADC sets how far your radar can see.</li>
+    </ul>
+    <div class="limit">
+      <b>The one genuinely hard part — chirp linearity</b>
+      Every equation here assumed the frequency ramps <em>perfectly</em> linearly. It doesn&rsquo;t, for free: a raw voltage-controlled oscillator sweeps with a bend in it, and any curvature smears a clean beat tone into a blur, destroying the range resolution you paid bandwidth for. Taming it &mdash; locking the sweep with a phase-locked loop, or calibrating and correcting the non-linearity in DSP &mdash; is where much of the real engineering of an FMCW chip actually goes.</p>
+    </div>
+
+    <h2><span class="sn">7</span>The design space, on one hand</h2>
+    <p>Four quantities, four knobs, and they pull against each other:</p>
+    <ul>
+      <li><b>Bandwidth</b> <span class="m"><i>B</i></span> sets range resolution (<span class="m"><i>c</i>/2<i>B</i></span>) &mdash; the only thing that does.</li>
+      <li><b>Slope</b> <span class="m"><i>S</i></span> with the ADC rate sets maximum range (<span class="m"><i>c f</i><sub>s</sub>/4<i>S</i></span>).</li>
+      <li><b>Chirp duration and count</b> set the velocity resolution and the fastest unambiguous speed you can read before the chirp-to-chirp phase step wraps around.</li>
+      <li><b>Total frame time</b> &mdash; all the chirps together &mdash; sets your update rate.</li>
+    </ul>
+    <p>You can&rsquo;t max all four. A car radar wants long range and closing speeds out to roughly &plusmn;90&nbsp;m/s, so it accepts coarser-than-possible resolution and spends its bandwidth and chirp timing accordingly; a short-range parking or gesture radar spends everything on resolution and refresh. But every one of these systems is the same idea you just built &mdash; turn an un-measurable time into an easy frequency &mdash; dressed for a different job.</p>
+
+    <h2><span class="sn">8</span>Where it lives in the design &amp; troubleshooting</h2>
+    <p>In a shipped radar the chirp sits at the head of a signal chain: a synthesiser ramps a VCO, a mixer beats each echo down to the audio-to-megahertz band, a cheap ADC digitises it, and two FFTs plus a detector turn the result into a list of targets. Almost every field failure traces back to one of the equations you just built &mdash; and shows up as a recognisable symptom. A short diagnostic table:</p>
+    <dl class="speclist">
+      <dt>Range reads scaled / wrong</dt><dd><b>Chirp slope mismatch</b> &mdash; the <span class="m"><i>S</i></span> the DSP assumes doesn&rsquo;t match the VCO&rsquo;s actual sweep &mdash; or a non-linear ramp. Since <span class="m"><i>R</i> = <i>c f</i><sub>b</sub>/2<i>S</i></span>, a wrong <span class="m"><i>S</i></span> scales every distance.</dd>
+      <dt>Two close targets won&rsquo;t separate</dt><dd><b>Bandwidth too low.</b> Resolution is <span class="m"><i>ΔR</i> = <i>c</i>/2<i>B</i></span> and nothing else &mdash; widen the sweep or live with the blur.</dd>
+      <dt>Max range falls short</dt><dd>The far beat is hitting the <b>ADC sample-rate / slope ceiling</b>, <span class="m"><i>R</i><sub>max</sub> = <i>c f</i><sub>s</sub>/4<i>S</i></span>. Sample faster, or flatten the slope.</dd>
+      <dt>Targets smear across range bins</dt><dd><b>Chirp non-linearity</b> &mdash; the VCO sweep isn&rsquo;t a straight line, so a single target&rsquo;s beat drifts in frequency and spreads over bins. Linearise the ramp.</dd>
+      <dt>Velocity leaks into range / ghost targets</dt><dd><b>Range&ndash;Doppler coupling</b> left unresolved: one up-chirp can&rsquo;t split <span class="m">2<i>SR</i>/<i>c</i></span> from <span class="m">2<i>v</i>/<i>λ</i></span>. Use a fast-chirp sequence or an up/down pair.</dd>
+      <dt>Phantom targets appear</dt><dd><b>Interference</b> from another FMCW radar sweeping nearby, or <b>TX&rarr;RX leakage</b> and radome reflections showing up as near-range clutter.</dd>
+    </dl>
+
+    <h2><span class="sn">9</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the datasheet won&rsquo;t tell you</span>
+      <ul>
+        <li><b>Chirp linearity is the whole ballgame.</b> Every equation here assumed a perfectly straight ramp; a real VCO bends, and a bent sweep smears a clean beat into a blur that eats the resolution you paid bandwidth for. You tame it by locking the sweep with a <b>PLL</b>, or by calibrating and correcting the curvature in DSP &mdash; and much of a radar chip&rsquo;s real engineering lives right here.</li>
+        <li><b>A cheap slow ADC works &mdash; but only behind an anti-alias filter.</b> The beat is deliberately low, so a jelly-bean converter digitises it &mdash; yet anything past <span class="m"><i>f</i><sub>s</sub>/2</span> folds back as a phantom, so you <em>must</em> band-limit before you sample. And a steeper slope pushes the beat up toward Nyquist, so slope and sample rate are quietly coupled.</li>
+        <li><b>Angle comes from MIMO, not from one antenna.</b> Modern radar &ldquo;images&rdquo; because it builds a <b>virtual array</b>: multiplex several transmitters (TDM or DDM) across a few receivers and you synthesise far more effective elements than you physically have. That trick &mdash; not the range maths &mdash; is why a bumper radar resolves angle at all.</li>
+        <li><b>Windowing is not optional.</b> A strong return&rsquo;s FFT sidelobes will bury a weak target a few bins away unless you apply a <b>Hann or Taylor window</b> first, trading a slightly wider mainlobe for far lower sidelobes. The clean sinc peaks of the theory are what you get <em>only</em> if you remember to window.</li>
+        <li><b>Mutual interference is real and growing.</b> As every car sprouts radars, one unit&rsquo;s sweep crosses another&rsquo;s band and throws up phantom targets. Mitigation &mdash; randomised slopes and start frequencies, detect-and-repair in DSP &mdash; is now part of the spec, not a footnote.</li>
+        <li><b>Range&ndash;Doppler coupling bites everyone once.</b> The first time, a moving target reads at the wrong distance because its Doppler leaked into the range beat. The flip side is a gift: the Doppler of the <em>stationary</em> world hands you the platform&rsquo;s own <b>ego-velocity</b> for free.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">the numbers and the procedure — so you can apply it, not just follow it</span></div>
+
+    <h2><span class="sn">10</span>Build it: a radar waveform, sized</h2>
+    <p>Enough principle &mdash; here is the actual chain of numbers for a concrete sensor, so you can copy the shape and reuse it. Take an automotive mid-range radar at <b>77 GHz</b>, and watch three choices (bandwidth, chirp time, chirp count) plus one ADC hand you the entire waveform. Each line is a one-line plug-in; the method already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — sizing an automotive mid-range radar</span>
+      <dl class="speclist">
+        <dt>Resolution → bandwidth</dt><dd>Resolve two cars <b>15 cm</b> apart: <span class="m"><i>B</i> = <i>c</i>/(2·<i>ΔR</i>) = (3×10⁸)/(2·0.15) = <b>1 GHz</b></span>. The whole sweep is bought here and nowhere else.</dd>
+        <dt>Chirp time → slope</dt><dd>Sweep that 1 GHz in <span class="m"><i>T</i> = 50 µs</span>: slope <span class="m"><i>S</i> = <i>B</i>/<i>T</i> = <b>20 MHz/µs</b></span> (2×10¹³ Hz/s). This one number sets both the beat and the range ceiling.</dd>
+        <dt>A 100 m target → its beat</dt><dd><span class="m"><i>f</i><sub>b</sub> = 2<i>SR</i>/<i>c</i> = (2·2×10¹³·100)/(3×10⁸) ≈ <b>13.3 MHz</b></span> &mdash; low enough that a modest converter reads it at leisure.</dd>
+        <dt>Max range 120 m → ADC rate</dt><dd>A 120 m ceiling keeps the far beat under <span class="m"><i>f</i><sub>b,max</sub> = 2<i>SR</i>/<i>c</i> = 16 MHz</span>. Nyquist (<span class="m"><i>f</i><sub>b</sub> ≤ <i>f</i><sub>s</sub>/2</span>) wants <span class="m"><i>f</i><sub>s</sub> ≥ 32 MHz</span>; take <span class="m"><i>f</i><sub>s</sub> = 40 MHz</span> for anti-alias margin, which by <span class="m"><i>R</i><sub>max</sub> = <i>c f</i><sub>s</sub>/4<i>S</i></span> reaches <b>150 m</b> &mdash; comfortably past 120.</dd>
+        <dt>Velocity → chirp count</dt><dd>Fire <span class="m"><i>N</i> = 128</span> of those chirps back-to-back (<span class="m"><i>T</i><sub>c</sub> = 50 µs</span>, <span class="m"><i>λ</i> = <i>c</i>/77 GHz ≈ 3.9 mm</span>): resolution <span class="m">Δ<i>v</i> = <i>λ</i>/(2<i>N T</i><sub>c</sub>) ≈ <b>0.30 m/s</b></span>, unambiguous out to <span class="m">±<i>v</i><sub>max</sub> = <i>λ</i>/(4<i>T</i><sub>c</sub>) ≈ <b>±19.5 m/s</b></span>. The full frame takes <span class="m"><i>N T</i><sub>c</sub> = 6.4 ms</span>.</dd>
+      </dl>
+    </div>
+    <p>That is the whole design on five one-liners, each a plug-in with no transforms by hand: resolution <span class="m"><i>ΔR</i> = <i>c</i>/2<i>B</i></span>, the beat <span class="m"><i>f</i><sub>b</sub> = 2<i>SR</i>/<i>c</i></span>, the reach <span class="m"><i>R</i><sub>max</sub> = <i>c f</i><sub>s</sub>/4<i>S</i></span>, the speed ceiling <span class="m"><i>v</i><sub>max</sub> = <i>λ</i>/4<i>T</i><sub>c</sub></span>, and the speed resolution <span class="m">Δ<i>v</i> = <i>λ</i>/2<i>N T</i><sub>c</sub></span>. Change the target spec and the numbers move, but the shape never does.</p>
+
+    <p><b>Size one in this order.</b> Each step consumes the previous one&rsquo;s output; skip a step and you just relocate the pain:</p>
+    <ol class="recipe">
+      <li><b>Resolution → bandwidth.</b> Set <span class="m"><i>B</i> = <i>c</i>/2<i>ΔR</i></span> from the finest two targets you must split. Everything else is spent inside this sweep.</li>
+      <li><b>Max range → ADC rate &amp; slope.</b> Choose the slope <span class="m"><i>S</i></span> and sampler so the farthest beat stays under Nyquist: <span class="m"><i>R</i><sub>max</sub> = <i>c f</i><sub>s</sub>/4<i>S</i></span>.</li>
+      <li><b>Velocity res + max → chirp time &amp; count.</b> <span class="m"><i>T</i><sub>c</sub></span> sets the speed ceiling (<span class="m"><i>λ</i>/4<i>T</i><sub>c</sub></span>); the chirp count <span class="m"><i>N</i></span> sets the resolution (<span class="m"><i>λ</i>/2<i>N T</i><sub>c</sub></span>).</li>
+      <li><b>Angle → MIMO TX×RX count.</b> Decide how many transmit and receive antennas to multiplex; the virtual array <span class="m"><i>N</i><sub>tx</sub>×<i>N</i><sub>rx</sub></span> sets angular resolution.</li>
+      <li><b>Detector + windowing.</b> Add a <b>CFAR</b> threshold over the range&ndash;Doppler map and a Hann/Taylor window so strong returns don&rsquo;t mask weak ones.</li>
+      <li><b>Linearise the chirp.</b> Lock the VCO sweep with a PLL or correct it in DSP &mdash; without this, none of the resolution above survives contact with real hardware.</li>
+    </ol>
+
+    <p><b>The forks that change the design.</b> These you decide up front; the rest you can trim later:</p>
+    <dl class="speclist">
+      <dt>FMCW vs pulsed</dt><dd>Cheap, continuous, low peak power, integrable in CMOS → FMCW. Need long reach with a hard range gate and can afford a high-peak-power transmitter and a fast receiver → pulsed time-of-flight.</dd>
+      <dt>24 vs 77/79 GHz</dt><dd>77/79 GHz opens up to 4 GHz of bandwidth (centimetre resolution) and shrinks the antennas; legacy 24 GHz has a fraction of the band and a coarser picture. The band you&rsquo;re allowed to sweep sets the resolution you can buy.</dd>
+      <dt>Fast-chirp vs triangular</dt><dd>A rapid sequence of identical chirps yields the modern 2-D range&ndash;Doppler map &mdash; range and speed per target, cleanly separated. A simple up/down triangle solves the coupling with two measurements but can&rsquo;t image a crowded scene.</dd>
+      <dt>TDM vs DDM MIMO</dt><dd>Time-division fires one transmitter at a time (simple, but spends the time budget and caps unambiguous velocity); Doppler-division runs them together on orthogonal Doppler codes (more throughput, more processing).</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what this page can&rsquo;t size for you</b>
+      Sizing the waveform is the architecture call, and now you can make it. What it does <em>not</em> do is the hard RF and signal-processing craft that turns a spec into a working sensor: the <b>front-end</b> (the mmWave MMIC, the antenna array and radome), the <b>chirp-linearisation</b> loop, the <b>CFAR detection, clustering and tracking</b> DSP, and <b>interference mitigation</b> are each a discipline of its own. When you build, don&rsquo;t hand-roll the RF &mdash; stand on a platform and spec against it: <b>TI&rsquo;s mmWave SDK and AWR radar chips</b>, or <b>MATLAB&rsquo;s Radar and Phased-Array toolboxes</b> for simulation. Your job is the waveform and the architecture call &mdash; which, after this, you own.
+    </div>
+
+    <h2><span class="sn">11</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">Your radar cleanly resolves two poles 50&nbsp;cm apart but blurs two that are 30&nbsp;cm apart into one. You must separate the 30-cm pair. Do you reach for more transmit power, a longer chirp, or more bandwidth &mdash; and why?</p><span class="a">More bandwidth. Range resolution is <span class="m"><i>ΔR</i> = <i>c</i>/2<i>B</i></span> and depends on nothing else &mdash; power only buys you range/SNR, and a longer chirp at the same bandwidth doesn&rsquo;t sharpen resolution (the <span class="m"><i>T</i></span> cancels). To resolve 30&nbsp;cm you need <span class="m"><i>B</i> ≥ <i>c</i>/(2·0.3) = 500&nbsp;MHz</span>.</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">You dial the chirp slope down to zero. What can the sensor still measure, and what has it lost?</p><span class="a">With <span class="m"><i>S</i> = 0</span> the beat frequency collapses to zero and range is gone entirely &mdash; but a moving target still produces a Doppler tone <span class="m">2<i>v</i>/<i>λ</i></span>. You&rsquo;ve degenerated into a continuous-wave Doppler radar: it measures velocity only, a speed gun. All of the range information lived in the slope.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">Your ADC samples at 20&nbsp;MHz and your slope is 50&nbsp;MHz/µs. Roughly how far can you see, and how would you double it <em>without</em> a faster converter &mdash; at what cost?</p><span class="a">Maximum range is <span class="m"><i>R</i><sub>max</sub> = <i>c f</i><sub>s</sub>/4<i>S</i> = (3×10⁸ · 2×10⁷)/(4 · 5×10¹³) ≈ 30&nbsp;m</span>. Halving the slope <span class="m"><i>S</i></span> (a gentler sweep) doubles the ceiling to 60&nbsp;m with the same ADC &mdash; but if you drop the slope by dropping bandwidth, you halve your range resolution. More reach, blurrier picture: the central FMCW trade.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <span class="nextpill"><b>Next:</b> Field-oriented control</span>
+      <span class="nextpill"><b>Next:</b> Eddy-current braking</span>
+      <span class="nextpill"><b>Then:</b> Hamming SECDED</span>
+    </div>
+    <p class="footnote"><b>How to Measure a Nanosecond — FMCW Ranging.</b> A first-principles deep dive in the <em>What Happens When…</em> series: start from the physical constraint (time is too fast to clock cheaply), reach the one reframing it forces (put the time in the frequency), and let the consequences fall out &mdash; range is a beat (<span class="m"><i>R</i> = <i>c f</i><sub>b</sub>/2<i>S</i></span>), resolution is bandwidth (<span class="m"><i>c</i>/2<i>B</i></span>), velocity comes free from Doppler, and a cheap converter&rsquo;s sample rate is your maximum range. Grounded in how real 77-GHz automotive radar and FMCW &ldquo;4-D&rdquo; LiDAR actually work &mdash; with live, interactive simulations of the chirp, the resolution limit, and the range&ndash;Doppler map.<br>
+    Companion volumes in the portal: <b>Sensors &amp; Perception</b> and <b>DSA in Embedded, Drones, Robotics, Marine &amp; Space</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#141a20';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616e79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#8893a0';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#d2dae0';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f0f3f6';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+  /* ddchirp — FMCW time–frequency diagram: TX sawtooth chirp vs the same ramp delayed by the
+     echo round-trip τ. The constant vertical gap between the two ramps is the beat frequency
+     f_b = S·τ = 2·S·R/c (S = B/T). Bigger range ⇒ echo slides right ⇒ bigger gap. */
+  SIMS.ddchirp={
+    controls:[
+      {k:'rng',label:'Range R',min:2,max:180,step:1,val:150,unit:' m'},
+      {k:'bw',label:'Bandwidth B',min:0.5,max:4,step:0.1,val:2.5,unit:' GHz',fmt:function(v){return v.toFixed(1);}}
+    ],
+    init:function(s,w,h){ s.sweep=0; },
+    step:function(s,dt){ s.sweep=(s.sweep||0)+dt; },
+    draw:function(ctx,w,h,s){
+      var C=3e8, T=40e-6;                       // carrier chirp duration = 40 µs (fixed)
+      var R=s.p.rng, B=s.p.bw*1e9;              // range [m], sweep bandwidth [Hz]
+      var S=B/T;                                // chirp slope [Hz/s]
+      var tau=2*R/C;                            // echo round-trip delay [s]
+      var fb=S*tau;                             // beat frequency [Hz]  (= S·τ)
+      var win=2*T;                              // show two chirp periods
+      var mL=46,mR=14,mT=16,mB=30;
+      var px=mL, pw=Math.max(40,w-mL-mR), py=mT, ph=Math.max(40,h-mT-mB), pb=py+ph;
+      function xT(tw){ return px+(tw/win)*pw; }
+      function yF(f){ return pb-(f/B)*ph; }
+      // axes
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,pb); ctx.lineTo(px+pw,pb); ctx.stroke();
+      // period gridlines at T and 2T
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.45; ctx.lineWidth=1;
+      for(var g=1;g<=2;g++){ var gx=xT(g*T); ctx.beginPath(); ctx.moveTo(gx,py); ctx.lineTo(gx,pb); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      // constant-gap ribbon + ramps, clipped to the plot
+      ctx.save();
+      ctx.beginPath(); ctx.rect(px,py,pw,ph); ctx.clip();
+      ctx.fillStyle=s.accent; ctx.globalAlpha=0.12;
+      for(var k=0;k<2;k++){
+        var ax=xT(k*T), bx=xT((k+1)*T), cx=xT(k*T+tau), dx=xT((k+1)*T+tau);
+        ctx.beginPath(); ctx.moveTo(ax,pb); ctx.lineTo(bx,py); ctx.lineTo(dx,py); ctx.lineTo(cx,pb); ctx.closePath(); ctx.fill();
+      }
+      ctx.globalAlpha=1;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.2;                 // TX chirp
+      for(var k=0;k<2;k++){ ctx.beginPath(); ctx.moveTo(xT(k*T),pb); ctx.lineTo(xT((k+1)*T),py); ctx.stroke(); }
+      ctx.strokeStyle=PAL.cool; ctx.lineWidth=2.2; ctx.globalAlpha=0.75;   // RX echo (delayed)
+      for(var k=0;k<2;k++){ ctx.beginPath(); ctx.moveTo(xT(k*T+tau),pb); ctx.lineTo(xT((k+1)*T+tau),py); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      ctx.restore();
+      // sweeping cursor kept inside the valid overlap of both ramps so the gap always reads f_b
+      var SW=3.2, ph01=(((s.sweep||0)/SW)%1+1)%1, seg=ph01*2, kk=Math.floor(seg), u=seg-kk;
+      var tcf=lerp(tau, T*0.985, u);            // TX time past this ramp's start
+      var tc=kk*T+tcf;
+      var fTX=S*tcf, fRX=S*(tcf-tau);
+      var xc=xT(tc), yTX=yF(fTX), yRX=yF(fRX);
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=1; ctx.globalAlpha=0.55;
+      ctx.beginPath(); ctx.moveTo(xc,py); ctx.lineTo(xc,pb); ctx.stroke(); ctx.globalAlpha=1;
+      arrow(ctx,xc,yTX,xc,yRX,PAL.gold,2); arrow(ctx,xc,yRX,xc,yTX,PAL.gold,2);   // double-headed = f_b
+      dot(ctx,xc,yTX,3.4,s.accent); dot(ctx,xc,yRX,3.4,PAL.cool);
+      txt(ctx,'f_b',xc+7,(yTX+yRX)/2+3.5,PAL.gold,10,'left');
+      // ramp labels
+      txt(ctx,'TX chirp',xT(0.5*T),yF(0.55*B)-5,s.accent,9.5,'center');
+      txt(ctx,'RX echo · delay τ',xT(1.5*T),pb-7,PAL.cool,9.5,'center');
+      txt(ctx,'f ↑  0 → B='+s.p.bw.toFixed(1)+' GHz',px+5,py+11,PAL.faint,9,'left');
+      // time ticks
+      txt(ctx,'0',px,pb+12,PAL.faint,9,'center');
+      txt(ctx,'T',xT(T),pb+12,PAL.faint,9,'center');
+      txt(ctx,'2T',xT(2*T),pb+12,PAL.faint,9,'center');
+      // readouts
+      var taus = tau*1e6>=1 ? (tau*1e6).toFixed(2)+' µs' : (tau*1e9).toFixed(0)+' ns';
+      txt(ctx,'R '+R.toFixed(0)+' m   ·   τ '+taus,px+2,11,PAL.ink,10.5,'left');
+      txt(ctx,'f_b '+(fb/1e6).toFixed(1)+' MHz',px+pw,11,s.accent,11.5,'right');
+      txt(ctx,'S '+(S/1e12).toFixed(0)+' MHz/µs',px+2,h-5,PAL.muted,9,'left');
+      txt(ctx,'f_b = S·τ = 2·S·R/c',px+pw,h-5,PAL.faint,9.5,'right');
+    }
+  };
+
+  /* ddres — range resolution: after the FFT the beat-frequency axis is relabelled as range.
+     Two targets at R and R+Δrange become sinc² peaks whose mainlobe half-width in range is
+     ΔR_res = c/(2B). They resolve only when Δrange ≥ ΔR_res — resolution is set by B alone. */
+  SIMS.ddres={
+    controls:[
+      {k:'bw',label:'Bandwidth B',min:0.2,max:4,step:0.1,val:1.5,unit:' GHz',fmt:function(v){return v.toFixed(1);}},
+      {k:'sep',label:'Target Δrange',min:0.02,max:2,step:0.02,val:0.6,unit:' m',fmt:function(v){return v.toFixed(2);}}
+    ],
+    init:function(s,w,h){ s.scan=0; },
+    step:function(s,dt){ s.scan=(s.scan||0)+dt; },
+    draw:function(ctx,w,h,s){
+      var C=3e8;
+      var B=s.p.bw*1e9, dR=s.p.sep;             // bandwidth [Hz], target separation [m]
+      var dRres=C/(2*B);                        // range resolution [m]
+      var Rc=30, Wm=8;                          // view: 8 m window centred on 30 m
+      var R1=Rc-dR/2, R2=Rc+dR/2;
+      var r0=Rc-Wm/2, r1=Rc+Wm/2;
+      var mL=16,mR=14,mT=22,mB=28;
+      var px=mL, pw=Math.max(40,w-mL-mR), py=mT, ph=Math.max(40,h-mT-mB), pb=py+ph;
+      function xR(r){ return px+((r-r0)/Wm)*pw; }
+      function sinc(x){ if(Math.abs(x)<1e-6) return 1; var a=Math.PI*x; return Math.sin(a)/a; }
+      function amp(r){ var a=sinc((r-R1)/dRres), b=sinc((r-R2)/dRres); return a*a+b*b; }
+      var N=Math.max(260,Math.floor(pw*2)), i, r, v, yy, mx=1e-6;
+      for(i=0;i<=N;i++){ r=r0+Wm*i/N; v=amp(r); if(v>mx) mx=v; }
+      // axis + range ticks
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,pb); ctx.lineTo(px+pw,pb); ctx.stroke();
+      for(var rt=Math.ceil(r0/2)*2; rt<=r1+0.001; rt+=2){ var tx=xR(rt);
+        ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.4; ctx.beginPath(); ctx.moveTo(tx,py); ctx.lineTo(tx,pb); ctx.stroke(); ctx.globalAlpha=1;
+        txt(ctx,rt.toFixed(0),tx,pb+13,PAL.faint,9,'center'); }
+      // filled spectrum
+      ctx.beginPath(); ctx.moveTo(px,pb);
+      for(i=0;i<=N;i++){ r=r0+Wm*i/N; v=clamp(amp(r)/mx,0,1); yy=pb-v*ph; ctx.lineTo(xR(r),yy); }
+      ctx.lineTo(px+pw,pb); ctx.closePath();
+      ctx.fillStyle=s.accent; ctx.globalAlpha=0.18; ctx.fill(); ctx.globalAlpha=1;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2; ctx.beginPath();
+      for(i=0;i<=N;i++){ r=r0+Wm*i/N; v=clamp(amp(r)/mx,0,1); yy=pb-v*ph; if(i===0) ctx.moveTo(xR(r),yy); else ctx.lineTo(xR(r),yy); }
+      ctx.stroke();
+      // target markers
+      ctx.strokeStyle=PAL.muted; ctx.setLineDash([3,3]); ctx.globalAlpha=0.7;
+      ctx.beginPath(); ctx.moveTo(xR(R1),py); ctx.lineTo(xR(R1),pb); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xR(R2),py); ctx.lineTo(xR(R2),pb); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'R₁',xR(R1),py+9,PAL.muted,9,'center');
+      txt(ctx,'R₂',xR(R2),py+9,PAL.muted,9,'center');
+      // ΔR_res bracket (peak-to-first-null width) near a peak
+      var by=py+ph*0.30, bx1=xR(R2), bx2=xR(R2+dRres);
+      arrow(ctx,bx1,by,bx2,by,PAL.viol,1.6); arrow(ctx,bx2,by,bx1,by,PAL.viol,1.6);
+      txt(ctx,'ΔR_res',(bx1+bx2)/2,by-4,PAL.viol,9,'center');
+      // animated readout cursor sweeping the range axis
+      var scf=(((s.scan||0)*0.14)%1+1)%1, scR=r0+scf*Wm;
+      ctx.strokeStyle=PAL.sky; ctx.globalAlpha=0.6; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(xR(scR),py); ctx.lineTo(xR(scR),pb); ctx.stroke(); ctx.globalAlpha=1;
+      txt(ctx,scR.toFixed(1)+' m',xR(scR),pb+24,PAL.sky,9,'center');
+      // readouts + status
+      var resolved = dR>=dRres;
+      var dRstr = dR<1 ? (dR*100).toFixed(0)+' cm' : dR.toFixed(2)+' m';
+      var resstr = (dRres*100)<10 ? (dRres*100).toFixed(1)+' cm' : (dRres*100).toFixed(0)+' cm';
+      txt(ctx,'B '+s.p.bw.toFixed(1)+' GHz   ·   Δrange '+dRstr,px+2,11,PAL.ink,10.5,'left');
+      txt(ctx,'ΔR_res '+resstr,px+pw,11,PAL.viol,11,'right');
+      txt(ctx,resolved?'resolved ✓':'merged',xR(Rc),py+ph*0.55,resolved?PAL.good:PAL.bad,12,'center');
+      txt(ctx,'resolution set only by bandwidth:  ΔR_res = c / 2B',px+pw,h-5,PAL.faint,9.5,'right');
+      txt(ctx,'range →',px+2,h-5,PAL.muted,9.5,'left');
+    }
+  };
+
+  /* ddrd — range–Doppler map: a target sits at (velocity, range). Range is recovered from the
+     fast-time FFT within one chirp; velocity from the slow-time FFT across chirps via the Doppler
+     shift f_d = 2v/λ (λ = c/77 GHz ≈ 3.9 mm). Velocity is unambiguous only within ±v_max. */
+  SIMS.ddrd={
+    controls:[
+      {k:'rng',label:'Range R',min:0,max:180,step:1,val:90,unit:' m'},
+      {k:'vel',label:'Velocity v',min:-30,max:30,step:1,val:12,unit:' m/s'}
+    ],
+    init:function(s,w,h){ s.pulse=0; },
+    step:function(s,dt){ s.pulse=(s.pulse||0)+dt; },
+    draw:function(ctx,w,h,s){
+      var C=3e8, lam=C/77e9;                    // 77 GHz carrier → λ ≈ 3.9 mm
+      var R=s.p.rng, v=s.p.vel;
+      var fd=2*v/lam;                           // Doppler shift [Hz]
+      var vmax=30;                              // unambiguous velocity window edge [m/s]
+      var mL=46,mR=14,mT=16,mB=36;
+      var px=mL, pw=Math.max(40,w-mL-mR), py=mT, ph=Math.max(40,h-mT-mB), pb=py+ph;
+      function xV(vv){ return px+((vv+vmax)/(2*vmax))*pw; }
+      function yR(rr){ return pb-(rr/180)*ph; }
+      function blob(cx,cy,peak,rad){
+        for(var i=8;i>=1;i--){ ctx.globalAlpha=peak*0.13*(1-(i-1)/9); ctx.fillStyle=s.accent;
+          ctx.beginPath(); ctx.arc(cx,cy,rad*i/8,0,2*Math.PI); ctx.fill(); }
+        ctx.globalAlpha=1;
+      }
+      // faint grid
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.4; ctx.lineWidth=1;
+      for(var vt=-30;vt<=30;vt+=10){ var gx=xV(vt); ctx.beginPath(); ctx.moveTo(gx,py); ctx.lineTo(gx,pb); ctx.stroke(); }
+      for(var rt=0;rt<=180;rt+=30){ var gy=yR(rt); ctx.beginPath(); ctx.moveTo(px,gy); ctx.lineTo(px+pw,gy); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      // axes + zero-velocity line
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,pb); ctx.lineTo(px+pw,pb); ctx.stroke();
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.7; ctx.beginPath(); ctx.moveTo(xV(0),py); ctx.lineTo(xV(0),pb); ctx.stroke(); ctx.globalAlpha=1;
+      for(var vt2=-30;vt2<=30;vt2+=10){ txt(ctx,(vt2>0?'+':'')+vt2,xV(vt2),pb+12,PAL.faint,8.5,'center'); }
+      for(var rt2=0;rt2<=180;rt2+=30){ txt(ctx,rt2.toString(),px-5,yR(rt2)+3,PAL.faint,8.5,'right'); }
+      // Doppler-alias ghost (first fold at v ± 2·v_max) — faint, appears only near the edges
+      var vg = v>0 ? v-2*vmax : v+2*vmax;
+      if(vg>=-vmax && vg<=vmax){ blob(xV(vg),yR(R),0.3,11); txt(ctx,'alias',xV(vg),yR(R)-14,PAL.faint,8.5,'center'); }
+      // target blob (soft gaussian, gentle pulse)
+      var pls=1+0.06*Math.sin((s.pulse||0)*2.2);
+      blob(xV(v),yR(R),1,16*pls);
+      dot(ctx,xV(v),yR(R),2.4,PAL.ink);
+      // axis titles with FFT-domain annotations
+      ctx.save(); ctx.translate(px-32,py+ph/2); ctx.rotate(-Math.PI/2);
+      txt(ctx,'range (m) · fast-time FFT',0,0,PAL.muted,9,'center'); ctx.restore();
+      txt(ctx,'velocity (m/s) · slow-time FFT',px+pw/2,h-14,PAL.muted,9,'center');
+      txt(ctx,'range ← within a chirp  ·  velocity ← across chirps',px+pw/2,h-4,PAL.faint,8.5,'center');
+      // readouts
+      txt(ctx,'R '+R.toFixed(0)+' m',px+2,11,PAL.ink,10.5,'left');
+      txt(ctx,'v '+(v>0?'+':'')+v.toFixed(0)+' m/s   ·   f_d '+(fd/1e3).toFixed(1)+' kHz',px+pw,11,s.accent,10.5,'right');
+      txt(ctx,'unambiguous |v| < v_max = '+vmax+' m/s',px+pw,py+ph-6,PAL.faint,8.5,'right');
+    }
+  };
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

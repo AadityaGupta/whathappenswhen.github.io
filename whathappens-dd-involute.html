@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>The Involute Gear Tooth — Why Teeth Are That Exact Shape · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#46687A; --accent-ink:#FFFFFF; --accent-wash:#E7EDF0;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#8FB0C2; --accent-ink:#241405; --accent-wash:#1B2730;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#8FB0C2; --accent-ink:#241405; --accent-wash:#1B2730;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 03 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>The Involute Gear Tooth: Why Teeth Are That Exact Shape</h1>
+    <p class="dek">Two meshing wheels transmit motion, but a careless tooth shape makes the output speed surge and dip within every tooth &mdash; the involute is the one curve that holds the speed ratio dead constant, even if the gears are mounted sloppily.</p>
+    <div class="meta">
+      <span>≈ 16 min read</span>
+      <span>gears · drivetrains · mechanical design</span>
+      <span>companion to <b>Machine &amp; Mechanical Design</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">Two wheels pressed edge to edge will drive each other by friction &mdash; for a while. Raise the load and they slip, and the ratio you were counting on quietly drifts. Cut teeth into their rims and the slipping is gone: the drive is positive, and the <em>average</em> speed ratio is now fixed exactly by the tooth counts. But a new problem walks in through the same door. The instant two teeth are pushing on each other, the shape of their touching faces decides, moment by moment, how fast the output turns &mdash; and almost any shape you would draw by hand makes that instantaneous ratio surge and sag within a single tooth. This piece is about the one family of curves that doesn&rsquo;t, why it is the shape on essentially every gear you will ever meet, and &mdash; the half the textbooks skip &mdash; how you actually size a gearset, what breaks it, and the things that only bite you on the bench.</p>
+
+    <h2><span class="sn">1</span>The constraint: a constant ratio, held through every tooth</h2>
+    <p>Start with what you actually want. Take rotation in on one shaft and deliver it on another at a <b>constant speed ratio</b> &mdash; three turns in for one turn out, and that three-to-one holding steady not just on average but at every instant. Two friction wheels give you the ratio by rolling contact, but they slip under load and the ratio wanders. Add teeth and the slip is solved outright: the teeth interlock, the drive is positive, and across one full tooth the output must advance by exactly one tooth&rsquo;s worth &mdash; so the <em>average</em> ratio is pinned to the ratio of tooth counts, forever.</p>
+    <p>The catch hides in the word <em>instant</em>. While a pair of teeth is engaged, the point where they touch slides along both tooth faces, and the line along which one tooth pushes the other tilts and shifts as it does. The instantaneous output speed depends on exactly <em>where</em> that push-line crosses the line joining the two shaft centres &mdash; and for a profile you sketched by eye, that crossing point marches back and forth all through the engagement. The result is a ratio that is right <em>on average</em> but wrong <em>moment to moment</em>: the output shaft speeds up and slows down within every single tooth, many times a second.</p>
+    <div class="eq"><span class="m"><span class="frac"><span class="nu">&omega;<sub>2</sub></span><span>&omega;<sub>1</sub></span></span> = constant&nbsp;?&nbsp;&nbsp;&mdash;&nbsp;only for the right tooth shape</span><span class="lbl">the whole question</span></div>
+    <p>That ripple is not cosmetic. It is velocity error &rarr; acceleration &rarr; dynamic tooth force &rarr; vibration, whine, and accelerated wear, all beating at the tooth-meshing frequency. So the requirement sharpens into something precise: we need a tooth profile that holds the instantaneous angular-velocity ratio <span class="m">&omega;<sub>1</sub>/&omega;<sub>2</sub></span> dead constant <em>throughout</em> the mesh, not merely averaged over a tooth.</p>
+
+    <h2><span class="sn">2</span>The reframe: the one rule every good tooth must obey</h2>
+    <p>Rather than guess at shapes, ask what <em>condition</em> a shape has to satisfy. Two tooth surfaces touch at a point. Where they touch they share a <b>common normal</b> &mdash; the single direction perpendicular to both faces and, ignoring friction, the only direction along which one tooth can push the other. (The perpendicular direction is pure sliding; it carries no drive.) Now impose the one physical constraint: the teeth may neither gap apart nor bite into each other, so the velocity of each surface <em>along that common normal</em> must be equal.</p>
+    <p>Work that out and a clean theorem drops into your lap &mdash; the <b>fundamental law of gearing</b>: the common normal at the contact point must cut the line of centres at a point <span class="m"><i>P</i></span> that divides it in the inverse ratio of the angular speeds.</p>
+    <div class="eq"><span class="m"><span class="frac"><span class="nu">&omega;<sub>1</sub></span><span>&omega;<sub>2</sub></span></span> = <span class="frac"><span class="nu"><i>O</i><sub>2</sub><i>P</i></span><span><i>O</i><sub>1</sub><i>P</i></span></span></span><span class="lbl">P on the line of centres</span></div>
+    <p>Read it and the whole design problem collapses to a single demand. For the ratio to be <em>constant</em>, that intersection point <span class="m"><i>P</i></span> &mdash; the <b>pitch point</b> &mdash; must sit still as the gears turn. Equivalently: two imaginary <em>pitch circles</em>, one on each gear, touch at <span class="m"><i>P</i></span> and roll on each other without slipping, so the gears behave exactly like those two friction wheels &mdash; but now without the slip. The real question is therefore no longer &ldquo;what shape?&rdquo; but something far more answerable: <b>what tooth curve guarantees that the contact normal always passes through one fixed point?</b> A profile with that property is said to give <em>conjugate action</em>, and any pair of curves that has it will work. The involute is the one that has it <em>and</em> forgives you everything else.</p>
+
+    <h2><span class="sn">3</span>The core result: the involute of a circle</h2>
+    <p>Here is a curve that passes the test almost by construction. Wind a string around a circle, hold the loose end taut, and unwind it, keeping it tight the whole way. The path traced by the string&rsquo;s end is the <b>involute</b> of that circle; the circle it unwinds from is the <b>base circle</b>. At every instant the unwound part of the string is a straight, taut line running from the point where it last leaves the circle out to the tracing end &mdash; and it is <em>tangent</em> to the base circle at that leave-off point.</p>
+    <p>That taut string <em>is</em> the geometry. The tracing end is swinging about the leave-off point like the tip of a rod, so its motion is perpendicular to the string &mdash; which means the string is exactly the <b>normal</b> to the involute at that point. State it plainly, because everything hinges on it: <b>the normal to an involute, at any point, is tangent to its base circle.</b> (The string also happens to equal the local radius of curvature, but the part we need is simpler &mdash; the normal direction is pinned to the base circle wherever you are on the curve.)</p>
+
+    <div class="simwrap">
+      <div class="simcap">The unwinding string — and why the normal is always tangent to the base circle</div>
+      <canvas class="sim" data-sim="involstring" data-c="#46687A" aria-label="involute of a circle generated by an unwinding taut string, with the normal tangent to the base circle"></canvas>
+      <div class="ctrls" data-sim="involstring"></div>
+    </div>
+    <p class="simnote">Unwind the string and watch the traced curve &mdash; the <em>involute</em>. The taut segment from the base circle out to the pen is always straight and always tangent to the base circle, and it is exactly the <em>normal</em> to the curve at the pen. Change the amount unwound and the normal still touches the base circle. That one invariant is the whole reason the shape works in a gear.</p>
+
+    <p>Now cut a tooth on each gear as an involute of its own base circle, and bring the two together. Wherever the teeth touch, the common normal must be normal to <em>both</em> involutes at once &mdash; so, by the rule we just proved, it must be tangent to <em>both</em> base circles at once. There is only one straight line that lies tangent to two given circles on the inside between them, and it never moves: the base circles are rigidly fixed to their shafts, so their common tangent is fixed in space. Every contact, for every pair of teeth, happens somewhere along that one unmoving line &mdash; the <b>line of action</b>. A fixed line crosses the line of centres at a fixed point; the pitch point stands still; conjugate action is satisfied <em>automatically</em>. And the angle that line makes with the common tangent to the pitch circles &mdash; the <b>pressure angle</b> <span class="m">&alpha;</span> &mdash; is constant as well, set purely by geometry:</p>
+    <div class="eq"><span class="m">cos&nbsp;&alpha; = <span class="frac"><span class="nu"><i>r</i><sub>b1</sub> + <i>r</i><sub>b2</sub></span><span><i>C</i></span></span></span><span class="lbl">C = centre distance</span></div>
+    <div class="key">
+      <span class="kl">The result the whole shape exists to reach</span>
+      <div class="eq"><span class="m"><span class="frac"><span class="nu">&omega;<sub>1</sub></span><span>&omega;<sub>2</sub></span></span> = <span class="frac"><span class="nu"><i>r</i><sub>b2</sub></span><span><i>r</i><sub>b1</sub></span></span> = <span class="frac"><span class="nu"><i>O</i><sub>2</sub><i>P</i></span><span><i>O</i><sub>1</sub><i>P</i></span></span> = constant</span></div>
+      <p>Because the contact normal is forever tacked to the two base circles, the speed ratio equals the ratio of the <b>base radii</b> alone (<span class="m"><i>r</i><sub>b</sub></span>), each one fixed the moment the gear was cut. Not the shaft spacing, not the mounting, not the running position &mdash; just two numbers machined into the metal. That single fact is why the involute runs the world.</p>
+    </div>
+
+    <h2><span class="sn">4</span>Why the involute won: forgiveness, straight cutters, and a floor on teeth</h2>
+    <p><b>It does not care where you put it.</b> Pull the two gears slightly apart &mdash; sloppy bores, a warm housing, a worn bearing &mdash; and the speed ratio does not budge. Increasing the centre distance <span class="m"><i>C</i></span> swings the line of action to a steeper angle (the pressure angle rises) and slides the pitch point along the centre line, but the ratio is <span class="m"><i>r</i><sub>b2</sub>/<i>r</i><sub>b1</sub></span>, and the base circles never changed. This is the involute&rsquo;s superpower, and the real reason it beat the older <b>cycloidal</b> tooth. A cycloidal profile achieves conjugate action only at one exact centre distance, because its shape is tied to specific rolling circles; mount it a hair off and the pitch point wanders, the ratio ripples, and you are right back in the problem of &sect;1. The involute hands you a constant ratio for free across a whole band of misalignment &mdash; which is to say it tolerates being manufactured and assembled by ordinary mortals.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Line of action fixed, pitch point fixed — ratio flat even as the centre distance drifts</div>
+      <canvas class="sim" data-sim="involmesh" data-c="#46687A" aria-label="two involute gears meshing with a fixed line of action and constant ratio, with a naive-tooth toggle that ripples"></canvas>
+      <div class="ctrls" data-sim="involmesh"></div>
+    </div>
+    <p class="simnote">Two involute teeth rolling through mesh: the contact point tracks straight along the fixed <em>line of action</em>, the pitch point never moves, and the output-speed trace is a flat line. Nudge the <em>centre distance</em> apart &mdash; the pressure angle opens up, the pitch point shifts, and the trace stays flat anyway. Flip on the <em>naive tooth</em> and the same trace starts to ripple within every tooth: that is the velocity error a non-involute profile injects.</p>
+
+    <p><b>The force has a fixed direction.</b> Since contact always lies on the straight line of action, the direction of the tooth-to-tooth push never changes &mdash; only its magnitude. That makes bearing reactions predictable and steady in direction, so a designer can size the bearings without chasing a force vector that swings around as the teeth roll.</p>
+    <p><b>Straight-edged tools cut it.</b> The involute has a quietly miraculous partner: the involute of a circle of <em>infinite</em> radius is a straight line. A gear of infinite radius is a <b>rack</b> &mdash; a flat bar with straight, trapezoidal teeth &mdash; so an involute gear meshes perfectly with a straight-sided rack, and can therefore be <em>generated</em> by a straight-edged cutting tool (a hob, or a rack-form cutter) rolled against the blank. Straight edges are cheap to make accurately, so involute gears are cheap to make accurately. Better still, every gear cut to the same <b>module</b> and the same pressure angle meshes correctly with every other, whatever its tooth count &mdash; a 17-tooth pinion and a 200-tooth wheel off the same hob are automatically compatible. Universal interchangeability, for free.</p>
+    <div class="limit">
+      <b>Limit check — a floor on tooth count</b>
+      The forgiveness has one sharp edge. Make a pinion with too few teeth and the generating rack, swinging into the blank, gouges the flank below the base circle, scooping out involute material right at the root &mdash; <b>undercut</b>. It thins and weakens the tooth and eats into the usable profile. For a standard full-depth tooth the threshold is <span class="m"><i>z</i><sub>min</sub> &asymp; 2 / sin<sup>2</sup>&alpha;</span>, which at the usual <span class="m">&alpha; = 20&deg;</span> comes out to about <b>17 teeth</b> (it falls to ~12 at 25&deg;, and climbs to ~32 at the legacy 14.5&deg;). Below the floor you don&rsquo;t abandon the involute &mdash; you <b>profile-shift</b> it (cut the tooth with the rack moved outward, also called addendum modification) and recover a sound tooth. More on that in the build.
+    </div>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives in the design, and how it fails</h2>
+    <p>At the design stage the involute is mostly a set of numbers you pick and then check. You choose the <b>module</b> <span class="m"><i>m</i></span> (tooth size), the <b>pressure angle</b> (almost always 20&deg;), and the <b>tooth counts</b> that give your ratio &mdash; and then you earn your pay by checking three things the clean geometry doesn&rsquo;t promise: the <b>contact ratio</b> (is more than one tooth pair always engaged, so the load never drops to a single tooth?), <b>undercut/interference</b> (are there enough teeth, or do you shift?), and the two stresses that actually size the metal &mdash; <b>root bending</b> (Lewis) and <b>surface contact</b> (Hertzian) stress. Get those right on paper and the gear works; miss one and it tells you, in a fairly legible vocabulary of failure:</p>
+    <dl class="speclist">
+      <dt>Whine at tooth-mesh frequency</dt><dd><b>Transmission error.</b> Tiny profile and pitch errors, plus the teeth flexing under load, make the real motion depart from the perfect geometry &mdash; even though the nominal ratio is exact. The noise is the error, not the ratio.</dd>
+      <dt>Surface pitting / spalling on the flanks</dt><dd><b>Contact (Hertzian) stress too high</b> for the material and hardness &mdash; the surface is fatiguing and flaking. Points at hardness, size, or overload.</dd>
+      <dt>Teeth snapping at the root</dt><dd><b>Bending fatigue.</b> The root fillet is the stress concentrator; the load exceeded the bending endurance there. A bigger module or a better fillet, not a better profile.</dd>
+      <dt>Excessive backlash / lost motion on reversal</dt><dd>Centre distance set too large, or the teeth were cut too thin &mdash; slack on every change of direction, which wrecks positioning.</dd>
+      <dt>Binding, overheating, seizing</dt><dd><b>Too little backlash.</b> No room left for thermal growth and the oil film, so the teeth jam and cook. Backlash is a feature, not a defect.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How it shapes the machine around it</h2>
+    <p>The quality of the tooth propagates into headline numbers you would never think to trace back to a curve. Gear accuracy sets the drivetrain&rsquo;s <b>NVH</b> &mdash; the whine and vibration you hear in a transmission or feel in a robot wrist &mdash; because transmission error is the excitation. It sets <b>efficiency</b>: a good spur stage runs about 98&ndash;99%, and the losses you don&rsquo;t get are heat you don&rsquo;t have to remove. It sets <b>load capacity</b>, which through root-bending and contact-stress limits sizes the whole gearbox: the module and face width you need for the torque fix the gear diameters, and those fix the housing. It sets <b>backlash</b>, and therefore the positioning accuracy a robot or CNC axis can hold. And &mdash; this is the quiet payoff of the involute&rsquo;s forgiveness &mdash; it loosens how precisely the <b>housing</b> bores must be machined, because the ratio survives a drifting centre distance. That tolerance is a real cost lever on every mass-produced gearbox. The <b>module</b> sets tooth size and hence gearbox size and weight; the <b>contact ratio</b> and (for helicals) the helix angle set how smoothly it runs.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>Anywhere rotation has to pass from one shaft to another with a dependable ratio: industrial gearboxes and reducers, vehicle transmissions and differentials, robot joints and actuators, printer and scanner drives, power tools, clocks and instruments, winches and hoists. When you choose or specify a gear, these are the parameters that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Module (or diametral pitch)</dt><dd>Tooth size &mdash; the master dimension. Metric <span class="m"><i>m</i></span> in mm; imperial DP in teeth-per-inch. It sizes strength and the whole gear.</dd>
+      <dt>Pressure angle</dt><dd><b>20&deg;</b> is the default; <b>25&deg;</b> is stronger (fatter root, fewer min teeth) but noisier and higher-thrust; <b>14.5&deg;</b> is legacy. Both mating gears must share it.</dd>
+      <dt>Tooth counts</dt><dd>Set the ratio &mdash; and keep the pinion <b>&ge; 17</b> at 20&deg; to dodge undercut, or deliberately profile-shift below that.</dd>
+      <dt>Face width</dt><dd>Typically <b>~8&ndash;12 &times; module</b>. Wider shares load but needs good alignment or the load crowds to one end.</dd>
+      <dt>Quality grade</dt><dd>AGMA / ISO accuracy class &mdash; the single biggest lever on noise and on how much transmission error you ship.</dd>
+      <dt>Material &amp; hardness</dt><dd>Through-hardened (cheaper, moderate capacity) vs case-hardened/ground (far higher contact and bending limits, more cost).</dd>
+      <dt>Spur vs helical</dt><dd>Spur is simple and thrust-free; helical is quieter and stronger but loads the shaft axially.</dd>
+      <dt>Backlash</dt><dd>Specify it &mdash; enough for thermal growth and lube, no more. Zero backlash seizes.</dd>
+      <dt>Micro-geometry</dt><dd><b>Tip relief</b> and <b>crowning</b> &mdash; the few-micron tweaks that quiet the gear and spread the load. Not on the nominal drawing; very much on the real part.</dd>
+      <dt>Contact ratio</dt><dd>Aim <b>&ge; ~1.4</b> so more than one tooth pair is usually engaged &mdash; the floor on smoothness and load sharing.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the datasheet won&rsquo;t tell you</span>
+      <ul>
+        <li>The involute&rsquo;s forgiveness lets you be sloppy on the <b>housing and centre distance</b> &mdash; but <b>never</b> on the base circle and the profile. Centre-distance error costs you almost nothing; profile and pitch error goes straight into transmission error and noise. Spend your tolerance budget on the teeth, not the bores.</li>
+        <li><b>Real gear noise is &ldquo;transmission error,&rdquo;</b> not the paper geometry. Perfectly shaped, perfectly rigid teeth would run silent; real teeth have micron-scale pitch errors and they <em>bend</em> under load, so the actual rotation stutters around the ideal. Chase the error, not the nominal ratio.</li>
+        <li><b>Tip relief is the quiet secret to quiet gears.</b> Shave a few microns off the tip so that, as the loaded tooth deflects, the next pair slides into contact smoothly instead of slamming on early. It is the difference between a gearbox that sings and one you can stand next to.</li>
+        <li>Minimum <b>~17 teeth at 20&deg;</b>, or profile-shift. Pros shift routinely anyway &mdash; not just to avoid undercut on a small pinion, but to balance pinion-and-wheel strength and to hit a non-standard centre distance with standard tooling.</li>
+        <li><b>Helical gears are quieter</b> &mdash; the contact line sweeps obliquely across the tooth so engagement is gradual and the overlap ratio exceeds one &mdash; <b>but they create axial thrust</b>, so you must add thrust bearings (or go double-helical / herringbone to cancel it). Quiet isn&rsquo;t free.</li>
+        <li><b>Backlash is required.</b> It is the clearance that lets the teeth grow with heat, carry an oil film, and deflect without jamming. Zero backlash seizes. If you need no lost motion, you preload a <em>split</em> gear &mdash; you don&rsquo;t cut the clearance to zero.</li>
+        <li><b>Module and pressure angle must match</b> between mating gears or they simply will not run. A 20&deg; gear and a 25&deg; gear of the same module don&rsquo;t mesh; neither do two gears of different module. &ldquo;Involute&rdquo; is necessary but not sufficient &mdash; the pair has to share both numbers.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">the numbers and the procedure — so you can apply it, not just follow it</span></div>
+
+    <h2><span class="sn">9</span>Build it: a reduction, sized</h2>
+    <p>Enough principle &mdash; here is an actual gearset, worked end to end, so you can copy the shape and reuse it. The job: a <b>3:1 reduction</b> in a spur stage. Pick a <b>module <span class="m"><i>m</i> = 2 mm</span></b>, the standard <b>pressure angle 20&deg;</b>, a pinion of <b><span class="m"><i>z</i><sub>1</sub> = 20</span> teeth</b> (comfortably above the 17-tooth floor, so no undercut), and a gear of <b><span class="m"><i>z</i><sub>2</sub> = 60</span> teeth</b>. Every number below is a one-line formula you plug into &mdash; the geometry already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a 3:1 spur stage, module 2, 20&deg;</span>
+      <dl class="speclist">
+        <dt>Pitch diameters</dt><dd><span class="m"><i>d</i> = <i>m</i>&middot;<i>z</i></span> &rarr; <span class="m"><i>d</i><sub>1</sub></span> = 2&times;20 = <b>40 mm</b>, <span class="m"><i>d</i><sub>2</sub></span> = 2&times;60 = <b>120 mm</b>. These are the imaginary wheels that roll at the pitch point.</dd>
+        <dt>Centre distance</dt><dd><span class="m"><i>a</i> = <i>m</i>(<i>z</i><sub>1</sub>+<i>z</i><sub>2</sub>)/2</span> = 2&times;(80)/2 = <b>80 mm</b> &mdash; where you bore the two shaft holes.</dd>
+        <dt>Ratio</dt><dd><span class="m"><i>i</i> = <i>z</i><sub>2</sub>/<i>z</i><sub>1</sub></span> = 60/20 = <b>3</b> exactly, as the tooth counts promise.</dd>
+        <dt>Base diameters</dt><dd><span class="m"><i>d</i><sub>b</sub> = <i>d</i>&middot;cos&alpha;</span> &rarr; <span class="m"><i>d</i><sub>b1</sub></span> = 40&times;cos20&deg; &asymp; <b>37.6 mm</b>, <span class="m"><i>d</i><sub>b2</sub></span> &asymp; 112.8 mm &mdash; the circles the involutes actually unwind from, and the pair that fixes the ratio.</dd>
+        <dt>Face width</dt><dd><span class="m"><i>b</i> &asymp; 10&middot;<i>m</i></span> = <b>20 mm</b> &mdash; mid-range of the 8&ndash;12&times; rule, pending the stress check.</dd>
+        <dt>Contact ratio</dt><dd>&asymp; <b>1.6</b> for 20/60 teeth at 20&deg; full depth &mdash; comfortably above 1.4, so there is almost always more than one tooth pair carrying load. OK.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: four picks (ratio, module, pressure angle, pinion teeth) hand you the pitch and base diameters, the centre distance to machine, and a contact-ratio check &mdash; no involute drawn by hand, no conjugate-action proof at the keyboard. The plug-in set is small: pitch <span class="m"><i>d</i> = <i>m</i>&middot;<i>z</i></span>; centre distance <span class="m"><i>a</i> = <i>m</i>(<i>z</i><sub>1</sub>+<i>z</i><sub>2</sub>)/2</span>; ratio <span class="m"><i>z</i><sub>2</sub>/<i>z</i><sub>1</sub></span>; base <span class="m"><i>d</i><sub>b</sub> = <i>d</i>&middot;cos&alpha;</span>; the tooth floor <span class="m"><i>z</i><sub>min</sub> &asymp; 2/sin<sup>2</sup>&alpha; &asymp; 17</span> at 20&deg;; and the first stress gate, the Lewis bending estimate <span class="m">&sigma; = <i>F</i><sub>t</sub> / (<i>b</i>&middot;<i>m</i>&middot;<i>Y</i>)</span>, with <span class="m"><i>F</i><sub>t</sub></span> the tangential tooth force and <span class="m"><i>Y</i></span> the Lewis form factor.</p>
+
+    <p><b>Size one in this order.</b> The sequence matters; skipping a step just relocates the pain:</p>
+    <ol class="recipe">
+      <li><b>Ratio &rarr; tooth counts</b> &mdash; split the ratio into <span class="m"><i>z</i><sub>1</sub></span>, <span class="m"><i>z</i><sub>2</sub></span>, keeping the pinion <b>&ge; 17</b> (or plan to profile-shift).</li>
+      <li><b>Module from the load</b> &mdash; torque &rarr; tangential force <span class="m"><i>F</i><sub>t</sub></span> &rarr; pick <span class="m"><i>m</i></span> (and face width) to pass bending and contact stress.</li>
+      <li><b>Pressure angle</b> &mdash; 20&deg; unless you have a reason (25&deg; for strength, 14.5&deg; only for legacy fit).</li>
+      <li><b>Centre distance</b> = <span class="m"><i>m</i>(<i>z</i><sub>1</sub>+<i>z</i><sub>2</sub>)/2</span> &mdash; and reconcile it with what the housing allows.</li>
+      <li><b>Check contact ratio &ge; 1.4, undercut, interference</b> &mdash; the three geometry gates. Fail one and go back a step or shift the profile.</li>
+      <li><b>Material, hardness &amp; heat treat</b> &mdash; chosen for the stresses and the fatigue life you need.</li>
+      <li><b>Micro-geometry &amp; finishing spec</b> &mdash; add tip relief and crowning, set the backlash, and pin the quality grade.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Spur vs helical</dt><dd>Quiet, smooth, high-speed, or heavily loaded &rarr; helical &mdash; but budget for <b>axial thrust</b> bearings. Simple, thrust-free, cheap &rarr; spur.</dd>
+      <dt>External vs planetary/internal</dt><dd>Need a big ratio or a lot of torque in a small, coaxial package &rarr; planetary (load split across planets, internal ring). A single external pair is simpler but bulkier per ratio.</dd>
+      <dt>Through- vs case-hardened</dt><dd>Moderate load, lower cost &rarr; through-hardened. High contact/bending stress and long life &rarr; case-hardened and ground, at more cost.</dd>
+      <dt>20&deg; vs 25&deg; pressure angle</dt><dd>Smoothness, lower thrust, quieter &rarr; 20&deg;. Fewer minimum teeth and a stronger root &rarr; 25&deg;, accepting more noise.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do with real tools</b>
+      This page sizes the gearset and makes the feasibility and selection call &mdash; it does not replace a rating calc or a test rig. The real tooth stress and <b>fatigue life</b> come from an <b>AGMA/ISO rating</b> calculation (or FEA) run against your actual load spectrum, not a single peak torque. The things that most decide whether the gear is quiet and lasts &mdash; <b>manufacturing method</b> (hobbed vs ground), the <b>quality grade</b>, and the <b>micro-geometry</b> &mdash; matter more in practice than the paper geometry, and the micro-geometry is best handed to a specialist. Do the ratings in a proper gear tool (<b>KISSsoft</b>, or well-vetted AGMA spreadsheets), and when NVH matters, <b>measure transmission error on a rig</b> &mdash; it is the one number that actually predicts the noise. Your job here is to land the right module, teeth, and pressure angle, and to know what every one of those downstream knobs <em>means</em> &mdash; which, after this, you do.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">A gearbox whines and vibrates on the bench, yet the ratio is exactly right on paper and the teeth are full involutes. What is the real cause, and where do you look &mdash; because it clearly isn&rsquo;t the nominal ratio?</p><span class="a">It&rsquo;s <em>transmission error</em> &mdash; the gap between the ideal rotation and the real one. Two sources: micron-scale profile and pitch errors from manufacturing, and the teeth deflecting under load so engagement happens a touch early or late. The perfect geometry is silent; real metal isn&rsquo;t. So look at the <b>quality grade</b> and the <b>micro-geometry</b> &mdash; add or correct <b>tip relief</b>, improve the finishing &mdash; not at the tooth counts. If you want proof, measure transmission error on a rig; that trace is the noise.</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">Your housing was machined with the bore centres 0.1&nbsp;mm too far apart. Does the speed ratio change? Explain why.</p><span class="a">No. The ratio is <span class="m"><i>r</i><sub>b2</sub>/<i>r</i><sub>b1</sub></span>, fixed by the two base circles that were cut into the gears &mdash; and those didn&rsquo;t change. Spreading the centres just opens the pressure angle (the line of action tilts steeper, <span class="m">cos&alpha; = (<i>r</i><sub>b1</sub>+<i>r</i><sub>b2</sub>)/<i>C</i></span> with a bigger <span class="m"><i>C</i></span>) and slides the pitch point along the centre line. Backlash grows a little, but the ratio holds dead constant. That insensitivity to centre distance is the involute&rsquo;s whole advantage &mdash; it is exactly what a cycloidal tooth would have lost.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">You need a 2.5:1 reduction in a tiny space and reach for a 10-tooth pinion. What goes wrong, and give two ways to fix it.</p><span class="a">Ten teeth is well below the ~17-tooth floor at 20&deg; (<span class="m"><i>z</i><sub>min</sub> &asymp; 2/sin<sup>2</sup>&alpha;</span>), so the generating cutter <b>undercuts</b> the tooth root &mdash; it scoops out involute material at the base, weakening the tooth and chewing into the active profile, with interference as the teeth try to mesh. Fixes: (1) <b>profile shift</b> the pinion (addendum modification &mdash; cut it with the rack moved outward) to restore a sound tooth at the same count; (2) raise the <b>pressure angle to 25&deg;</b>, which drops the floor to ~12 teeth; or (3) simply use more teeth (a smaller module to keep it compact) or re-split the ratio. Profile shift is the usual professional move.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <span class="nextpill"><b>Done:</b> FMCW ranging</span>
+      <span class="nextpill"><b>Done:</b> Field-oriented control</span>
+      <span class="nextpill"><b>Next:</b> The rocket equation &amp; staging</span>
+    </div>
+    <p class="footnote"><b>The Involute Gear Tooth — Why Teeth Are That Exact Shape.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one demand (a constant instantaneous ratio) and the one rule it forces (the contact normal must pass through a fixed pitch point) from which the involute, the straight line of action, <span class="m">&omega;<sub>1</sub>/&omega;<sub>2</sub> = <i>r</i><sub>b2</sub>/<i>r</i><sub>b1</sub></span> and its forgiveness of mounting error all fall out &mdash; then the practitioner&rsquo;s half: where it sits in a gearbox design, how it fails, how it sizes the whole machine, what to spec, and what the datasheet won&rsquo;t tell you. With live simulations of the unwinding-string generation and of two involutes meshing at a fixed ratio while a naive tooth ripples.<br>
+    Companion volume in the portal: <b>Machine &amp; Mechanical Design</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* involstring — the involute drawn as an unwinding taut string: the line from the pen P back
+     to the base-circle tangent point T has length rb·θ, is tangent to the base circle at T, and
+     is the NORMAL to the traced curve at P. That is why the contact normal always kisses the
+     base circle — it fixes the line of action. Controls: unwind amount, speed, base radius. */
+  SIMS.involstring={
+    controls:[
+      {k:'unwind',label:'Unwind amount',min:0.18,max:1.0,step:0.02,val:0.62,unit:' turn',fmt:function(v){return v.toFixed(2);}},
+      {k:'speed',label:'Unwind speed',min:0.2,max:2.5,step:0.1,val:1.0,fmt:function(v){return v.toFixed(1)+'×';}},
+      {k:'rb',label:'Base radius rb',min:20,max:56,step:1,val:38,unit:' px'}
+    ],
+    init:function(s,w,h){ s.phase=0; },
+    step:function(s,dt){ s.phase=(s.phase||0)+dt*(s.p.speed)*0.16; },
+    draw:function(ctx,w,h,s){
+      var R0=s.p.rb, thMax=s.p.unwind*2*Math.PI;
+      var maxE=R0*Math.sqrt(1+thMax*thMax);
+      var availR=Math.min(w*0.38,h*0.40);
+      var fit=Math.min(1,availR/maxE);
+      var cx=w*0.45, cy=h*0.52;
+      function X(mx){return cx+mx*fit;}
+      function Y(my){return cy-my*fit;}
+      function inv(t){ return [R0*(Math.cos(t)+t*Math.sin(t)), R0*(Math.sin(t)-t*Math.cos(t))]; }
+      var fr=s.phase-Math.floor(s.phase);
+      var tri=fr<0.5?fr*2:2-fr*2;
+      var th=0.02+tri*(thMax-0.02);
+      // base circle
+      ctx.fillStyle=PAL.surf; ctx.globalAlpha=0.45;
+      ctx.beginPath(); ctx.arc(cx,cy,R0*fit,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.arc(cx,cy,R0*fit,0,Math.PI*2); ctx.stroke();
+      // faint full involute 0..thMax (the whole curve this unwinding will sweep)
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.20; ctx.lineWidth=1.4;
+      ctx.beginPath();
+      for(var i=0;i<=96;i++){ var p=inv(thMax*i/96); if(i===0)ctx.moveTo(X(p[0]),Y(p[1])); else ctx.lineTo(X(p[0]),Y(p[1])); }
+      ctx.stroke(); ctx.globalAlpha=1;
+      // solid involute 0..th (what the pen has traced so far)
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4;
+      ctx.beginPath();
+      var N=Math.max(2,Math.round(96*th/thMax));
+      for(var j=0;j<=N;j++){ var q=inv(th*j/N); if(j===0)ctx.moveTo(X(q[0]),Y(q[1])); else ctx.lineTo(X(q[0]),Y(q[1])); }
+      ctx.stroke();
+      // key points
+      var ct=Math.cos(th), st=Math.sin(th);
+      var Tm=[R0*ct,R0*st], Pm=inv(th);
+      // radius O->T (dashed) — the string is perpendicular to this, hence tangent to the circle
+      ctx.strokeStyle=PAL.muted; ctx.globalAlpha=0.55; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(X(Tm[0]),Y(Tm[1])); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      // the taut string T->P (length rb·θ)
+      ctx.strokeStyle=PAL.gold; ctx.lineWidth=2.6;
+      ctx.beginPath(); ctx.moveTo(X(Tm[0]),Y(Tm[1])); ctx.lineTo(X(Pm[0]),Y(Pm[1])); ctx.stroke();
+      // right-angle markers: radius⟂string at T, string⟂curve at P
+      var ms=9/fit;
+      function sq(V,a,b){ ctx.strokeStyle=PAL.muted; ctx.lineWidth=1.2; ctx.beginPath();
+        ctx.moveTo(X(V[0]+a[0]),Y(V[1]+a[1]));
+        ctx.lineTo(X(V[0]+a[0]+b[0]),Y(V[1]+a[1]+b[1]));
+        ctx.lineTo(X(V[0]+b[0]),Y(V[1]+b[1])); ctx.stroke(); }
+      sq(Tm,[-ct*ms,-st*ms],[st*ms,-ct*ms]);
+      sq(Pm,[-st*ms,ct*ms],[ct*ms,st*ms]);
+      // dots
+      dot(ctx,cx,cy,3,PAL.ink);
+      dot(ctx,X(Tm[0]),Y(Tm[1]),3.4,PAL.gold);
+      dot(ctx,X(Pm[0]),Y(Pm[1]),4.2,s.accent);
+      // labels
+      txt(ctx,'base circle',cx,cy+R0*fit+13,PAL.faint,9.5,'center');
+      txt(ctx,'T',X(Tm[0])-11,Y(Tm[1])-5,PAL.gold,10.5,'center');
+      txt(ctx,'P',X(Pm[0])+9,Y(Pm[1])+4,s.accent,11.5,'left');
+      var mmx=(Tm[0]+Pm[0])/2, mmy=(Tm[1]+Pm[1])/2;
+      txt(ctx,'string = rb·θ',X(mmx)+7,Y(mmy)-6,PAL.gold,9.5,'left');
+      // readouts
+      txt(ctx,'θ = '+(th*180/Math.PI).toFixed(0)+'°    rb·θ = '+(R0*th).toFixed(0)+' px',12,16,PAL.muted,10,'left');
+      txt(ctx,'normal ⟂ involute · string stays tangent to base circle',w-12,h-9,s.accent,9.5,'right');
+    }
+  };
+  /* involmesh — conjugate action: two base circles roll on one straight line of action that is
+     tangent to both, so contact slides along it and the pitch point is pinned on the centre line.
+     Hence ω1·rb1 = ω2·rb2 and the ratio ω1/ω2 = rb2/rb1 is EXACT for ANY centre distance C — only
+     the pressure angle α shifts. The naive-tooth toggle lets the contact normal wander so the pitch
+     point oscillates and the output ratio RIPPLES. Controls: ratio rb2/rb1, centre distance C, toggle. */
+  SIMS.involmesh={
+    controls:[
+      {k:'ratio',label:'Ratio rb2/rb1 (teeth)',min:0.6,max:2.4,step:0.1,val:1.6,fmt:function(v){return v.toFixed(1);}},
+      {k:'cdist',label:'Centre distance C',min:1.02,max:1.32,step:0.01,val:1.10,fmt:function(v){return v.toFixed(2)+'×';}},
+      {btn:true,k:'naive',label:'Toggle naive tooth'}
+    ],
+    _geom:function(s,w,h){
+      var rb1=Math.min(w,h)*0.17, gr=s.p.ratio, rb2=rb1*gr, cm=s.p.cdist;
+      var spanX=rb1+cm*(rb1+rb2)+rb2, maxR=Math.max(rb1,rb2);
+      var fit=Math.min((w*0.80)/spanX,(h*0.30)/maxR,1);
+      rb1*=fit; rb2*=fit;
+      var C=cm*(rb1+rb2);
+      var cx=w*0.5, cy=h*0.52;
+      s.rb1=rb1; s.rb2=rb2; s.Cd=C; s.gr=gr; s.cm=cm;
+      s.o1x=cx-C/2; s.o2x=cx+C/2; s.oy=cy;
+      s.alpha=Math.acos(1/cm);
+      s.pr1=cm*rb1; s.pr2=cm*rb2;      // pitch radii: O1·P = pr1, P·O2 = pr2
+      s.pxp=s.o1x+s.pr1;               // fixed pitch point on the centre line
+    },
+    init:function(s,w,h){ SIMS.involmesh._geom(s,w,h); s.ag1=0; s.ag2=0; s.nv=false; },
+    onbtn:function(s,k){ if(k==='naive'){ s.nv=!s.nv; } },
+    step:function(s,dt){
+      SIMS.involmesh._geom(s,s.canvasW||740,s.canvasH||250);
+      var om1=0.8;
+      var amp=s.nv?0.16*Math.min(s.pr1,s.pr2):0;
+      var del=amp*Math.sin(s.t*2.2);
+      var rinst=(s.pr2-del)/(s.pr1+del);
+      s.om1=om1; s.om2=om1/rinst; s.rinst=rinst; s.del=del; s.amp=amp;
+      s.ag1+=om1*dt; s.ag2-=s.om2*dt;
+    },
+    draw:function(ctx,w,h,s){
+      SIMS.involmesh._geom(s,w,h);
+      var o1x=s.o1x,o2x=s.o2x,oy=s.oy,rb1=s.rb1,rb2=s.rb2;
+      var al=s.alpha, sa=Math.sin(al), ca=Math.cos(al);
+      // centre line
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1; ctx.setLineDash([5,5]);
+      ctx.beginPath(); ctx.moveTo(o1x-rb1-16,oy); ctx.lineTo(o2x+rb2+16,oy); ctx.stroke(); ctx.setLineDash([]);
+      // base circles
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=1.7;
+      ctx.beginPath(); ctx.arc(o1x,oy,rb1,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(o2x,oy,rb2,0,Math.PI*2); ctx.stroke();
+      // pitch circles (dashed) — tangent to each other at the pitch point
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.6; ctx.setLineDash([3,4]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(o1x,oy,s.pr1,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(o2x,oy,s.pr2,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      // line of action: common internal tangent A1 (on circle 1) -> A2 (on circle 2)
+      var A1=[o1x+rb1*ca, oy+rb1*sa];
+      var A2=[o2x-rb2*ca, oy-rb2*sa];
+      var dx=A2[0]-A1[0], dy=A2[1]-A1[1], dl=Math.hypot(dx,dy)||1; dx/=dl; dy/=dl;
+      // faint extensions
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.3; ctx.setLineDash([4,4]); ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(A1[0]-dx*20,A1[1]-dy*20); ctx.lineTo(A2[0]+dx*20,A2[1]+dy*20); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      // the acting segment
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.moveTo(A1[0],A1[1]); ctx.lineTo(A2[0],A2[1]); ctx.stroke();
+      // tangency ticks at A1, A2
+      dot(ctx,A1[0],A1[1],2.6,PAL.muted); dot(ctx,A2[0],A2[1],2.6,PAL.muted);
+      // sliding contact point
+      var cs=(s.t*0.22)%1; if(cs<0)cs+=1;
+      var cpx=A1[0]+cs*(A2[0]-A1[0]), cpy=A1[1]+cs*(A2[1]-A1[1]);
+      dot(ctx,cpx,cpy,4.2,PAL.gold);
+      // pressure-angle arc at the pitch point (between vertical and the line of action)
+      var aLA=Math.atan2(-ca,sa);
+      ctx.strokeStyle=PAL.cool; ctx.lineWidth=1.3; ctx.globalAlpha=0.85;
+      ctx.beginPath(); ctx.moveTo(s.pxp,oy); ctx.lineTo(s.pxp,oy-26); ctx.stroke();
+      ctx.beginPath(); ctx.arc(s.pxp,oy,17,-Math.PI/2,aLA); ctx.stroke(); ctx.globalAlpha=1;
+      txt(ctx,'α',s.pxp+9,oy-19,PAL.cool,10,'left');
+      // fixed pitch point
+      dot(ctx,s.pxp,oy,3.6,PAL.ink);
+      txt(ctx,'pitch point',s.pxp,oy+16,s.nv?PAL.faint:PAL.ink,9.5,'center');
+      // naive: instantaneous pitch point wanders along the centre line
+      if(s.nv){
+        var wpx=s.pxp+s.del;
+        ctx.strokeStyle=PAL.bad; ctx.lineWidth=1.3; ctx.globalAlpha=0.9;
+        ctx.beginPath(); ctx.moveTo(wpx,oy-rb1*0.7); ctx.lineTo(wpx,oy+rb2*0.7); ctx.stroke(); ctx.globalAlpha=1;
+        dot(ctx,wpx,oy,4,PAL.bad);
+        txt(ctx,'normal wanders →',wpx,oy-rb1*0.7-6,PAL.bad,9,'center');
+      }
+      // rotating spokes so the turning is visible
+      function spoke(ox,ang,R,col){
+        var tx=ox+R*Math.cos(ang), ty=oy+R*Math.sin(ang);
+        ctx.strokeStyle=col; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(tx,ty); ctx.stroke();
+        var bx=ox-R*Math.cos(ang), by=oy-R*Math.sin(ang);
+        ctx.lineWidth=1.3; ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(bx,by); ctx.stroke();
+        dot(ctx,tx,ty,3,col);
+      }
+      spoke(o1x,s.ag1,rb1,s.accent);
+      spoke(o2x,s.ag2,rb2,PAL.cool);
+      dot(ctx,o1x,oy,2.8,PAL.ink); dot(ctx,o2x,oy,2.8,PAL.ink);
+      txt(ctx,'O1',o1x,oy+rb1+13,PAL.muted,9.5,'center');
+      txt(ctx,'O2',o2x,oy+rb2+13,PAL.muted,9.5,'center');
+      // readouts
+      txt(ctx,'ω1 = '+s.om1.toFixed(2)+' rad/s',12,15,PAL.muted,10,'left');
+      txt(ctx,'ω2 = '+s.om2.toFixed(2)+' rad/s',12,29,s.nv?PAL.bad:PAL.cool,10,'left');
+      txt(ctx,'ω1/ω2 = rb2/rb1 = '+s.gr.toFixed(2),w-12,15,s.accent,10.5,'right');
+      txt(ctx,'α = '+(al*180/Math.PI).toFixed(1)+'°   C = '+s.Cd.toFixed(0)+' px',w-12,29,PAL.muted,9.5,'right');
+      if(s.nv){
+        var rmax=(s.pr2+s.amp)/(s.pr1-s.amp), rmin=(s.pr2-s.amp)/(s.pr1+s.amp);
+        var rip=(rmax-rmin)/s.gr*100;
+        txt(ctx,'naive tooth · ratio ripples ±'+(rip/2).toFixed(1)+'% · ω2 wobbles',w-12,h-9,PAL.bad,9.5,'right');
+      } else {
+        txt(ctx,'involute · ratio EXACT for any C · α only re-aims the line',w-12,h-9,PAL.good,9.5,'right');
+      }
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

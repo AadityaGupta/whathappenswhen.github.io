@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>What Happens When · Data Stores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E7ECEE; --surface:#FCFDFD; --surface-2:#F1F4F5;
+    --ink:#151B1F; --ink-soft:#3A454B; --muted:#63717A; --faint:#8A97A0;
+    --line:#D3DBDF; --line-soft:#E2E8EB;
+    --accent:#0E7C86; --accent-ink:#FFFFFF; --accent-wash:#DCEDEE;
+
+    --pg:#3A6EA5;    /* PostgreSQL — blue */
+    --rds:#4C63B6;   /* RDS Postgres — indigo */
+    --redis:#B23A48; /* Redis — crimson */
+    --s3:#2F8055;    /* S3 — green */
+    --ddb:#A9721A;   /* DynamoDB — amber */
+    --cb:#B0517E;    /* Couchbase — rose */
+
+    --shadow:0 1px 2px rgba(20,30,36,.05), 0 8px 24px -14px rgba(20,30,36,.18);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+      --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+      --line:#273035; --line-soft:#20282D;
+      --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+      --pg:#7AA7DA; --rds:#8493E0; --redis:#E28088; --s3:#5FB98C; --ddb:#D6A24A; --cb:#D983AE;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+    --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+    --line:#273035; --line-soft:#20282D;
+    --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+    --pg:#7AA7DA; --rds:#8493E0; --redis:#E28088; --s3:#5FB98C; --ddb:#D6A24A; --cb:#D983AE;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:820px;margin:0 auto;padding-inline:20px;padding-block:0}
+
+  header.top{padding-block:56px 20px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  .vol{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 9px}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(2.1rem,6vw,3.15rem);line-height:1.02;letter-spacing:-.02em;margin:.32em 0 .1em;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.16rem;color:var(--ink-soft);max-width:64ch;margin:.6em 0 0}
+  .metaline{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .metaline b{color:var(--ink);font-weight:600}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  .controls{position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(9px);border-bottom:1px solid var(--line-soft);margin-top:12px}
+  .controls .wrap{padding-block:12px;display:flex;flex-direction:column;gap:11px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .search input{width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--ink)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);padding:5px 12px 5px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:border-color .12s,color .12s,background .12s}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,var(--faint))}
+  .chip[data-cat="all"]{--dot:var(--accent)}
+  .chip[data-cat="pg"]{--dot:var(--pg)}
+  .chip[data-cat="rds"]{--dot:var(--rds)}
+  .chip[data-cat="redis"]{--dot:var(--redis)}
+  .chip[data-cat="s3"]{--dot:var(--s3)}
+  .chip[data-cat="ddb"]{--dot:var(--ddb)}
+  .chip[data-cat="cb"]{--dot:var(--cb)}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--ink)}
+
+  section.track{padding-top:40px}
+  .track-head{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:6px}
+  .track-head .tno{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--track,var(--accent));font-weight:600}
+  .track-head h2{font-family:var(--sans);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:.15em 0 .1em}
+  .track-head p{font-family:var(--serif);color:var(--muted);margin:.2em 0 0;font-size:1rem;max-width:62ch}
+  section[data-track="pg"]{--track:var(--pg)}
+  section[data-track="rds"]{--track:var(--rds)}
+  section[data-track="redis"]{--track:var(--redis)}
+  section[data-track="s3"]{--track:var(--s3)}
+  section[data-track="ddb"]{--track:var(--ddb)}
+  section[data-track="cb"]{--track:var(--cb)}
+
+  .scenario{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--cat,var(--accent));border-radius:12px;padding:22px 24px 20px;margin-top:16px;box-shadow:var(--shadow)}
+  .scenario[data-cat="pg"]{--cat:var(--pg)}
+  .scenario[data-cat="rds"]{--cat:var(--rds)}
+  .scenario[data-cat="redis"]{--cat:var(--redis)}
+  .scenario[data-cat="s3"]{--cat:var(--s3)}
+  .scenario[data-cat="ddb"]{--cat:var(--ddb)}
+  .scenario[data-cat="cb"]{--cat:var(--cb)}
+
+  .s-top{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .s-no{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--cat,var(--accent));flex:none}
+  .s-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:500;margin-left:auto;flex:none}
+  .scenario h3{font-family:var(--sans);font-weight:600;font-size:1.24rem;line-height:1.22;letter-spacing:-.01em;margin:.1em 0 .5em;text-wrap:balance}
+  .why{font-family:var(--sans);font-size:12.5px;color:var(--muted);margin:0 0 14px;padding-left:11px;border-left:2px solid var(--line)}
+  .why b{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;display:block;margin-bottom:2px}
+  .answer{font-family:var(--serif);font-size:1.075rem;line-height:1.62;color:var(--ink-soft)}
+  .answer p{margin:0 0 .85em}
+  .answer p:last-child{margin-bottom:0}
+  .answer .arch{color:var(--ink)}
+  .answer .arch::before{content:"Architect lens";font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;display:inline-block;margin-right:9px;padding:2px 7px;border-radius:5px;background:var(--surface-2);vertical-align:1px}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);color:var(--ink);padding:1px 5px;border-radius:5px;border:1px solid var(--line-soft)}
+  .terms{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .terms .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:8px;display:block}
+  .termlist{display:flex;flex-wrap:wrap;gap:6px}
+  .term{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;line-height:1.3}
+
+  .noresult{display:none;text-align:center;font-family:var(--serif);color:var(--muted);padding:48px 0 12px;font-size:1.05rem}
+  body.empty .noresult{display:block}
+
+  footer.foot{margin-top:52px;padding:26px 0 60px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.7}
+  footer.foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:520px){
+    .scenario{padding:18px 16px 16px}
+    header.top{padding-block:40px 16px}
+    .s-tag{display:none}
+  }
+  @media print{
+    .toggle,.controls{display:none}
+    body{background:#fff;color:#000}
+    .scenario{box-shadow:none;border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid}
+    .answer .arch::before{border:1px solid #999;background:#fff;color:#000}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html" title="Back to all volumes" aria-label="Back to all volumes">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker"><span class="vol">Data Stores · Basic → Advanced</span> Architect Rehearsal</div>
+    <h1>What Happens <em>When…</em></h1>
+    <p class="lede">The six stores an AI-platform architect actually reaches for — PostgreSQL and its managed form on RDS, Redis, S3, DynamoDB, and Couchbase — walked from the fundamentals to the advanced production edges. Same format as the rest of the series: the mechanism, then the architect lens, then the terms to land — with the AI-platform angle (pgvector, semantic caches, data lakes, agent memory) called out where it's real.</p>
+    <div class="metaline">
+      <span><b>31</b> scenarios</span>
+      <span><b>6</b> stores</span>
+      <span><b>basic → advanced</b>, spoken</span>
+      <span>Companion to the <b>What Happens When…</b> series</span>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Search — e.g. MVCC, vacuum, hot partition, eviction, XDCR, multipart, pgvector" aria-label="Search scenarios">
+      </label>
+      <span class="count" id="count"><b>31</b> shown</span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by store">
+      <button class="chip" data-cat="all" aria-pressed="true"><span class="dot"></span>All</button>
+      <button class="chip" data-cat="pg" aria-pressed="false"><span class="dot"></span>PostgreSQL</button>
+      <button class="chip" data-cat="rds" aria-pressed="false"><span class="dot"></span>RDS Postgres</button>
+      <button class="chip" data-cat="redis" aria-pressed="false"><span class="dot"></span>Redis</button>
+      <button class="chip" data-cat="s3" aria-pressed="false"><span class="dot"></span>S3</button>
+      <button class="chip" data-cat="ddb" aria-pressed="false"><span class="dot"></span>DynamoDB</button>
+      <button class="chip" data-cat="cb" aria-pressed="false"><span class="dot"></span>Couchbase</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="list">
+
+  <!-- ===== POSTGRESQL ===== -->
+  <section class="track" data-track="pg">
+    <div class="track-head">
+      <div class="tno">Store 01 — The default relational choice</div>
+      <h2>PostgreSQL</h2>
+      <p>The "boring, correct" default. Its whole personality — concurrency, vacuum, planning, indexing, scaling — falls out of one design decision: multi-version concurrency control. And with pgvector it doubles as a RAG store.</p>
+    </div>
+
+    <article class="scenario" data-cat="pg">
+      <div class="s-top"><span class="s-no">01</span><span class="s-tag">Postgres · core</span></div>
+      <h3>A row is updated (MVCC)</h3>
+      <p class="why"><b>Why it matters</b>MVCC is the foundation of Postgres concurrency — and the root of vacuum, bloat, and isolation behavior.</p>
+      <div class="answer">
+        <p>Postgres never updates a row in place. An <code>UPDATE</code> writes a <b>new version</b> of the row — a new tuple — and marks the old one expired. This is <b>MVCC</b>, multi-version concurrency control. Each tuple carries <code>xmin</code> (the transaction that created it) and <code>xmax</code> (the one that superseded it), and every transaction has a <b>snapshot</b> deciding which versions it can see. So a reader sees a consistent snapshot without locking — <b>readers don't block writers and writers don't block readers</b>. A <code>DELETE</code> just sets <code>xmax</code>; the old, now-invisible versions are <b>dead tuples</b> that must be cleaned up later.</p>
+        <p class="arch">MVCC is why Postgres gives high read/write concurrency without read locks, and it explains a chain of behavior: isolation levels are implemented via snapshots (read-committed takes a fresh snapshot per statement, repeatable-read one per transaction); an update that changes an indexed column may touch every index; and dead tuples accumulate, so storage grows and needs vacuuming. The "update in place is free" intuition from other systems is wrong here — an update is effectively an insert-plus-tombstone, which is why high-churn tables bloat and why HOT updates (heap-only tuples, when no indexed column changes) are an important optimization.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">MVCC · tuple versions</span><span class="term">xmin / xmax</span><span class="term">snapshot isolation</span><span class="term">readers don't block writers</span><span class="term">dead tuples</span><span class="term">HOT update</span><span class="term">no in-place update</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pg">
+      <div class="s-top"><span class="s-no">02</span><span class="s-tag">Postgres · core</span></div>
+      <h3>A transaction commits (WAL &amp; checkpoints)</h3>
+      <p class="why"><b>Why it matters</b>The WAL is how Postgres is durable and fast at once — and it powers replication and point-in-time recovery.</p>
+      <div class="answer">
+        <p>On <code>COMMIT</code>, durability comes from the <b>WAL</b> — the write-ahead log. Before any change touches the data files, a WAL record is written and flushed to disk (<code>fsync</code>) — commit returns only once the WAL is durable. The modified pages live in <b>shared buffers</b> and are written to the data files lazily, by the background writer and at <b>checkpoints</b>. A checkpoint flushes all dirty buffers and records a safe recovery point, so crash recovery only replays WAL from the last checkpoint (redo committed, roll back uncommitted) — no committed transaction lost, none half-applied.</p>
+        <p class="arch">The WAL is the elegant core: sequential log writes are cheap, so you get durability without random-write cost on commit, and the same stream is shipped to replicas (streaming replication) and archived for PITR. The knobs I care about: <code>synchronous_commit</code> (off trades a small loss window for throughput on non-critical writes), checkpoint tuning (too frequent = write storms; too rare = long recovery and huge WAL), and <code>fsync</code> — never disabled in production, that's how you lose data on a crash. It's the same principle across databases: the log is the database.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">WAL (write-ahead log)</span><span class="term">fsync on commit</span><span class="term">shared buffers</span><span class="term">checkpoint</span><span class="term">crash recovery / redo</span><span class="term">synchronous_commit</span><span class="term">WAL feeds replication + PITR</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pg">
+      <div class="s-top"><span class="s-no">03</span><span class="s-tag">Postgres · advanced</span></div>
+      <h3>VACUUM runs (dead tuples, bloat, wraparound)</h3>
+      <p class="why"><b>Why it matters</b>Not understanding vacuum is how Postgres silently bloats and, worst case, shuts down on transaction-ID wraparound.</p>
+      <div class="answer">
+        <p>Because MVCC leaves <b>dead tuples</b> behind, Postgres needs <b>VACUUM</b>. Regular (auto)vacuum marks dead-tuple space reusable within the table (it doesn't shrink the file — that's <code>VACUUM FULL</code>, which rewrites and locks), refreshes the visibility map and statistics, and <b>freezes</b> old tuples. The advanced danger is <b>transaction-ID wraparound</b>: XIDs are 32-bit and wrap; VACUUM must freeze old tuples before the counter laps them, or Postgres refuses writes to protect data — an emergency that has taken down major sites.</p>
+        <p class="arch">I treat vacuum as a first-class operational concern, not background magic. High-churn tables produce dead tuples faster than default autovacuum cleans them, so they bloat — heap and index bloat that slows scans and wastes storage — so I tune autovacuum per table, monitor dead-tuple counts, and watch the age of the oldest unfrozen transaction so wraparound never surprises me. The silent killer is a long-running transaction: it holds back the vacuum horizon — nothing newer than the oldest running snapshot can be cleaned — so one forgotten open transaction causes cluster-wide bloat. This is the Postgres-specific tax of MVCC.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">autovacuum</span><span class="term">space reuse vs VACUUM FULL (lock)</span><span class="term">tuple freezing</span><span class="term">transaction-ID wraparound</span><span class="term">table / index bloat</span><span class="term">long-transaction vacuum horizon</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pg">
+      <div class="s-top"><span class="s-no">04</span><span class="s-tag">Postgres · core</span></div>
+      <h3>A query is planned (the optimizer)</h3>
+      <p class="why"><b>Why it matters</b>Reading and shaping the plan is the core skill of database performance.</p>
+      <div class="answer">
+        <p>SQL is declarative — you say what, not how — so the <b>planner</b> decides how. It parses and rewrites, then enumerates strategies: access method per table (<b>seq scan vs index scan vs index-only</b>), join algorithm (<b>nested loop / hash / merge</b>), and join order. It estimates each plan's cost from table <b>statistics</b> (row counts, most-common-values, histograms gathered by <code>ANALYZE</code>) and picks the cheapest. <code>EXPLAIN</code> shows the chosen plan; <code>EXPLAIN ANALYZE</code> runs it and shows estimated vs actual rows — how you catch bad estimates.</p>
+        <p class="arch">Performance work is mostly reading plans and fixing why the planner chose badly: stale or missing statistics (wrong estimates → wrong plan), a missing index, a query written so an index can't be used (a function on the column, a leading wildcard), or skew. So I lean on <code>EXPLAIN ANALYZE</code> — a big gap between estimated and actual rows means bad stats — keep <code>ANALYZE</code> current, and design indexes to the query. The model I teach: the planner is a cost-based bet using statistics — keep its information accurate and it usually bets right; starve it and it guesses.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">declarative SQL</span><span class="term">planner / optimizer</span><span class="term">seq / index / index-only scan</span><span class="term">nested-loop / hash / merge join</span><span class="term">cost model + statistics (ANALYZE)</span><span class="term">EXPLAIN ANALYZE</span><span class="term">estimated vs actual rows</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pg">
+      <div class="s-top"><span class="s-no">05</span><span class="s-tag">Postgres · advanced</span></div>
+      <h3>An index is used — including pgvector</h3>
+      <p class="why"><b>Why it matters</b>Indexing is the highest-leverage performance lever — and pgvector makes Postgres a RAG store.</p>
+      <div class="answer">
+        <p>The default index is a <b>B-tree</b> — O(log n) for equality and range, and it can serve an <b>index-only scan</b> when all needed columns are in the index. But there's a family: <b>GIN</b> for multi-valued/contained data (JSONB, arrays, full-text), <b>GiST</b> for geometric/nearest-neighbor, <b>BRIN</b> for huge naturally-ordered tables, plus <b>partial</b> indexes (only rows matching a predicate) and <b>expression</b> indexes. An index isn't used if the column is hidden in a function, if the planner thinks a scan is cheaper, or if stats are stale. For AI workloads, the <b>pgvector</b> extension adds a vector type and ANN indexes (HNSW, IVFFlat) so Postgres does embedding similarity search — turning your existing Postgres into a vector store.</p>
+        <p class="arch">Indexes trade write cost and storage for read speed, so I index to actual query patterns, not everything — every index slows writes and must be vacuumed. The senior moves: composite indexes with the right column order (equality first, then range), covering/index-only scans for hot queries, partial indexes for skew, GIN for JSONB. And the AI point I'd make unprompted: pgvector means many RAG systems don't need a separate vector database — keeping embeddings next to relational data, with metadata filtering as a plain <code>WHERE</code> clause, is simpler and often enough until scale justifies a dedicated store. "Postgres until it hurts" is a defensible default.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">B-tree · index-only scan</span><span class="term">GIN / GiST / BRIN</span><span class="term">partial &amp; expression indexes</span><span class="term">selectivity</span><span class="term">composite index column order</span><span class="term">pgvector (HNSW / IVFFlat)</span><span class="term">Postgres as vector store</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pg">
+      <div class="s-top"><span class="s-no">06</span><span class="s-tag">Postgres · advanced</span></div>
+      <h3>Postgres scales — replication, pooling, partitioning</h3>
+      <p class="why"><b>Why it matters</b>Knowing how — and how far — Postgres scales, and its ceilings, is core architecture.</p>
+      <div class="answer">
+        <p>The scaling tools: <b>streaming replication</b> ships the WAL to replicas that stay near-current, giving <b>read replicas</b> (offload reads; async by default, or synchronous for zero loss at a latency cost) and HA (promote a replica on failover). <b>Logical replication</b> replicates selected tables. For write scaling — which replicas don't help — you reach for <b>partitioning</b> (declarative range/list/hash) and, beyond a node, <b>sharding</b> (Citus or app-level). And connection scaling is its own problem: each connection is a <b>process</b> with real memory, so thousands crush Postgres — you put <b>PgBouncer</b> in front.</p>
+        <p class="arch">The framing I bring is "reads scale out easily, writes scale up and eventually shard." Read replicas are the first lever, but they're eventually consistent — replication lag means a replica can serve slightly stale data, a real read-after-write consideration. Writes bottleneck on the single primary, so I partition big tables early, use PgBouncer to keep connection counts sane (the classic incident is a serverless fleet opening thousands of connections and exhausting Postgres), and shard only when a single primary genuinely can't keep up — because sharding gives up cross-shard transactions and joins. Postgres scales remarkably far vertically before you need any of the exotic stuff.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">streaming replication (async/sync)</span><span class="term">read replicas + lag</span><span class="term">logical replication</span><span class="term">declarative partitioning</span><span class="term">sharding (Citus)</span><span class="term">connection = process · PgBouncer</span><span class="term">reads-out / writes-up</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== RDS POSTGRES ===== -->
+  <section class="track" data-track="rds">
+    <div class="track-head">
+      <div class="tno">Store 02 — Postgres, operated by AWS</div>
+      <h2>RDS PostgreSQL</h2>
+      <p>The same engine, with the toil handed to AWS — and a shared-responsibility line worth stating precisely. HA via Multi-AZ, recovery via PITR, and a decision tree that ends at Aurora when the single writer or coupled storage is the ceiling.</p>
+    </div>
+
+    <article class="scenario" data-cat="rds">
+      <div class="s-top"><span class="s-no">07</span><span class="s-tag">RDS · core</span></div>
+      <h3>You run Postgres on RDS (managed)</h3>
+      <p class="why"><b>Why it matters</b>Knowing the managed/self line separates "I used a DB" from "I chose a data platform."</p>
+      <div class="answer">
+        <p>RDS is managed Postgres: AWS runs the same engine but takes over the undifferentiated ops — provisioning, OS and minor-version patching, automated backups, monitoring, and (with Multi-AZ) failover. You still own what needs domain knowledge: schema and index design, query tuning, instance sizing, and configuration via <b>parameter groups</b> — you get no shell or superuser, so settings come through parameter/option groups rather than <code>postgresql.conf</code> and OS access. You connect to an <b>endpoint</b> (a DNS name), not a host, so the underlying instance can be replaced beneath you.</p>
+        <p class="arch">The value is shifting operational toil to AWS so the team focuses on data modeling and queries — but the shared-responsibility line matters: RDS does not save you from a bad schema, an N+1 query, or a missing index, and it constrains you (no superuser, supported extensions only, config via parameter groups). So I pick RDS when I want managed Postgres with control over version and instance, and I'm explicit that "managed" means managed infrastructure, not managed performance — that's still mine. The endpoint-not-host model is also why apps must reconnect gracefully, since the instance can move.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">managed engine (same Postgres)</span><span class="term">shared responsibility</span><span class="term">AWS does patching/backup/monitoring</span><span class="term">parameter/option groups (no shell)</span><span class="term">endpoint not host</span><span class="term">supported extensions only</span><span class="term">"managed infra ≠ managed perf"</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="rds">
+      <div class="s-top"><span class="s-no">08</span><span class="s-tag">RDS · core</span></div>
+      <h3>RDS Multi-AZ fails over</h3>
+      <p class="why"><b>Why it matters</b>It's the HA story you must be able to narrate — and its limits.</p>
+      <div class="answer">
+        <p>With Multi-AZ, RDS keeps a <b>synchronous standby</b> in a different Availability Zone — every commit is written to both before it's acknowledged, so the standby is an exact, current copy, but it is <b>not readable</b> (it's for failover, not read scaling). When the primary fails — hardware, an AZ outage, or during patching — RDS <b>automatically fails over</b>: promotes the standby and flips the endpoint's DNS to it, typically in about 60–120 seconds. The app sees a brief blip and reconnects to the same endpoint. The newer Multi-AZ cluster deployment adds two readable standbys and faster failover.</p>
+        <p class="arch">Multi-AZ gives durability and automatic failover with RPO near zero (synchronous), and the number to state is the <b>RTO</b> — roughly a minute or two of DNS-flip plus reconnect, not instant — so apps need retry logic and I design for a short blip, not zero downtime. The distinction I draw: Multi-AZ standby (synchronous, not readable, for HA) versus read replicas (asynchronous, readable, for scaling, can be cross-region) — different tools, often confused. Multi-AZ protects against instance/AZ failure within a region; cross-region DR needs read replicas or cross-region snapshots. It maps straight to the RPO/RTO framing.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">synchronous standby (other AZ)</span><span class="term">standby not readable</span><span class="term">auto-failover (promote + DNS flip)</span><span class="term">RTO ~60–120s · RPO~0</span><span class="term">Multi-AZ cluster (readable)</span><span class="term">standby vs read replica</span><span class="term">cross-region needs replicas</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="rds">
+      <div class="s-top"><span class="s-no">09</span><span class="s-tag">RDS · core</span></div>
+      <h3>A backup and point-in-time restore happens</h3>
+      <p class="why"><b>Why it matters</b>Backups you can't restore aren't backups — PITR is the recovery story, usually for human error.</p>
+      <div class="answer">
+        <p>RDS takes automated daily <b>snapshots</b> and continuously archives the transaction logs, retaining them for a configurable window. Together they enable <b>point-in-time recovery</b>: restore to any second within retention, because RDS takes the nearest snapshot and replays WAL to your chosen timestamp. Crucially, a restore creates a <b>brand-new instance</b> with a new endpoint — it does not overwrite the running one — so recovering from a bad migration or a bad delete means restoring to just before it, then repointing or comparing. Manual snapshots persist until deleted (unlike automated ones that age out) and can be copied cross-region for DR.</p>
+        <p class="arch">The discipline I stress is that a backup strategy is a <b>restore</b> strategy — I test restores, because "we have snapshots" is worthless if nobody's proven a recovery. PITR is the tool for the most common disaster — human error, a bad <code>UPDATE</code> without a <code>WHERE</code> — and restore-creates-a-new-instance shapes the runbook: you restore in parallel and cut over, never in place. For DR I copy snapshots (or run read replicas) cross-region and set retention and RTO/RPO deliberately. And backups are not a substitute for Multi-AZ — one is recovery, the other is availability.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">automated snapshots + WAL archive</span><span class="term">retention window</span><span class="term">point-in-time recovery</span><span class="term">restore = new instance/endpoint</span><span class="term">manual snapshots (cross-region copy)</span><span class="term">test your restores</span><span class="term">backup ≠ HA</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="rds">
+      <div class="s-top"><span class="s-no">10</span><span class="s-tag">RDS · advanced</span></div>
+      <h3>RDS hits its ceiling (scaling &amp; Aurora)</h3>
+      <p class="why"><b>Why it matters</b>Knowing when to scale up, add replicas, add a proxy, or move to Aurora is a real architecture decision.</p>
+      <div class="answer">
+        <p>RDS scaling levers: vertically, change the <b>instance class</b> (a brief failover on Multi-AZ); storage can autoscale and you provision IOPS (or use gp3) for throughput. Horizontally for reads, add <b>read replicas</b> (async, readable, cross-region possible). For connections, <b>RDS Proxy</b> pools and multiplexes — vital for Lambda/serverless fleets that would exhaust Postgres. But single-primary <b>write throughput</b> and the coupling of compute and storage are the ceilings — which is where <b>Aurora Postgres</b> comes in: it re-architects storage as a distributed, auto-scaling layer shared across instances, giving faster failover, up to 15 low-lag read replicas, and auto-growing storage, at higher cost and with some behavioral differences.</p>
+        <p class="arch">My decision tree: start on RDS Postgres (simplest, standard Postgres); scale the instance up and add read replicas as load grows; put RDS Proxy in front if connection count is the problem (the serverless classic); move to Aurora when you need its decoupled-storage benefits — very fast failover, many low-lag replicas, or effortless storage scaling — and can accept the cost and lock-in. When even a single writer isn't enough, that's genuine sharding or a different data model, not a bigger box. What I won't do is reach for Aurora reflexively; RDS Postgres carries most workloads, and "boring Postgres" is usually the right answer.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">vertical (instance class)</span><span class="term">storage autoscale + IOPS/gp3</span><span class="term">read replicas (async, cross-region)</span><span class="term">RDS Proxy (serverless pooling)</span><span class="term">single-writer ceiling</span><span class="term">Aurora (decoupled storage, 15 replicas)</span><span class="term">decision tree · cost/lock-in</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== REDIS ===== -->
+  <section class="track" data-track="redis">
+    <div class="track-head">
+      <div class="tno">Store 03 — In-memory, atomic, fast</div>
+      <h2>Redis</h2>
+      <p>An in-memory data-structure server whose whole character comes from two facts: everything is in RAM, and commands run single-threaded and atomic. That makes it a superb cache, lock, counter, queue — and an LLM semantic cache — with durability and scale as deliberate choices.</p>
+    </div>
+
+    <article class="scenario" data-cat="redis">
+      <div class="s-top"><span class="s-no">11</span><span class="s-tag">Redis · core</span></div>
+      <h3>A GET/SET hits Redis</h3>
+      <p class="why"><b>Why it matters</b>Understanding why Redis is fast — and single-threaded — explains everything else about it.</p>
+      <div class="answer">
+        <p>Redis is an <b>in-memory data-structure store</b>: all data lives in RAM, so operations are microsecond-fast and mostly O(1). It's (mostly) <b>single-threaded</b> for command execution — one command at a time on one core via an event loop — which sounds limiting but is a feature: no locks, no races between commands, each command <b>atomic</b>. Clients speak a simple protocol (RESP), and values aren't just strings — they're rich structures (strings, hashes, lists, sets, sorted sets, streams, bitmaps, HyperLogLog) with server-side operations.</p>
+        <p class="arch">"In memory and single-threaded" drives every consequence. Fast because RAM plus no lock contention; atomic per command, so it's a great coordination primitive; but <b>one slow command blocks everyone</b> — a <code>KEYS *</code> or a big sort on a huge collection stalls the whole server, so you never run O(n) commands on large keys in production. Capacity is your RAM, and data is volatile unless you configure persistence. The model I give: Redis is a networked, atomic data-structure server, not "a faster cache" — its value is doing real work (counters, leaderboards, rate limits, queues) server-side at memory speed.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">in-memory · microsecond latency</span><span class="term">single-threaded event loop</span><span class="term">atomic per command</span><span class="term">RESP protocol</span><span class="term">rich data structures</span><span class="term">O(n)-command hazard</span><span class="term">RAM-bound capacity</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="redis">
+      <div class="s-top"><span class="s-no">12</span><span class="s-tag">Redis · core</span></div>
+      <h3>Redis persists — or loses — data</h3>
+      <p class="why"><b>Why it matters</b>Treating Redis as durable when it isn't is how you lose data; knowing the modes is the architect's call.</p>
+      <div class="answer">
+        <p>Redis is memory-first but can persist two ways. <b>RDB</b> takes point-in-time snapshots (a fork dumps every N minutes / M changes) — fast to load, compact, but you lose everything since the last snapshot on a crash. <b>AOF</b> (append-only file) logs every write command and replays it on restart; with fsync-every-second (common) you lose at most ~1 second, or fsync-every-write for max durability at a throughput cost. You can run both. On restart Redis rebuilds from RDB and/or AOF — for a large dataset a noticeable <b>cold start</b>.</p>
+        <p class="arch">The decision is durability vs performance vs restart time, and it starts with a blunt question: is Redis a cache or a store of record? If it's a cache, I can even run with no persistence — losing it means a cold cache and thundering-herd risk (the stampede scenario), not a data-loss incident. If it holds data I can't lose, I use AOF (everysec at least) plus replicas, and I'm honest that Redis is not Postgres-grade durable — RDB can lose minutes, everysec-AOF a second, and a crash mid-fsync is still a window. So for money/billing I don't make Redis the source of truth; I make it the fast layer in front of one.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">memory-first</span><span class="term">RDB snapshots (lose since last)</span><span class="term">AOF (per-command, fsync everysec/always)</span><span class="term">restart rebuild (cold start)</span><span class="term">durability vs performance</span><span class="term">cache vs store-of-record</span><span class="term">not Postgres-grade durable</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="redis">
+      <div class="s-top"><span class="s-no">13</span><span class="s-tag">Redis · advanced</span></div>
+      <h3>Redis fills up — eviction &amp; expiry</h3>
+      <p class="why"><b>Why it matters</b>Memory limits and eviction policy are where Redis surprises people in production.</p>
+      <div class="answer">
+        <p>Redis is bounded by RAM, and you set <code>maxmemory</code>. When it's reached, behavior depends on the <b>eviction policy</b>: <code>noeviction</code> (reject writes with an error — safe for a store, but can wedge an app assuming writes succeed), or an LRU/LFU/random/TTL-based policy that evicts keys to make room (<code>allkeys-lru</code> evicts any key; <code>volatile-lru</code> only keys with a TTL). Expiry is separate: TTL'd keys are removed <b>lazily</b> (on access) and by a background sampler (active expiry), so an expired key can briefly still occupy memory. Redis can also free memory asynchronously (lazy-free) so deleting a huge key doesn't block the single thread.</p>
+        <p class="arch">The policy encodes intent. For a pure cache, <code>allkeys-lru</code>/lfu is right — Redis self-manages, evicting cold data. For a store where every key matters, <code>noeviction</code> plus capacity planning is right — but then running out of memory is an outage, so I alert well before <code>maxmemory</code>. The traps I flag: mixing cache and durable data in one instance (eviction can silently drop the durable keys), the big-key problem (one enormous key dominating memory and blocking on delete), and forgetting TTL'd keys aren't instantly gone. Memory management isn't automatic peace of mind — it's a policy I choose to match whether this instance is a cache or a store.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">maxmemory</span><span class="term">noeviction / allkeys-lru / volatile-lru / lfu</span><span class="term">lazy + active expiry</span><span class="term">lazy-free (async delete)</span><span class="term">cache-policy vs store-policy</span><span class="term">big-key problem</span><span class="term">don't mix cache + durable</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="redis">
+      <div class="s-top"><span class="s-no">14</span><span class="s-tag">Redis · advanced</span></div>
+      <h3>You use Redis as more than a cache</h3>
+      <p class="why"><b>Why it matters</b>Redis's real power — and its footguns — show when it's a lock, a queue, a rate limiter, or an LLM cache.</p>
+      <div class="answer">
+        <p>Beyond GET/SET caching, Redis's structures and atomicity make it a coordination layer. Counters and <b>rate limiters</b> via atomic <code>INCR</code> with expiry. Leaderboards and time-ordered feeds via <b>sorted sets</b>. Queues and <b>Streams</b> with consumer groups (a lightweight Kafka-like). <b>Distributed locks</b> via <code>SET</code>-if-not-exists with a TTL — though correct distributed locking is famously subtle (the Redlock debate: a single-node lock can be lost on failover, and even Redlock has contested edges, so correctness-critical locks add fencing tokens or use a consensus store). Pub/sub for fan-out. And for AI platforms: an <b>LLM semantic cache</b> (cache by embedding similarity to cut cost and latency) and Redis's vector-search as a lightweight vector store.</p>
+        <p class="arch">I reach for Redis when I need shared, atomic, low-latency state across instances — its atomic commands let many app servers coordinate without their own locking. But I'm precise about guarantees: a Redis lock is a performance optimization or best-effort mutex, not a correctness guarantee across failover, so for "must never double-charge" I don't rely on it alone. And I keep responsibilities separate — a cache instance shouldn't also be my only copy of a queue. The AI angle I'd raise unprompted: an LLM semantic cache in Redis is one of the highest-ROI cost levers on a GenAI platform, tying straight back to the gateway's caching story.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">atomic INCR (rate limit)</span><span class="term">sorted sets (leaderboards)</span><span class="term">Streams + consumer groups</span><span class="term">SETNX + TTL locks</span><span class="term">Redlock / fencing caveats</span><span class="term">pub/sub</span><span class="term">LLM semantic cache · vector search</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="redis">
+      <div class="s-top"><span class="s-no">15</span><span class="s-tag">Redis · advanced</span></div>
+      <h3>Redis scales — replication, Sentinel, Cluster</h3>
+      <p class="why"><b>Why it matters</b>Single-node Redis has hard limits; HA and sharding — and the hot-key problem — are the scaling story.</p>
+      <div class="answer">
+        <p>A single node is limited by one machine's RAM and one core's throughput. <b>Replication</b> gives replicas that copy the primary asynchronously — for read scaling and as failover candidates (async means a failover can lose the last writes). For automatic HA, <b>Sentinel</b> monitors the primary and promotes a replica on failure. For horizontal scale, <b>Redis Cluster</b> shards data across nodes using <b>16384 hash slots</b> (each key hashes to a slot, slots distributed across primaries with replicas); the client is redirected to the node owning a key's slot, and resharding moves slots. The catch: multi-key ops and transactions must stay within one slot (hash tags co-locate related keys).</p>
+        <p class="arch">I scale in that order — single node (astonishingly capable, so don't shard prematurely), then replicas + Sentinel for HA, then Cluster only when one node's RAM or throughput is genuinely the wall. The costs I name: async replication means Redis HA can lose recent writes on failover (again, not for can't-lose data without care); Cluster constrains you to single-slot multi-key ops (so model data to co-locate related keys via hash tags); and single-threaded execution means a <b>hot key</b> on one shard can bottleneck the whole cluster — you can't spread a single hot key by adding capacity, only by design. So capacity planning is about RAM, hot-key distribution, and command cost, not just total ops.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">async replication</span><span class="term">Sentinel (monitor + failover)</span><span class="term">Redis Cluster · 16384 hash slots</span><span class="term">slot redirection + resharding</span><span class="term">single-slot multi-key + hash tags</span><span class="term">async-failover loss window</span><span class="term">hot-key bottleneck</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== S3 ===== -->
+  <section class="track" data-track="s3">
+    <div class="track-head">
+      <div class="tno">Store 04 — Object storage &amp; the data lake</div>
+      <h2>Amazon S3</h2>
+      <p>Not a filesystem — a flat, immutable, eleven-nines object store that is the gravity well of every analytics and ML platform. Throughput scales per prefix, cost is a tiering decision, and misconfigured access is a headline breach.</p>
+    </div>
+
+    <article class="scenario" data-cat="s3">
+      <div class="s-top"><span class="s-no">16</span><span class="s-tag">S3 · core</span></div>
+      <h3>An object is PUT and GET</h3>
+      <p class="why"><b>Why it matters</b>Object storage is a different model from a filesystem — getting that right underlies everything.</p>
+      <div class="answer">
+        <p>S3 is <b>object storage</b>, not a filesystem. You PUT an object (bytes plus metadata) into a <b>bucket</b> under a <b>key</b>, and GET it by that key over an HTTP API. There are no real directories — the namespace is <b>flat</b>, and "folders" are just key prefixes. Objects are <b>immutable</b>: you overwrite the whole object, you don't edit in place, and rename is copy-then-delete. S3's headline guarantees: <b>eleven nines</b> of durability (99.999999999%), achieved by redundantly storing each object across multiple devices in multiple AZs; and, since 2020, <b>strong read-after-write consistency</b> — after a successful PUT, a GET immediately returns the new data. Objects can be up to 5 TB, and you can range-GET part of one.</p>
+        <p class="arch">The model shift I emphasize is "objects, not files" — no in-place edits, no cheap rename, a flat keyspace, access over HTTP with rich metadata — which is why S3 is for whole-blob workloads (media, backups, logs, data-lake files, ML datasets and model artifacts) rather than a mutable database or a POSIX filesystem. Eleven-nines durability means I treat the object as effectively unloseable (though I still use versioning and replication against accidental deletes and regional loss), and strong consistency removed a whole class of "I wrote it but can't read it yet" workarounds. It's the cheapest, most durable place to put bytes at any scale.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">object storage vs filesystem</span><span class="term">bucket / key · flat namespace</span><span class="term">immutable (overwrite, rename=copy+delete)</span><span class="term">HTTP API + metadata</span><span class="term">11-nines durability (multi-AZ)</span><span class="term">strong read-after-write</span><span class="term">up to 5 TB / range GET</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="s3">
+      <div class="s-top"><span class="s-no">17</span><span class="s-tag">S3 · advanced</span></div>
+      <h3>S3 scales for throughput (prefixes &amp; multipart)</h3>
+      <p class="why"><b>Why it matters</b>S3 scales massively but not magically — request-rate and large-object mechanics matter at scale.</p>
+      <div class="answer">
+        <p>S3 scales request throughput <b>per prefix</b>: it supports very high rates (thousands of requests/second per prefix) and auto-partitions the keyspace, so spreading keys across many prefixes gives near-unlimited aggregate throughput, while hammering one prefix can throttle. For large objects, <b>multipart upload</b> splits a big file into parts uploaded in parallel and retried independently (and it's required past 5 GB); parts are assembled server-side. Downloads parallelize with byte-range GETs. Transfer Acceleration or CloudFront front S3 for global/edge delivery.</p>
+        <p class="arch">The counterintuitive bit is that S3's scaling is per-prefix, so key design is a performance decision — for write-heavy workloads I spread keys across prefixes (S3 auto-partitions now, so the old random-hash-prefix trick is unnecessary, but a single hot prefix can still throttle briefly). For big files — data-lake objects, ML datasets, model checkpoints — multipart upload and range reads are how you get throughput and resilience (a failed part retries, not the whole upload). For read-heavy public content I put CloudFront in front so S3 isn't serving every request. "S3 is infinitely scalable" is true in aggregate, but you design keys and use multipart to actually get there.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">per-prefix rate scaling + auto-partition</span><span class="term">hot-prefix throttling</span><span class="term">key design = performance</span><span class="term">multipart upload (parallel, &gt;5GB, retriable)</span><span class="term">range GET</span><span class="term">Transfer Acceleration / CloudFront</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="s3">
+      <div class="s-top"><span class="s-no">18</span><span class="s-tag">S3 · advanced</span></div>
+      <h3>Storage classes &amp; lifecycle (cost)</h3>
+      <p class="why"><b>Why it matters</b>Storage-class and lifecycle strategy is one of the biggest cloud-cost levers — and a real architecture design.</p>
+      <div class="answer">
+        <p>S3 has tiers trading retrieval speed/cost for storage price: <b>Standard</b> (hot, instant, priciest storage), <b>Standard-IA / One-Zone-IA</b> (infrequent access — cheaper storage, retrieval fee, still instant), <b>Glacier Instant Retrieval</b> (archive, instant), and <b>Glacier Flexible / Deep Archive</b> (cheapest storage, retrieval in minutes to hours). <b>Intelligent-Tiering</b> auto-moves objects between access tiers by usage for a small monitoring fee. <b>Lifecycle policies</b> automate transitions ("IA after 30 days, Glacier after 90, delete after 365") and expiration by age or tag.</p>
+        <p class="arch">Cost optimization here is a design decision up front, not a cleanup afterthought — match the storage class to the access pattern and let lifecycle policies enforce it automatically. Hot data on Standard; aging data on IA; cold compliance/backup on Glacier; unknown/variable patterns on Intelligent-Tiering. The retrieval-cost trap is what to watch: IA and Glacier are cheap to store but you pay (and wait) to read, so they're wrong for frequently-accessed data. This is exactly the storage-tiering TCO design I've done — tiering observability/log data across classes to cut spend — where the levers are class + lifecycle + retrieval-pattern awareness, and at petabyte scale the savings are enormous.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Standard / IA / One-Zone / Glacier tiers</span><span class="term">retrieval latency + fee trade</span><span class="term">Intelligent-Tiering (auto)</span><span class="term">lifecycle policies (age/tag)</span><span class="term">match class to access pattern</span><span class="term">retrieval-cost trap</span><span class="term">TCO tiering</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="s3">
+      <div class="s-top"><span class="s-no">19</span><span class="s-tag">S3 · advanced</span></div>
+      <h3>S3 as a data lake and event source</h3>
+      <p class="why"><b>Why it matters</b>S3 is the backbone of analytics and ML data platforms — and it reacts to changes.</p>
+      <div class="answer">
+        <p>S3 is the de-facto <b>data lake</b>: you land raw and processed data as objects (often Parquet/ORC), partition by prefix (date, tenant), and query it in place with Athena, Redshift Spectrum, or Spark — <b>storage decoupled from compute</b>. It emits <b>event notifications</b> on object create/delete that fire Lambda, SQS, SNS, or EventBridge — so an upload can trigger a pipeline (the classic "file lands → Lambda transforms it"). <b>Versioning</b> keeps every version (protecting against overwrite/delete, enabling rollback), and cross-region replication copies objects for DR or locality. For ML/AI, S3 is where training datasets, feature files, embedding dumps, and model artifacts live.</p>
+        <p class="arch">The pattern I lean on is S3 as the durable, cheap, decoupled storage layer under analytics and ML — compute (Athena, Spark, SageMaker) reads from and writes to S3 without owning the data, so you scale or swap compute freely and many systems share one source of truth. Event notifications make it reactive — the trigger for event-driven ETL, and it ties to the RAG ingestion pipeline: docs land in S3, an event kicks off chunk-embed-index. I design with partitioning for query cost (Athena charges by data scanned, so partition + columnar formats matter), versioning for safety, replication for DR. S3 is less "a service" than the gravity well the rest of the data platform orbits.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">data lake (Parquet, prefix partitions)</span><span class="term">query-in-place (Athena/Spectrum/Spark)</span><span class="term">storage/compute decoupling</span><span class="term">event notifications → Lambda/SQS</span><span class="term">versioning (rollback)</span><span class="term">cross-region replication (DR)</span><span class="term">ML data + artifacts · RAG-ingest trigger</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="s3">
+      <div class="s-top"><span class="s-no">20</span><span class="s-tag">S3 · advanced</span></div>
+      <h3>S3 security &amp; access</h3>
+      <p class="why"><b>Why it matters</b>S3 misconfiguration is a top cause of public data breaches — access design is non-negotiable.</p>
+      <div class="answer">
+        <p>Access is deny-by-default and layered: <b>IAM policies</b> (what a principal can do), <b>bucket policies</b> (resource-side rules, cross-account, conditions), and — as a strong backstop — <b>Block Public Access</b>, which overrides permissive policies to prevent accidental exposure. Data is encrypted at rest (SSE-S3, or <b>SSE-KMS</b> for customer-managed keys and audit) and in transit (TLS). For controlled, time-limited access without credentials, you issue <b>presigned URLs</b> — a signed link granting GET or PUT to one object for a set window. VPC endpoints keep S3 traffic off the public internet.</p>
+        <p class="arch">The failure I design against is the infamous "public S3 bucket leaked millions of records," so Block Public Access is on by default and any public bucket is an explicit, reviewed exception. The principles: least-privilege IAM, bucket policies for cross-account/condition-based access, SSE-KMS when I need key control and an audit trail (and to enforce encryption via policy), and presigned URLs so clients hit S3 directly without me proxying bytes or sharing keys — great for upload/download at scale, and it dovetails with the gateway/virtual-key mindset. Encryption in transit and at rest is table stakes. For a regulated domain, this access model — plus versioning and access logging — is a compliance requirement, not a nice-to-have.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">deny-by-default</span><span class="term">IAM vs bucket policy</span><span class="term">Block Public Access (backstop)</span><span class="term">SSE-S3 / SSE-KMS + TLS</span><span class="term">presigned URLs (time-limited, direct)</span><span class="term">VPC endpoint</span><span class="term">least privilege</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== DYNAMODB ===== -->
+  <section class="track" data-track="ddb">
+    <div class="track-head">
+      <div class="tno">Store 05 — Serverless NoSQL at any scale</div>
+      <h2>DynamoDB</h2>
+      <p>A distributed hash table with ranges, dressed as a database. Single-digit-millisecond at any scale — if you model backwards from access patterns and design the partition key for even distribution. Fight it with relational habits and it punishes you.</p>
+    </div>
+
+    <article class="scenario" data-cat="ddb">
+      <div class="s-top"><span class="s-no">21</span><span class="s-tag">DynamoDB · core</span></div>
+      <h3>An item is written and read</h3>
+      <p class="why"><b>Why it matters</b>The partition-key model is the whole basis of DynamoDB's scale and its constraints.</p>
+      <div class="answer">
+        <p>DynamoDB is a managed, serverless NoSQL key-value/document store built for predictable single-digit-millisecond latency at any scale. Every item lives in a table and is located by its <b>primary key</b>: either just a <b>partition key</b>, or a composite of partition key + <b>sort key</b>. DynamoDB <b>hashes the partition key</b> to decide which physical partition stores the item, so a read/write by key goes straight to one partition — no scan. The sort key lets many items share a partition key and be range-queried (all orders for a customer, by date). You provision throughput as <b>on-demand</b> (pay per request, auto-scales) or <b>provisioned</b> capacity (set read/write units, optionally auto-scaled).</p>
+        <p class="arch">The model I insist on is "a distributed hash table with ranges, not a relational database." Because everything hangs off the partition key's hash, DynamoDB scales horizontally almost without limit and stays fast — but only if you access by key. No joins, no ad-hoc queries; querying by a non-key attribute means a Scan (read everything, expensive) unless you built an index. So the power and the constraint are the same fact: design around keys and access patterns and you get effortless scale; fight it with relational habits and you get slow, costly Scans. That's why DynamoDB modeling is access-pattern-first, not entity-first.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">managed serverless NoSQL</span><span class="term">single-digit-ms</span><span class="term">partition key hash → partition</span><span class="term">composite key (partition + sort)</span><span class="term">sort-key range query</span><span class="term">on-demand vs provisioned</span><span class="term">"hash table with ranges"</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="ddb">
+      <div class="s-top"><span class="s-no">22</span><span class="s-tag">DynamoDB · advanced</span></div>
+      <h3>You model for access patterns (single-table design)</h3>
+      <p class="why"><b>Why it matters</b>DynamoDB rewards modeling backwards from queries — the opposite of relational normalization.</p>
+      <div class="answer">
+        <p>In relational you model entities and normalize, then query however you like. In DynamoDB you invert it: enumerate your <b>access patterns first</b>, then design keys so each pattern is a direct key lookup or a sort-key range query. This leads to <b>single-table design</b> — multiple entity types (customers, orders, items) in one table with generic composite keys (like <code>PK=CUSTOMER#123</code>, <code>SK=ORDER#2026-…</code>) and overloaded indexes, so one query returns a customer and their orders together (emulating a join by co-location). You <b>denormalize deliberately</b> — duplicating data so each read is single-shot — because storage is cheap and extra reads are not.</p>
+        <p class="arch">This is the hardest shift for relational people and the thing that separates someone who's run DynamoDB from someone who's read about it. The rule: <b>know all your access patterns before you create the table</b>, because the key schema encodes them and changing it later is painful. Single-table design trades modeling simplicity for query performance and cost (one request, not many); denormalization trades write complexity (keeping duplicates in sync, often via Streams) for read speed. I'm honest about the flip side too: if access patterns are unknown, ad-hoc, or analytics-heavy, DynamoDB is the wrong tool — that's where Postgres wins. DynamoDB is for known, high-scale access patterns.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">access-pattern-first (invert relational)</span><span class="term">single-table design</span><span class="term">overloaded composite keys</span><span class="term">join-by-co-location</span><span class="term">deliberate denormalization</span><span class="term">know patterns up front</span><span class="term">wrong tool for ad-hoc/analytics</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="ddb">
+      <div class="s-top"><span class="s-no">23</span><span class="s-tag">DynamoDB · advanced</span></div>
+      <h3>A hot partition throttles</h3>
+      <p class="why"><b>Why it matters</b>Hot partitions are the classic DynamoDB production incident — and the model explains exactly why.</p>
+      <div class="answer">
+        <p>Throughput is distributed across partitions, so it's effectively <b>per-partition</b>. If access concentrates on one partition key — a celebrity user, today's date as a key, one popular product — that partition takes disproportionate traffic and can exceed its share and <b>throttle</b>, even while the table's total capacity looks fine. DynamoDB's <b>adaptive capacity</b> mitigates by shifting capacity toward hot partitions and can isolate a very hot key, but it's not a cure for a fundamentally skewed key. The fix is in the data model: <b>write sharding</b> (append a suffix to spread a hot key across N partitions), a higher-cardinality partition key, or distributing the load (don't key by raw date).</p>
+        <p class="arch">The lesson I state is "your partition key is your scalability, so a low-cardinality or skewed key is a scaling bug baked into the schema." I design keys for even distribution from the start — high cardinality, no single value attracting a large fraction of traffic — because you can't fully fix a hot partition at runtime, only in the model (and write-sharding after the fact is painful). It's the DynamoDB face of the same hot-key problem as Redis: a single hot key can't be spread by adding capacity, only by design. So partition-key design is a capacity-planning decision, not an afterthought.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">per-partition throughput</span><span class="term">hot partition / hot key</span><span class="term">throttle despite table capacity</span><span class="term">adaptive capacity (mitigation)</span><span class="term">write sharding (key suffix)</span><span class="term">high-cardinality even keys</span><span class="term">"partition key = scalability"</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="ddb">
+      <div class="s-top"><span class="s-no">24</span><span class="s-tag">DynamoDB · advanced</span></div>
+      <h3>Query vs Scan, GSI vs LSI</h3>
+      <p class="why"><b>Why it matters</b>Choosing the right access construct is the difference between fast and cripplingly expensive.</p>
+      <div class="answer">
+        <p>A <b>Query</b> fetches items by partition key (and optional sort-key condition) — efficient, reads only matches. A <b>Scan</b> reads the entire table and filters after — expensive and slow, a red flag in production. To query by non-key attributes you add secondary indexes. A <b>GSI</b> (Global Secondary Index) has its own partition/sort key and its own throughput and is maintained asynchronously (so it's <b>eventually consistent</b> with the base table) — effectively another access pattern, another "table" DynamoDB keeps in sync. An <b>LSI</b> (Local Secondary Index) shares the base partition key with an alternate sort key, must be defined at table creation, and can be strongly consistent. Indexes can <b>project</b> a subset of attributes to save space/cost.</p>
+        <p class="arch">The rule I enforce is "Query, never Scan, in the hot path" — a Scan in production is almost always a modeling miss, and the fix is a GSI that turns the needed pattern into a Query. I reach for GSIs to add access patterns after the fact (flexible — own keys, own capacity, added anytime), accepting their eventual consistency and extra write cost (every base write updates the index). LSIs I use rarely (creation-time only, share the partition key). And I project only needed attributes to keep index cost down. The senior signal is treating Scan as an alarm, knowing a GSI is usually the answer, and knowing indexes aren't free — they're duplicated writes and storage.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Query (by key) vs Scan (full table)</span><span class="term">GSI (own keys/throughput, eventual)</span><span class="term">LSI (shared PK, alt sort, create-time)</span><span class="term">attribute projection</span><span class="term">"Query not Scan"</span><span class="term">GSI to add access patterns</span><span class="term">index write-amplification</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="ddb">
+      <div class="s-top"><span class="s-no">25</span><span class="s-tag">DynamoDB · advanced</span></div>
+      <h3>Consistency, transactions &amp; TTL</h3>
+      <p class="why"><b>Why it matters</b>The consistency and transaction model determines what's safe to build on DynamoDB.</p>
+      <div class="answer">
+        <p>Reads default to <b>eventually consistent</b> (a read might not see a just-completed write for a fraction of a second, since it may hit a replica) — cheaper, lower-latency; you can request <b>strongly consistent</b> reads on the base table (latest write) at double the read cost. Single-item writes are atomic. For multi-item atomicity, <b>DynamoDB Transactions</b> (<code>TransactWriteItems</code>) give all-or-nothing across a bounded set of items, with conditions — for "debit A and credit B together." <b>Conditional writes</b> (write only if a condition holds) give optimistic concurrency without a transaction. <b>TTL</b> sets a per-item expiry timestamp and DynamoDB deletes expired items automatically, for free and asynchronously — great for session/chat/cache-like data.</p>
+        <p class="arch">I match the consistency choice to the operation — eventually consistent for the vast majority (cheaper, faster), strongly consistent only where a stale read is actually harmful. For correctness across items I use transactions or conditional writes deliberately (they cost more and have limits, so reserve them for genuine invariants — not double-applying a payment, my billing world). TTL I use as a feature: the clean way to expire agent/chat session state at scale without a cleanup job — which is exactly why DynamoDB is a common backing store for LLM conversation history and agent memory (keyed by session, TTL'd, single-digit-ms). Knowing these primitives is what lets you build safely on an eventually-consistent store.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">eventual vs strong reads (cost/latency)</span><span class="term">atomic single-item write</span><span class="term">DynamoDB Transactions (multi-item)</span><span class="term">conditional writes (optimistic)</span><span class="term">TTL auto-expiry (free/async)</span><span class="term">match consistency to operation</span><span class="term">agent/chat-memory store</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="ddb">
+      <div class="s-top"><span class="s-no">26</span><span class="s-tag">DynamoDB · advanced</span></div>
+      <h3>Streams &amp; global tables</h3>
+      <p class="why"><b>Why it matters</b>Change-data-capture and multi-region are the advanced patterns that make DynamoDB a platform.</p>
+      <div class="answer">
+        <p><b>DynamoDB Streams</b> is a change log: every item-level change (insert/modify/remove) is captured in order per partition key, available ~24 hours, and typically consumed by Lambda. That's the <b>CDC</b> primitive — powering derived views, syncing to another store (a search index, analytics, a cache), maintaining denormalized copies, or triggering event-driven workflows on data change. <b>Global Tables</b> build on Streams to give <b>multi-region active-active</b> replication: write in any region and DynamoDB asynchronously replicates to the others, with <b>last-writer-wins</b> conflict resolution — so users worldwide get local low-latency reads and writes, and you get regional DR.</p>
+        <p class="arch">Streams turns DynamoDB from a store into an <b>event source</b> — the same pattern as S3 notifications or Kafka, at the row level — so I use it for CDC: propagate changes to a search index, keep denormalized single-table copies consistent, fan out downstream, all without app-level dual-writes (which risk inconsistency). Global Tables give genuine multi-region active-active with the honest caveat of eventual consistency and last-writer-wins (which can silently drop a concurrent update). This ties to the active-active multi-region strategy I've worked on — Global Tables are one of the cleanest ways to get it, precisely because the conflict model is simple and replication is built in — but I keep strongly-consistent, conflict-sensitive operations region-pinned.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Streams (ordered per-key change log)</span><span class="term">CDC → Lambda</span><span class="term">derived views / denorm sync</span><span class="term">Global Tables (multi-region active-active)</span><span class="term">last-writer-wins</span><span class="term">eventual-consistency caveat</span><span class="term">regional DR + local latency</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== COUCHBASE ===== -->
+  <section class="track" data-track="cb">
+    <div class="track-head">
+      <div class="tno">Store 06 — Memory-first document DB</div>
+      <h2>Couchbase</h2>
+      <p>Cache, key-value store, and document database in one, sharded across 1024 vBuckets and scaled per-service. Fast because memory-first — which makes durability a knob you must set deliberately — with XDCR for active-active across regions.</p>
+    </div>
+
+    <article class="scenario" data-cat="cb">
+      <div class="s-top"><span class="s-no">27</span><span class="s-tag">Couchbase · core</span></div>
+      <h3>A document is stored and fetched (KV)</h3>
+      <p class="why"><b>Why it matters</b>Couchbase's memory-first, KV-at-the-core architecture explains its speed and its trade-offs.</p>
+      <div class="answer">
+        <p>Couchbase is a distributed <b>document database</b> (JSON) with a built-in, <b>memory-first</b> architecture: a managed cache (a Memcached-derived layer) sits in front of storage, so hot data is served from RAM at sub-millisecond latency and writes land in memory first. Data is organized into <b>buckets</b>, and within them <b>scopes and collections</b> (roughly databases/schemas/tables). Every document has a key; Couchbase maps that key to one of <b>1024 vBuckets</b> (its sharding unit), and vBuckets are distributed across nodes — so a KV GET/SET goes directly to the node owning that vBucket. <b>Sub-document</b> operations read/modify parts of a document without fetching the whole thing.</p>
+        <p class="arch">The framing I use is "Couchbase is a KV store and a managed cache and a document DB in one" — the integrated cache is why it's fast and why teams pick it over bolting Redis in front of a separate database (fewer moving parts, no cache-invalidation dance). The vBucket model is the key to its distribution: 1024 fixed vBuckets hashed from the key and remapped to nodes as the cluster changes, which makes rebalancing clean. In my telecom/billing context Couchbase is used exactly this way — a fast, distributed operational store where the KV path is the hot path. The mental model: fast because memory-first, scalable because vBucket-sharded, flexible because documents.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">distributed document DB (JSON)</span><span class="term">memory-first + built-in cache</span><span class="term">buckets / scopes / collections</span><span class="term">key → 1024 vBuckets</span><span class="term">vBucket → node mapping</span><span class="term">sub-document ops</span><span class="term">"cache + KV + document in one"</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="cb">
+      <div class="s-top"><span class="s-no">28</span><span class="s-tag">Couchbase · advanced</span></div>
+      <h3>Couchbase scales and rebalances</h3>
+      <p class="why"><b>Why it matters</b>The vBucket + services model is how Couchbase scales elastically — a real distributed-systems story.</p>
+      <div class="answer">
+        <p>You scale by adding nodes and <b>rebalancing</b>: because data is in 1024 vBuckets, rebalance redistributes vBuckets (and their replicas) across the new node set, moving the minimum data and updating the cluster map clients use to route keys — done online. A distinctive feature is <b>Multi-Dimensional Scaling (MDS)</b>: Couchbase's services — Data (KV), Index, Query (SQL++), Search, Analytics, Eventing — can run on separate nodes, so you scale each independently (more Query nodes for query load without touching Data nodes). Each vBucket has configurable <b>replicas</b> on other nodes, and on failure <b>auto-failover</b> promotes a replica vBucket to active so the cluster keeps serving.</p>
+        <p class="arch">MDS is the architecturally interesting part — isolating and scaling services independently means a heavy analytical query workload doesn't starve the low-latency KV path, and you right-size each service to its load. Rebalancing as an online vBucket redistribution is what makes elastic scaling and node replacement smooth. Things I plan for: rebalance moves data and consumes resources (schedule it), replica count sets failure tolerance (and costs RAM/disk), and auto-failover has a threshold to avoid flapping on transient blips — the same node-failure-detection tradeoff as Kubernetes eviction timeouts. It's a genuinely elastic distributed system, and MDS is its differentiator versus one-size-fits-all nodes.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">online rebalance (redistribute vBuckets)</span><span class="term">cluster map routing</span><span class="term">Multi-Dimensional Scaling (services split)</span><span class="term">independent per-service scaling</span><span class="term">configurable replicas</span><span class="term">auto-failover (promote replica)</span><span class="term">failover threshold</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="cb">
+      <div class="s-top"><span class="s-no">29</span><span class="s-tag">Couchbase · advanced</span></div>
+      <h3>You query with N1QL / SQL++</h3>
+      <p class="why"><b>Why it matters</b>Couchbase's SQL-for-JSON is its bridge between NoSQL flexibility and familiar querying.</p>
+      <div class="answer">
+        <p>Beyond key-value access, Couchbase offers <b>N1QL (now SQL++)</b> — a SQL dialect over JSON: SELECT/JOIN/WHERE/aggregate against collections, including nesting/unnesting arrays. Queries run on the <b>Query service</b>, which uses <b>Global Secondary Indexes</b> (maintained by the Index service) to avoid scanning every document — so, like any database, an N1QL query is only fast if a suitable GSI covers its predicates. There's also a <b>Search</b> service (full-text) and an <b>Analytics</b> service (ad-hoc analytical queries over operational data without impacting it). So Couchbase gives you the KV fast path and a SQL query path over the same documents.</p>
+        <p class="arch">The design choice I articulate is <b>when to use KV vs N1QL</b>: if you know the key, a direct KV GET is the fastest, cheapest path — always prefer it for hot, known-key operations; use N1QL when you need to query by attributes or join, and then index for those queries the same way you would in Postgres (a query without a covering GSI is a slow scan). The MDS point returns — put Query and Index on their own nodes so query load doesn't hurt the KV latency operational traffic depends on. So Couchbase lets one system serve both the low-latency operational path and richer queries, but I'm deliberate: KV for hot keys, indexed N1QL for query patterns, Analytics for ad-hoc — matching the access path to the need, not defaulting to SQL because it's familiar.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">N1QL / SQL++ (SQL over JSON)</span><span class="term">Query service + GSIs</span><span class="term">index-or-scan (as any DB)</span><span class="term">Search + Analytics services</span><span class="term">KV fast path vs query path</span><span class="term">index to the query</span><span class="term">MDS isolation for query load</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="cb">
+      <div class="s-top"><span class="s-no">30</span><span class="s-tag">Couchbase · advanced</span></div>
+      <h3>Durability &amp; persistence in Couchbase</h3>
+      <p class="why"><b>Why it matters</b>Memory-first means durability is a deliberate choice — critical for money/billing data.</p>
+      <div class="answer">
+        <p>Because Couchbase is memory-first, a write by default is acknowledged once it's in the active node's <b>memory</b>, and it's persisted to disk and copied to replicas <b>asynchronously</b> afterward. That's fast, but a naive write could be lost if that node crashes before persistence/replication. Couchbase addresses this with <b>durability requirements</b> set per write: levels like <b>majority</b> (ack only after the write is in memory on a majority of replica nodes), and <b>persistToActive / majorityAndPersist</b> (also require it on disk) — so you trade latency for stronger guarantees per operation. Replicas provide redundancy and failover targets; async persistence uses a write queue to disk.</p>
+        <p class="arch">The crucial point is that Couchbase's default — ack-on-memory — is a performance choice, not a durability guarantee, so for data I can't lose (billing, payments) I explicitly set a durability level (majority, or persist-to-disk) and accept the added latency, matching the guarantee to the value of the data. It's the same RPO conversation as everywhere: how much am I willing to lose, and what latency will I pay to lose less? I flag this as a common footgun — teams enjoy the default speed and are surprised by loss on a node crash — so I make durability level an explicit, per-use-case decision: strong for financial writes, relaxed for tolerant data. Memory-first is a feature with a knob, and knowing the knob is the seniority signal.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">ack-on-active-memory (default)</span><span class="term">async persist + replicate</span><span class="term">durability levels (majority / persistToActive)</span><span class="term">latency vs durability trade</span><span class="term">replicas for redundancy</span><span class="term">write queue to disk</span><span class="term">default ≠ durable footgun · RPO</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="cb">
+      <div class="s-top"><span class="s-no">31</span><span class="s-tag">Couchbase · advanced</span></div>
+      <h3>XDCR &amp; cross-datacenter (multi-region)</h3>
+      <p class="why"><b>Why it matters</b>XDCR is how Couchbase does multi-region / active-active — a real resilience design.</p>
+      <div class="answer">
+        <p><b>XDCR</b> — Cross Data Center Replication — asynchronously replicates data between separate Couchbase clusters, typically in different regions. It's flexible: <b>unidirectional</b> (to a DR site) or <b>bidirectional / active-active</b> (both clusters take writes and replicate to each other), at bucket/collection granularity, with optional filtering. Because it's async between independent clusters, replicas across sites are <b>eventually consistent</b>, and active-active means concurrent writes to the same document in two clusters can <b>conflict</b> — resolved by a policy (revision/sequence-based, or timestamp/last-writer-wins). This gives geo-distributed low latency (users hit the nearest cluster) and DR (a whole region can fail and another serves).</p>
+        <p class="arch">XDCR is Couchbase's answer to the active-active multi-region problem I've designed for — write locally in each region, replicate cross-region asynchronously, tolerate eventual consistency, handle conflicts by policy. The honest tradeoffs are the standard multi-region ones: cross-region latency makes synchronous impossible, so you accept an RPO window (replication lag = potential loss on a regional failure) and must design for conflicts (LWW can silently drop a concurrent update, so conflict-prone data needs care or single-region ownership per key). I use it for geo-locality and DR where the data model tolerates eventual consistency, and keep strongly-consistent, conflict-sensitive operations region-pinned. It's the same CAP tradeoff as DynamoDB Global Tables — active-active buys availability and locality at the cost of strong consistency, and the architecture job is deciding which data can live with that.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">XDCR (async cross-cluster)</span><span class="term">unidirectional (DR) vs bidirectional (active-active)</span><span class="term">eventual consistency across sites</span><span class="term">conflict resolution (revision / LWW)</span><span class="term">geo-locality + regional DR</span><span class="term">RPO / replication-lag window</span><span class="term">CAP trade (vs Global Tables)</span></div></div>
+    </article>
+  </section>
+
+  <p class="noresult" id="noresult">No scenarios match that. Clear the search or pick another store.</p>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>How to rehearse:</b> read each answer aloud once at pace — the mechanism, then the architect lens. Within each store the scenarios run basic → advanced, so you can start at the fundamentals and push into the production edges.<br>
+    This is the data-stores companion to the "What Happens When…" series. Filter by store to drill one at a time; search a term (MVCC, hot partition, XDCR, pgvector) to jump straight to it.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  var q=document.getElementById('q');
+  var chips=Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var scenarios=Array.prototype.slice.call(document.querySelectorAll('.scenario'));
+  var sections=Array.prototype.slice.call(document.querySelectorAll('section.track'));
+  var countEl=document.getElementById('count');
+  var activeCat='all';
+
+  scenarios.forEach(function(s){ s._text=(s.textContent||'').toLowerCase(); });
+
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase();
+    var shown=0;
+    scenarios.forEach(function(s){
+      var okCat=activeCat==='all' || s.getAttribute('data-cat')===activeCat;
+      var okText=!term || s._text.indexOf(term)!==-1;
+      var vis=okCat && okText;
+      s.hidden=!vis;
+      if(vis) shown++;
+    });
+    sections.forEach(function(sec){
+      var any=Array.prototype.some.call(sec.querySelectorAll('.scenario'),function(s){return !s.hidden;});
+      sec.hidden=!any;
+    });
+    countEl.innerHTML='<b>'+shown+'</b> shown';
+    document.body.classList.toggle('empty', shown===0);
+  }
+
+  chips.forEach(function(c){
+    c.addEventListener('click',function(){
+      activeCat=c.getAttribute('data-cat');
+      chips.forEach(function(x){x.setAttribute('aria-pressed', x===c ? 'true':'false');});
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+})();
+</script>
+
+</body>
+</html>

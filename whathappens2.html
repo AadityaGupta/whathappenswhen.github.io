@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>What Happens When · Platform & DevOps II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E7ECEE;
+    --surface:#FCFDFD;
+    --surface-2:#F1F4F5;
+    --ink:#151B1F;
+    --ink-soft:#3A454B;
+    --muted:#63717A;
+    --faint:#8A97A0;
+    --line:#D3DBDF;
+    --line-soft:#E2E8EB;
+    --accent:#0E7C86;
+    --accent-ink:#FFFFFF;
+    --accent-wash:#DCEDEE;
+
+    --obs:#4C63B6;   /* Observability — indigo */
+    --data:#2F8055;  /* Data & messaging — green */
+    --agent:#8A4F9E; /* Agentic & LLM — violet */
+    --k8s:#3A6EA5;   /* Kubernetes, deeper — blue */
+    --net:#B0517E;   /* Networking & mesh — rose */
+    --cd:#A9721A;    /* Delivery, deeper — amber */
+    --sec:#AC4E39;   /* Security, deeper — rust */
+
+    --shadow:0 1px 2px rgba(20,30,36,.05), 0 8px 24px -14px rgba(20,30,36,.18);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1316;
+      --surface:#161D21;
+      --surface-2:#1B2429;
+      --ink:#E7EDEF;
+      --ink-soft:#C2CDD2;
+      --muted:#95A3AB;
+      --faint:#6C7A82;
+      --line:#273035;
+      --line-soft:#20282D;
+      --accent:#3BB9C0;
+      --accent-ink:#07211F;
+      --accent-wash:#123137;
+
+      --obs:#8493E0;
+      --data:#5FB98C;
+      --agent:#C58BD6;
+      --k8s:#7AA7DA;
+      --net:#D983AE;
+      --cd:#D6A24A;
+      --sec:#D9836C;
+
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1316;
+    --surface:#161D21;
+    --surface-2:#1B2429;
+    --ink:#E7EDEF;
+    --ink-soft:#C2CDD2;
+    --muted:#95A3AB;
+    --faint:#6C7A82;
+    --line:#273035;
+    --line-soft:#20282D;
+    --accent:#3BB9C0;
+    --accent-ink:#07211F;
+    --accent-wash:#123137;
+
+    --obs:#8493E0;
+    --data:#5FB98C;
+    --agent:#C58BD6;
+    --k8s:#7AA7DA;
+    --net:#D983AE;
+    --cd:#D6A24A;
+    --sec:#D9836C;
+
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding-inline:20px;padding-block:0}
+
+  /* Masthead */
+  header.top{padding-block:56px 20px}
+  .kicker{
+    font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  .vol{
+    font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;
+    color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 9px;
+  }
+  h1{
+    font-family:var(--sans);font-weight:700;font-size:clamp(2.1rem,6vw,3.15rem);
+    line-height:1.02;letter-spacing:-.02em;margin:.32em 0 .1em;text-wrap:balance;
+  }
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.16rem;color:var(--ink-soft);max-width:64ch;margin:.6em 0 0}
+  .metaline{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .metaline b{color:var(--ink);font-weight:600}
+
+  /* Theme toggle */
+  .toggle{
+    position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;
+    display:grid;place-items:center;box-shadow:var(--shadow);
+  }
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  /* Controls */
+  .controls{
+    position:sticky;top:0;z-index:30;
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter:blur(9px);border-bottom:1px solid var(--line-soft);margin-top:12px;
+  }
+  .controls .wrap{padding-block:12px;display:flex;flex-direction:column;gap:11px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .search input{
+    width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px;
+  }
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--ink)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{
+    font-family:var(--sans);font-size:12.5px;font-weight:500;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);
+    padding:5px 12px 5px 10px;border-radius:999px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;line-height:1;
+    transition:border-color .12s, color .12s, background .12s;
+  }
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,var(--faint))}
+  .chip[data-cat="all"]{--dot:var(--accent)}
+  .chip[data-cat="obs"]{--dot:var(--obs)}
+  .chip[data-cat="data"]{--dot:var(--data)}
+  .chip[data-cat="agent"]{--dot:var(--agent)}
+  .chip[data-cat="k8s"]{--dot:var(--k8s)}
+  .chip[data-cat="net"]{--dot:var(--net)}
+  .chip[data-cat="cd"]{--dot:var(--cd)}
+  .chip[data-cat="sec"]{--dot:var(--sec)}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--ink)}
+
+  /* Section headers */
+  section.track{padding-top:40px}
+  .track-head{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:6px}
+  .track-head .tno{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--track,var(--accent));font-weight:600}
+  .track-head h2{font-family:var(--sans);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:.15em 0 .1em}
+  .track-head p{font-family:var(--serif);color:var(--muted);margin:.2em 0 0;font-size:1rem;max-width:62ch}
+  section[data-track="obs"]{--track:var(--obs)}
+  section[data-track="data"]{--track:var(--data)}
+  section[data-track="agent"]{--track:var(--agent)}
+  section[data-track="k8s"]{--track:var(--k8s)}
+  section[data-track="net"]{--track:var(--net)}
+  section[data-track="cd"]{--track:var(--cd)}
+  section[data-track="sec"]{--track:var(--sec)}
+
+  /* Scenario blocks */
+  .scenario{
+    background:var(--surface);border:1px solid var(--line-soft);
+    border-left:3px solid var(--cat,var(--accent));border-radius:12px;
+    padding:22px 24px 20px;margin-top:16px;box-shadow:var(--shadow);
+  }
+  .scenario[data-cat="obs"]{--cat:var(--obs)}
+  .scenario[data-cat="data"]{--cat:var(--data)}
+  .scenario[data-cat="agent"]{--cat:var(--agent)}
+  .scenario[data-cat="k8s"]{--cat:var(--k8s)}
+  .scenario[data-cat="net"]{--cat:var(--net)}
+  .scenario[data-cat="cd"]{--cat:var(--cd)}
+  .scenario[data-cat="sec"]{--cat:var(--sec)}
+
+  .s-top{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .s-no{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--cat,var(--accent));flex:none}
+  .s-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:500;margin-left:auto;flex:none}
+  .scenario h3{font-family:var(--sans);font-weight:600;font-size:1.24rem;line-height:1.22;letter-spacing:-.01em;margin:.1em 0 .5em;text-wrap:balance}
+  .why{font-family:var(--sans);font-size:12.5px;color:var(--muted);margin:0 0 14px;padding-left:11px;border-left:2px solid var(--line)}
+  .why b{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;display:block;margin-bottom:2px}
+  .answer{font-family:var(--serif);font-size:1.075rem;line-height:1.62;color:var(--ink-soft)}
+  .answer p{margin:0 0 .85em}
+  .answer p:last-child{margin-bottom:0}
+  .answer .arch{color:var(--ink)}
+  .answer .arch::before{
+    content:"Architect layer";font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--cat,var(--accent));font-weight:600;display:inline-block;margin-right:9px;
+    padding:2px 7px;border-radius:5px;background:var(--surface-2);vertical-align:1px;
+  }
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);color:var(--ink);padding:1px 5px;border-radius:5px;border:1px solid var(--line-soft)}
+  .terms{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .terms .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:8px;display:block}
+  .termlist{display:flex;flex-wrap:wrap;gap:6px}
+  .term{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;line-height:1.3}
+
+  .gist{
+    font-family:var(--serif);font-size:1.02rem;font-style:italic;line-height:1.5;
+    color:var(--ink-soft);margin:0 0 14px;padding:9px 13px;
+    background:var(--surface-2);border-radius:8px;border-left:2px solid var(--cat,var(--accent));
+  }
+  .gist b{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;margin-right:8px}
+  .selfcheck{
+    font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--ink-soft);
+    margin:15px 0 0;padding:11px 13px;border-radius:8px;background:var(--accent-wash);
+  }
+  .selfcheck b{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;display:block;margin-bottom:4px}
+  .selfcheck .sc-a{display:block;margin-top:5px;color:var(--muted);font-style:italic}
+  .foot-row{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .ytlink{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);
+    font-size:11.5px;font-weight:500;color:var(--cat,var(--accent));text-decoration:none;margin-bottom:11px}
+  .ytlink svg{width:15px;height:15px;flex:none;opacity:.92}
+  .ytlink:hover{color:var(--accent);text-decoration:underline}
+  .foot-row .terms{margin-top:0;padding-top:0;border-top:none}
+
+  .noresult{display:none;text-align:center;font-family:var(--serif);color:var(--muted);padding:48px 0 12px;font-size:1.05rem}
+  body.empty .noresult{display:block}
+
+  footer.foot{margin-top:52px;padding:26px 0 60px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.7}
+  footer.foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:520px){
+    .scenario{padding:18px 16px 16px}
+    header.top{padding-block:40px 16px}
+    .s-tag{display:none}
+  }
+  @media print{
+    .toggle,.controls{display:none}
+    body{background:#fff;color:#000}
+    .scenario{box-shadow:none;border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid}
+    .answer .arch::before{border:1px solid #999;background:#fff;color:#000}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html" title="Back to all volumes" aria-label="Back to all volumes">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker"><span class="vol">Vol. II</span> DevOps &amp; Platform · Interview Rehearsal</div>
+    <h1>What Happens <em>When…</em></h1>
+    <p class="lede">The deeper cut. Where Volume I walked the request path and the control plane, this one goes into the layers a senior platform architect is expected to own: observability, data and messaging, the agentic-AI platform, and the harder corners of Kubernetes, networking, delivery, and security. Same format — mechanism first, then the architect's read, then the terms to land, each spoken in two to three minutes.</p>
+    <div class="metaline">
+      <span><b>32</b> scenarios</span>
+      <span><b>7</b> tracks</span>
+      <span><b>2–3 min</b> each, spoken</span>
+      <span>Continues <b>What Happens When…</b> (Vol. I)</span>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Search — e.g. tracing, Kafka, JWT, canary, finalizer, quorum" aria-label="Search scenarios">
+      </label>
+      <span class="count" id="count"><b>32</b> shown</span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by track">
+      <button class="chip" data-cat="all" aria-pressed="true"><span class="dot"></span>All</button>
+      <button class="chip" data-cat="obs" aria-pressed="false"><span class="dot"></span>Observability</button>
+      <button class="chip" data-cat="data" aria-pressed="false"><span class="dot"></span>Data &amp; messaging</button>
+      <button class="chip" data-cat="agent" aria-pressed="false"><span class="dot"></span>Agentic &amp; LLM</button>
+      <button class="chip" data-cat="k8s" aria-pressed="false"><span class="dot"></span>Kubernetes</button>
+      <button class="chip" data-cat="net" aria-pressed="false"><span class="dot"></span>Networking &amp; mesh</button>
+      <button class="chip" data-cat="cd" aria-pressed="false"><span class="dot"></span>Delivery</button>
+      <button class="chip" data-cat="sec" aria-pressed="false"><span class="dot"></span>Security</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="list">
+
+  <!-- ===== TRACK 1 · OBSERVABILITY ===== -->
+  <section class="track" data-track="obs">
+    <div class="track-head">
+      <div class="tno">Track 01 — Signals &amp; insight</div>
+      <h2>Observability</h2>
+      <p>Not dashboards — the mechanisms. How a request is followed across services, how an alert actually reaches a human, and how the monitoring system itself scales or falls over.</p>
+    </div>
+
+    <article class="scenario" data-cat="obs">
+      <div class="s-top"><span class="s-no">01</span><span class="s-tag">Observability</span></div>
+      <h3>A request gets traced across services</h3>
+      <p class="why"><b>Why they ask</b>The "how do you debug latency across fifteen microservices" question — it tests context propagation, not dashboards.</p>
+      <p class="gist"><b>Analogy</b> A relay baton with the runners&rsquo; names written on it: each leg (span) is timed, and as long as every runner passes the same baton (the trace context) forward, you can reconstruct exactly where the race was lost.</p>
+      <div class="answer">
+        <p>A trace follows one request across every service it touches. When the request enters, the first service starts a trace with a unique <b>trace ID</b> and opens a <b>span</b> — a timed unit of work with a start, a duration, and metadata. As it calls the next service it propagates the context in headers — the W3C <code>traceparent</code> header carries the trace ID and the parent span ID — so the downstream service opens a <b>child span</b> under the same trace instead of starting a fresh one. Every hop adds spans, and together they form a tree you read as a waterfall: which service took how long, where the time actually went, where the error was thrown.</p>
+        <p>Instrumentation is usually <b>OpenTelemetry</b> — SDKs create spans, auto-instrumentation covers common libraries, and an OTel collector receives, batches, and exports spans to a backend like Jaeger or Tempo. Because tracing every request is expensive, you <b>sample</b>: head-based decides at the start, tail-based decides after seeing the whole trace so you can keep the slow and failed ones.</p>
+        <p>The payoff is correlation: an <b>exemplar</b> links a point on a latency histogram straight to the exact slow trace, and if every log line carries the trace ID, you jump trace &rarr; logs &rarr; metrics without guessing. The thing that quietly breaks it is one service that doesn&rsquo;t forward <code>traceparent</code> &mdash; from there down the trace is orphaned, which is why instrumentation coverage, not the backend, is the real work.</p>
+        <p class="arch">What makes it work end-to-end is disciplined context propagation — one hop that doesn't forward <code>traceparent</code> orphans the rest of the trace. I treat the trace ID as the correlation key that ties traces, logs, and metrics together, so from a spiky p99 you jump straight to the exact slow trace and its logs. And I budget sampling deliberately — tail-based to always capture errors and outliers without paying to store every healthy request.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why does one service failing to propagate the <code>traceparent</code> header break the <em>whole</em> downstream trace, not just its own span? <span class="sc-a">Downstream services use the incoming context to attach their spans as children of the same trace; if a hop doesn&rsquo;t forward it, the next service starts a <em>new</em> trace instead of continuing yours &mdash; so everything beyond that hop is orphaned into a separate trace, and the end-to-end waterfall is lost.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=distributed%20tracing%20opentelemetry%20trace%20span%20context%20propagation"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a request is traced across services</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">trace ID · span</span><span class="term">W3C traceparent</span><span class="term">context propagation</span><span class="term">OpenTelemetry · collector</span><span class="term">span waterfall</span><span class="term">head vs tail sampling</span><span class="term">correlation key</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="obs">
+      <div class="s-top"><span class="s-no">02</span><span class="s-tag">Observability</span></div>
+      <h3>An alert fires</h3>
+      <p class="why"><b>Why they ask</b>It tells them whether you've run alerting in anger or only built pretty dashboards.</p>
+      <p class="gist"><b>Analogy</b> A smoke detector wired to a dispatcher: the detector only trips after smoke persists for a bit (the <code>for</code> window), and the dispatcher (Alertmanager) decides who to call, bundles related alarms, and stays quiet during a planned fire drill.</p>
+      <div class="answer">
+        <p>With Prometheus, alerting rules are evaluated on a schedule against the time series. A rule is an expression plus a <code>for</code> duration — the condition has to hold for that whole window before the alert flips to <b>firing</b>, which suppresses flapping on a momentary spike. Once firing, Prometheus hands it to <b>Alertmanager</b>, which does the real work: it <b>groups</b> related alerts so one bad node doesn't page you fifty times; it <b>routes</b> by labels to decide who gets it (team, severity); it honors <b>silences</b> for planned maintenance and <b>inhibition</b> so that if the whole cluster is down it suppresses the hundred downstream alerts; then it dispatches to a receiver — PagerDuty, Slack, email.</p>
+        <p>The highest-leverage design choice is <em>what</em> you page on: symptom-based, SLO-burn-rate alerts (&ldquo;users are seeing errors fast enough to blow the budget&rdquo;) rather than cause-based threshold alerts on every CPU blip &mdash; the former is actionable, the latter trains people to ignore the pager. Inhibition is the unsung hero: when the whole cluster is down, suppress the hundred downstream alarms and page once.</p>
+        <p class="arch">I design alerts to be symptom-based and actionable — page on user-facing symptoms tied to SLOs, not on every CPU blip, or you train people to ignore the pager, which is <b>alert fatigue</b> and it's how real incidents get missed. Grouping, inhibition, and good routing are what keep signal-to-noise high, and every alert links to a runbook, because a page at 3am is useless without "here's what to check first."</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> What is &lsquo;alert fatigue,&rsquo; and which two Alertmanager features most directly fight it? <span class="sc-a">Alert fatigue is when noisy, non-actionable pages train responders to ignore the pager, so real incidents get missed; <b>grouping</b> (one page for a batch of related alerts instead of fifty) and <b>inhibition</b> (suppressing downstream alerts when a root-cause alert is firing) are the key noise-killers &mdash; plus paging on symptoms/SLOs, not every metric.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=prometheus%20alertmanager%20grouping%20inhibition%20silence%20alert%20fatigue"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: What happens when an alert fires</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">rule evaluation</span><span class="term">for-duration · firing</span><span class="term">Alertmanager</span><span class="term">grouping · routing</span><span class="term">silence · inhibition</span><span class="term">alert fatigue</span><span class="term">runbook</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="obs">
+      <div class="s-top"><span class="s-no">03</span><span class="s-tag">Observability</span></div>
+      <h3>A metric gets scraped</h3>
+      <p class="why"><b>Why they ask</b>The pull model and cardinality are where the monitoring system itself breaks.</p>
+      <p class="gist"><b>Analogy</b> A health inspector who <em>visits</em> each kitchen on a schedule (pull) rather than waiting for kitchens to call in &mdash; and whose filing system explodes if you give every meal its own folder (high-cardinality labels).</p>
+      <div class="answer">
+        <p>Prometheus is <b>pull-based</b>: on an interval it scrapes an HTTP <code>/metrics</code> endpoint that each target exposes — either instrumented directly or fronted by an <b>exporter</b> like node_exporter. It finds targets through <b>service discovery</b>, so in Kubernetes it picks up pods and services automatically and scraping follows them as they come and go. Each sample is stored as a <b>time series</b> identified by its metric name plus its full set of labels, timestamped into the local TSDB.</p>
+        <p>The failure mode to name is <b>cardinality explosion</b>: every unique combination of label values is its own time series, so putting something high-cardinality into a label — a user ID, a request ID, a raw URL with IDs in it — can spawn millions of series and blow up memory and query time. That's the classic "our monitoring fell over" incident.</p>
+        <p>For latency you need <b>histograms</b>, not averages &mdash; you can&rsquo;t average percentiles across instances, so you record bucketed histograms and compute quantiles at query time; and expensive dashboard queries get pre-computed with <b>recording rules</b>. Pull plus service discovery self-adjusts to a churning cluster, but short-lived batch jobs that vanish before a scrape use a push gateway instead.</p>
+        <p class="arch">Pull plus service discovery is what makes it self-adjusting in a dynamic cluster, but I treat label design as a first-class decision — labels are for bounded dimensions like status code, route template, and service, never unbounded identifiers. For long-term storage and a global view across clusters I'd use remote-write into Thanos or Cortex, and for short-lived batch jobs that can't be scraped, a push gateway.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why is putting a user ID or request ID into a Prometheus label a classic way to take down your monitoring? <span class="sc-a">Every unique label-value combination is a separate time series, so an unbounded identifier spawns millions of series &mdash; a cardinality explosion that blows up memory and query time (&ldquo;our monitoring fell over&rdquo;); labels must be bounded dimensions (status code, route <em>template</em>, service), never unbounded IDs.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=prometheus%20pull%20model%20scrape%20cardinality%20explosion%20histogram"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a metric is scraped (and breaks)</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">pull model</span><span class="term">/metrics · exporter</span><span class="term">service discovery</span><span class="term">time series (name + labels)</span><span class="term">TSDB</span><span class="term">cardinality explosion</span><span class="term">remote-write · Thanos</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="obs">
+      <div class="s-top"><span class="s-no">04</span><span class="s-tag">Observability</span></div>
+      <h3>An SLO's error budget burns</h3>
+      <p class="why"><b>Why they ask</b>It connects reliability to a decision framework instead of "just add more nines."</p>
+      <p class="gist"><b>Analogy</b> A monthly data plan for failures: 99.9% uptime <em>is</em> a budget of allowed errors &mdash; and what you alarm on isn&rsquo;t that you used some, but how <em>fast</em> you&rsquo;re burning through it.</p>
+      <div class="answer">
+        <p>An SLO sets a target for a service level indicator — say 99.9% of requests succeed over 30 days. The <b>error budget</b> is the allowed failure: 0.1% of requests, a concrete number of bad events you're permitted in the window. Every error spends budget. What you alert on isn't the raw error rate but the <b>burn rate</b> — how fast you're spending relative to the window. A burn rate of 1 exhausts the budget exactly at month-end; a burn rate of 10 burns a month's budget in three days, which deserves a page now.</p>
+        <p>Good practice is <b>multiwindow, multi-burn-rate</b> alerting: a fast-burn alert on a short window catches acute outages, and a slow-burn alert on a long window catches the quiet, steady degradation that would otherwise eat the budget unnoticed.</p>
+        <p>Concretely, multi-burn-rate alerting (from Google&rsquo;s SRE workbook) pages on a <em>fast</em> burn &mdash; e.g. ~14x over an hour, which would exhaust a month&rsquo;s budget in ~2 days &mdash; and separately on a <em>slow</em> burn over a long window that catches quiet, steady degradation. The target itself should reflect real user need, because each extra nine costs exponentially more to engineer.</p>
+        <p class="arch">The error budget turns reliability into a shared, quantified decision. Budget healthy? Ship fast, take risks. Budget exhausted? The policy is to freeze feature work and spend on reliability until it recovers. It aligns product and platform on one number instead of arguing about whether things are "stable enough," and it's exactly why you pick a target that reflects real user need rather than reflexively chasing nines, which get exponentially more expensive.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why alert on error-budget <em>burn rate</em> rather than on raw error rate crossing a fixed threshold? <span class="sc-a">Burn rate measures spending relative to your reliability target and window, so it&rsquo;s meaningful and self-scaling &mdash; a fast burn (consuming budget far quicker than sustainable) pages now, a slow burn catches gradual erosion &mdash; whereas a fixed error-rate threshold is arbitrary, noisy at low traffic, and disconnected from whether you&rsquo;re actually at risk of missing the SLO.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=SLO%20error%20budget%20burn%20rate%20multiwindow%20alerting%20SRE"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How an error budget burns</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">SLI / SLO</span><span class="term">error budget</span><span class="term">burn rate</span><span class="term">multiwindow alerting</span><span class="term">fast vs slow burn</span><span class="term">error-budget policy / freeze</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="obs">
+      <div class="s-top"><span class="s-no">05</span><span class="s-tag">Observability</span></div>
+      <h3>A log line travels from app to a query</h3>
+      <p class="why"><b>Why they ask</b>Logs are the third pillar most people hand-wave &mdash; it tests whether you know the pipeline, the cost model, and structured logging.</p>
+      <p class="gist"><b>Analogy</b> A log line is a diary entry; the pipeline is the postal system that collects every entry from every machine, files it by time and tag, and makes a decade of diaries searchable in a second &mdash; or falls over under the sheer volume if you&rsquo;re not careful.</p>
+      <div class="answer">
+        <p>The app writes a line &mdash; ideally <b>structured</b> (JSON with fields), not free text &mdash; to stdout. A node agent (Fluent Bit, Vector, Promtail) <b>tails</b> the container&rsquo;s log file, enriches each line with Kubernetes metadata (pod, namespace, labels) and ideally the <b>trace ID</b>, buffers, and ships it to a backend (Elasticsearch/OpenSearch, Loki, or a cloud service). There it&rsquo;s <b>indexed</b> &mdash; fully in Elasticsearch, or only by labels with the body left compressed in Loki &mdash; and queried from Kibana/Grafana.</p>
+        <p>Logs are the highest-volume, highest-cost signal, so the design is about taming volume: use <b>levels</b> and sampling so you&rsquo;re not paying to store debug spam, keep <b>cardinality</b> sane (the same trap as metrics &mdash; don&rsquo;t index unbounded fields in Elasticsearch, don&rsquo;t put high-cardinality values in Loki labels), and set <b>retention</b> tiers (hot for days, cold/archived for compliance). Structured logging is what makes them queryable instead of grep-able.</p>
+        <p class="arch">I frame logs, metrics, and traces as three complementary signals and stitch them with one <b>correlation key</b> &mdash; the trace ID in every log line &mdash; so I pivot from a latency spike (metric) to the slow trace to its exact logs. The two levers I set are structured logging (so queries are fields, not regexes) and a cost-control discipline (levels, sampling, retention, cardinality limits), because an unbounded logging bill and an index meltdown are the real failure modes. And logs should never be the <em>only</em> place a critical signal lives &mdash; alert on metrics, investigate with logs.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why is structured logging with a trace ID on every line so much more valuable than plain text logs, and what&rsquo;s the main operational risk of logging? <span class="sc-a">Structured logs are queryable by field (not fragile regex) and the trace ID lets you correlate logs with the exact trace and metric for one request &mdash; turning three signals into one investigation; the main risk is cost and scale &mdash; logs are the highest-volume signal, so without levels, sampling, retention tiers, and cardinality control the bill explodes and the index can fall over.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20logging%20pipeline%20fluentbit%20loki%20elasticsearch%20structured"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a log line becomes searchable</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">structured (JSON) logs</span><span class="term">node agent tail + enrich</span><span class="term">index: full (ES) vs labels (Loki)</span><span class="term">trace-ID correlation</span><span class="term">levels / sampling</span><span class="term">cardinality & retention</span><span class="term">three pillars</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 2 · DATA & MESSAGING ===== -->
+  <section class="track" data-track="data">
+    <div class="track-head">
+      <div class="tno">Track 02 — State &amp; events</div>
+      <h2>Data &amp; messaging</h2>
+      <p>The stateful core — where correctness, durability, and ordering are won or lost. Kafka's log, a transaction commit, a database failover, and the cache failures that cascade.</p>
+    </div>
+
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">06</span><span class="s-tag">Kafka</span></div>
+      <h3>A message is produced to Kafka</h3>
+      <p class="why"><b>Why they ask</b>Ordering, durability, and partitioning are the heart of event-driven systems — and everyday reality in billing/telecom.</p>
+      <p class="gist"><b>Analogy</b> A durable ledger split into numbered columns (partitions): entries with the same account number always go in the same column, so that account&rsquo;s history stays in order &mdash; without forcing the whole ledger into one slow line.</p>
+      <div class="answer">
+        <p>The producer sends a record to a <b>topic</b>, which is split into <b>partitions</b>. Which partition it lands in is decided by the <b>key</b>: the same key hashes to the same partition, and that's how Kafka gives you <b>ordering per key</b> — all events for one billing account stay in order — without any global ordering. Each partition has one <b>leader</b> broker and follower <b>replicas</b>; the producer writes to the leader, which appends to its log.</p>
+        <p>Durability is the <code>acks</code> setting. <code>acks=1</code> means the leader acknowledges as soon as it has written; <code>acks=all</code> means it waits until the <b>in-sync replicas</b> — the ISR — also have the record, so it survives a broker loss. With <code>acks=all</code> plus <code>min.insync.replicas</code>, a committed write is safely replicated. An idempotent producer avoids duplicates on retry, and transactions give atomic multi-partition writes.</p>
+        <p>Two design traps: a <b>hot key</b> (one account with most of the traffic) overloads one partition since all its events must stay together &mdash; so choose the key for even spread; and partition count is effectively <em>sticky</em> &mdash; adding partitions later changes the key&rarr;partition mapping and breaks per-key ordering for existing keys, so size it up front. Batching (<code>linger.ms</code>) trades a little latency for much higher throughput.</p>
+        <p class="arch">The design levers are partition count — your unit of parallelism and of ordering — and the key: choose it so related events stay ordered and load spreads evenly, because a hot key is a hot partition. For billing I'd take <code>acks=all</code> and idempotence for correctness and accept the added latency, and I'd watch for partition skew from a bad key. The mental model to say out loud: Kafka is a durable, replayable log, not just a queue — that replayability is what lets consumers rebuild state or reprocess after a bug.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why can&rsquo;t you freely increase a topic&rsquo;s partition count later to relieve a hot partition? <span class="sc-a">Partition assignment is <code>hash(key) % partitions</code>, so changing the partition count remaps keys to different partitions &mdash; a given key&rsquo;s new events land in a different partition from its old ones, breaking the per-key ordering guarantee; so partition count (your parallelism and ordering unit) should be chosen generously up front.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kafka%20producer%20partition%20key%20acks%20ISR%20ordering%20durability"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a message is produced to Kafka</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">topic · partition</span><span class="term">key-based partitioning</span><span class="term">ordering per key</span><span class="term">leader + ISR</span><span class="term">acks=all · min.insync.replicas</span><span class="term">idempotent producer</span><span class="term">replayable log</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">07</span><span class="s-tag">Kafka</span></div>
+      <h3>A Kafka consumer group rebalances</h3>
+      <p class="why"><b>Why they ask</b>The "why did we double-process everything" incident lives right here.</p>
+      <p class="gist"><b>Analogy</b> Musical chairs for partitions: whenever a player joins or leaves, everyone briefly stands up and reseats (rebalance) &mdash; and if you stop processing to do slow work and miss the music (the poll deadline), the group thinks you left and reseats without you.</p>
+      <div class="answer">
+        <p>A <b>consumer group</b> splits a topic's partitions across its consumers — each partition is owned by exactly one consumer in the group, which is how consumption parallelizes. A <b>rebalance</b> is the redistribution, triggered when a consumer joins, leaves, or is declared dead (it stopped heartbeating), or when partitions change. The group coordinator reassigns partitions; in a classic <b>eager</b> rebalance everyone stops consuming briefly — the stop-the-world pause — which is why <b>cooperative</b> incremental rebalancing was added, to move only the partitions that need moving.</p>
+        <p>Progress is tracked by <b>committed offsets</b> — the position up to which you've processed. Here's the double-processing trap: if you process, then crash before committing, the next owner reprocesses from the last commit — that's <b>at-least-once</b>, so consumers must be idempotent. Commit before processing and you risk losing messages (at-most-once). Exactly-once needs Kafka transactions or an idempotent sink.</p>
+        <p>The underrated causes of rebalance storms are operational: a rolling restart reshuffles the whole group unless you use <b>static membership</b> (<code>group.instance.id</code>), and a consumer that takes too long between polls trips <code>max.poll.interval.ms</code>, gets evicted mid-batch, and triggers a rebalance &mdash; so you either process faster or poll smaller batches. Cooperative rebalancing avoids the stop-the-world pause by moving only the partitions that must move.</p>
+        <p class="arch"><b>Consumer lag</b> — how far behind the latest offset you are — is the health metric that matters; rising lag means you're not keeping up and need more consumers (up to the partition count, your parallelism ceiling) or faster processing. I design consumers to be idempotent because at-least-once is the sane default, tune session and heartbeat timeouts so a slow consumer isn't wrongly evicted into a rebalance storm, and use cooperative rebalancing to avoid stop-the-world pauses.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your consumers double-processed a batch of messages after a crash &mdash; what offset-handling behaviour caused it, and what&rsquo;s the required consumer property? <span class="sc-a">You processed messages but crashed <em>before</em> committing their offsets, so the new owner re-consumed from the last committed offset &mdash; that&rsquo;s at-least-once delivery; the required property is <b>idempotent</b> processing (or a transactional/idempotent sink) so reprocessing the same messages has no duplicate effect.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kafka%20consumer%20group%20rebalance%20offset%20commit%20at%20least%20once"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Consumer rebalance & double-processing</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">consumer group</span><span class="term">partition ownership</span><span class="term">rebalance · coordinator</span><span class="term">heartbeat / session timeout</span><span class="term">committed offset</span><span class="term">at-least-once · idempotent</span><span class="term">consumer lag</span><span class="term">cooperative rebalancing</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">08</span><span class="s-tag">Databases</span></div>
+      <h3>A database transaction commits</h3>
+      <p class="why"><b>Why they ask</b>ACID and the WAL made concrete — table stakes for anyone owning data platforms.</p>
+      <p class="gist"><b>Analogy</b> A careful accountant who writes every change in an indelible journal (the WAL) and flushes it to the safe <em>before</em> updating the ledgers &mdash; so even if the lights go out mid-entry, the journal replays exactly what was and wasn&rsquo;t finished.</p>
+      <div class="answer">
+        <p>On commit, the database must make the change durable and atomic, and the core mechanism is <b>write-ahead logging</b>. Before the change touches the data files, a record of it is written to a sequential log — the WAL or redo log — and that log record is flushed to disk, <code>fsync</code>'d, first. Commit returns only once the log is durably on disk. So if the server dies an instant later, <b>recovery</b> replays the log to redo committed transactions and roll back uncommitted ones — you never see a half-applied transaction. The actual data pages can be written lazily afterward, because the log is the source of truth.</p>
+        <p>That's ACID in practice: <b>atomicity</b> (all-or-nothing via the log), <b>consistency</b> (constraints hold), <b>isolation</b> (concurrent transactions don't corrupt each other, governed by the isolation level — read-committed up to serializable, trading concurrency for stronger guarantees, with MVCC letting readers not block writers), <b>durability</b> (the fsync'd log).</p>
+        <p>Two things worth adding: databases batch commits (<b>group commit</b>) so one <code>fsync</code> durably commits many transactions, which is how they stay fast; and the WAL is also why the <b>transactional outbox</b> pattern works &mdash; writing a &lsquo;publish this event&rsquo; row in the <em>same</em> transaction as the data change, then relaying it, so your DB write and your Kafka event can&rsquo;t diverge (the dual-write problem).</p>
+        <p class="arch">The WAL is why databases are both durable and fast — sequential log writes are cheap, and the same log powers replication (ship it to replicas) and point-in-time recovery. The isolation level is a real design choice: most systems run read-committed for throughput and reach for serializable only where correctness demands it. And <code>fsync</code>-on-commit is the durability-versus-latency knob people are tempted to weaken — which is precisely how you lose committed data in a crash.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why does commit return only after the log record is <code>fsync</code>&rsquo;d, while the actual data pages can be written lazily afterwards? <span class="sc-a">The log is the durable source of truth: once the WAL record is safely on disk, a crash can <em>replay</em> it to redo the committed change, so durability is guaranteed even if the data pages haven&rsquo;t been written yet &mdash; sequential log writes are cheap and fast, so forcing only the log (not every data page) on commit gives both durability and speed.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=database%20transaction%20commit%20write%20ahead%20log%20WAL%20fsync%20ACID"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a transaction commits (the WAL)</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">write-ahead log (WAL/redo)</span><span class="term">fsync durability</span><span class="term">atomicity</span><span class="term">crash recovery (redo/undo)</span><span class="term">isolation levels</span><span class="term">MVCC</span><span class="term">log-based replication</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">09</span><span class="s-tag">Databases</span></div>
+      <h3>A database primary fails over</h3>
+      <p class="why"><b>Why they ask</b>RPO/RTO and split-brain — the availability question for anything stateful.</p>
+      <p class="gist"><b>Analogy</b> A deputy who takes over when the sheriff is shot &mdash; but if the sheriff was only unconscious and wakes up, you now have two sheriffs giving conflicting orders (split-brain). Fencing is making sure the old sheriff is truly disarmed first.</p>
+      <div class="answer">
+        <p>In a primary-replica setup, writes go to the <b>primary</b>, which streams its log to <b>replicas</b> that stay near-current. When the primary dies, something must detect it and <b>promote</b> a replica to be the new primary, then repoint clients or the connection endpoint at it. Two numbers define the outcome: <b>RPO</b>, recovery point objective, is how much data you might lose — driven by replication lag, since async replication means the promoted replica may be missing the last few committed writes; <b>RTO</b>, recovery time objective, is how long the failover takes.</p>
+        <p>The danger is <b>split-brain</b>: if the old primary isn't truly dead but only partitioned, and a replica gets promoted, you now have two primaries taking writes and diverging. <b>Fencing</b> — forcibly isolating the old primary, STONITH, revoking its access — and quorum-based decisions are what prevent that.</p>
+        <p>The part people forget is the clients: after promotion, connections must be repointed &mdash; via a virtual IP, a proxy (PgBouncer/ProxySQL), or a service endpoint update &mdash; and in-flight transactions on the old primary are lost, so apps need reconnect-and-retry logic. Modern automated failover uses a consensus layer (Raft/Patroni/Orchestrator) with <b>quorum</b> so a minority-partitioned old primary can&rsquo;t keep accepting writes.</p>
+        <p class="arch">It's a deliberate trade. Synchronous replication gives RPO near zero but adds write latency and can stall if a replica is slow; asynchronous is fast but risks data loss on failover. I'd pick per workload — synchronous or quorum writes for money and billing, async for tolerant data — always with fencing to stop split-brain, and I'd test failover regularly, because an untested failover is a hope, not a plan. Automatic failover trades a small false-positive risk for low RTO; manual is safer but slower.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> What is split-brain in a database failover, and what mechanism prevents the promoted replica and a not-quite-dead primary from both taking writes? <span class="sc-a">Split-brain is two nodes both believing they&rsquo;re primary (e.g. the old one was only partitioned, not dead) and accepting divergent writes; <b>fencing</b> (forcibly isolating/STONITH-ing the old primary) plus <b>quorum</b>-based promotion decisions prevent it &mdash; a node that can&rsquo;t reach a majority must step down and stop accepting writes.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=database%20primary%20replica%20failover%20RPO%20RTO%20split%20brain%20fencing"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Database failover: RPO, RTO, split-brain</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">primary / replica</span><span class="term">streaming replication</span><span class="term">promotion</span><span class="term">RPO vs RTO</span><span class="term">replication lag</span><span class="term">sync vs async</span><span class="term">split-brain · fencing/STONITH</span><span class="term">quorum</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">10</span><span class="s-tag">Reliability</span></div>
+      <h3>A cache goes cold and a stampede hits</h3>
+      <p class="why"><b>Why they ask</b>The thundering-herd failure — and whether you know its standard fixes.</p>
+      <p class="gist"><b>Analogy</b> A dam that normally holds back the river (cache), with just a trickle (misses) reaching the valley (database). Punch a hole (a hot key expires) and the whole reservoir floods through at once &mdash; and the flood keeps the dam from ever refilling.</p>
+      <div class="answer">
+        <p>Normally reads hit the cache and only misses fall through to the database. A cache goes <b>cold</b> when it's empty or just restarted — every read misses and hits the database at once. The vicious version is a <b>cache stampede</b>, or thundering herd: a hot key expires, and in the window before it's repopulated, thousands of concurrent requests all miss at the same instant and all hammer the database to recompute the same value — which can take the database down, which keeps the cache empty: a feedback loop.</p>
+        <p>The fixes: <b>request coalescing</b> (singleflight) — the first miss recomputes while the rest wait for that one result instead of all recomputing; <b>TTL jitter</b> so a whole cohort of keys doesn't expire on the same tick; <b>early/probabilistic refresh</b> so a popular key is refreshed just before it expires; and a lock or lease so only one caller recomputes a given key.</p>
+        <p>Add two guards: <b>negative caching</b> (cache the &lsquo;not found&rsquo; so a missing or malicious key doesn&rsquo;t hammer the DB repeatedly &mdash; the cache-penetration case), and <b>consistent hashing</b> across cache nodes so losing one node re-homes only its slice of keys instead of cold-starting the entire cache. A local in-process cache in front of the distributed one also absorbs the hottest keys.</p>
+        <p class="arch">I'd distinguish the patterns — cache-aside is the default, write-through or write-behind when you need freshness — and design cold-start explicitly: warm critical keys on deploy, stagger TTLs, put coalescing in front of expensive recomputes. And I'd be honest that a cache is an availability dependency: if losing it takes the database down, your real capacity is the uncached path, so you need graceful degradation and load shedding for when it's cold — which ties straight back to the connection-pool cascade from Volume I.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A single hot key expiring causes thousands of simultaneous database queries &mdash; name the failure and two standard fixes. <span class="sc-a">A cache stampede / thundering herd; fix with <b>request coalescing (singleflight)</b> so only the first miss recomputes while the rest wait for that one result, and <b>TTL jitter / early (probabilistic) refresh</b> so popular keys are refreshed just before expiry and a whole cohort doesn&rsquo;t expire on the same tick &mdash; plus a lock/lease so one caller recomputes a given key.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=cache%20stampede%20thundering%20herd%20singleflight%20TTL%20jitter%20cache%20aside"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Cold cache & the thundering herd</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">cache-aside</span><span class="term">cold cache</span><span class="term">stampede / thundering herd</span><span class="term">request coalescing (singleflight)</span><span class="term">TTL jitter</span><span class="term">early refresh</span><span class="term">graceful degradation</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">11</span><span class="s-tag">Reliability</span></div>
+      <h3>An idempotency key dedupes a retried request</h3>
+      <p class="why"><b>Why they ask</b>&ldquo;At-least-once delivery means duplicates&rdquo; shows up in Kafka, retries, and webhooks &mdash; this is how you make duplicates harmless, which matters hugely in billing.</p>
+      <p class="gist"><b>Analogy</b> A coat-check ticket: hand over the same ticket twice and you still get back one coat, not two &mdash; the ticket (idempotency key) lets the system recognise &lsquo;I&rsquo;ve already done this one&rsquo; and safely ignore the repeat.</p>
+      <div class="answer">
+        <p>Networks make retries unavoidable, and most delivery is <b>at-least-once</b>, so the <em>same</em> request can arrive twice &mdash; a retried payment, a redelivered Kafka message, a webhook fired again. <b>Idempotency</b> means processing it twice has the same effect as once. The standard mechanism is an <b>idempotency key</b>: the client attaches a unique key per logical operation; the server records keys it has processed (with the result), and on a repeat key it returns the stored result instead of re-executing.</p>
+        <p>The subtlety is doing it <b>atomically</b>: the check-and-record and the actual work must commit together, or two concurrent retries both pass the check and double-charge. In practice that&rsquo;s a unique constraint on the key in the same database transaction as the effect, or a conditional write. Some operations are <em>naturally</em> idempotent (a <code>PUT</code> that sets a value, <code>DELETE</code>); the dangerous ones are increments and &lsquo;create&rsquo; actions, which need an explicit key.</p>
+        <p class="arch">I treat idempotency as the sane default across the whole async stack: at-least-once Kafka consumers, retrying HTTP clients, and inbound webhooks all assume redelivery, so the receiver must dedupe &mdash; which is exactly why the Kafka and retry scenarios kept saying &lsquo;make consumers idempotent.&rsquo; For billing I&rsquo;d insist on an idempotency key on every money-moving operation, enforced by a unique constraint committed in the same transaction as the charge, so a retry storm or a consumer reprocessing after a crash can never double-bill. Exactly-once is mostly idempotency plus dedup, not magic.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why must the &lsquo;have I seen this idempotency key?&rsquo; check and the actual operation commit in the <em>same</em> transaction? <span class="sc-a">Otherwise two concurrent retries can both pass the check before either records the key, and both execute the operation &mdash; a double-charge; committing the key-record and the effect atomically (e.g. a unique constraint in the same DB transaction) ensures only one succeeds and the duplicate is safely rejected or returns the stored result.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=idempotency%20key%20exactly%20once%20at%20least%20once%20retry%20dedupe%20billing"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Making retries safe with idempotency</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">at-least-once &rarr; duplicates</span><span class="term">idempotency key</span><span class="term">store key + result</span><span class="term">atomic check-and-act</span><span class="term">unique constraint</span><span class="term">naturally idempotent (PUT/DELETE)</span><span class="term">exactly-once = dedupe</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 3 · AGENTIC & LLM ===== -->
+  <section class="track" data-track="agent">
+    <div class="track-head">
+      <div class="tno">Track 03 — The agentic platform</div>
+      <h2>Agentic &amp; LLM platform</h2>
+      <p>Your differentiator, and the JD's agentic criterion. Consuming LLMs as a governed platform — the agent gateway, model routing, and retrieval — framed as platform and governance, not model hosting.</p>
+    </div>
+
+    <article class="scenario" data-cat="agent">
+      <div class="s-top"><span class="s-no">12</span><span class="s-tag">Agentic</span></div>
+      <h3>An agent calls a tool through MCP / the agent gateway</h3>
+      <p class="why"><b>Why they ask</b>It's your kagent/agentgateway work as a mechanism — and the platform-governance framing the JD wants.</p>
+      <p class="gist"><b>Analogy</b> An agent asking the platform&rsquo;s concierge (the gateway) to fetch something, rather than walking into the vault itself: the concierge checks the request is well-formed, that this guest is allowed, logs it, and only then retrieves it.</p>
+      <div class="answer">
+        <p>The model decides it needs a tool and emits a structured <b>tool call</b> — a tool name plus JSON arguments. That call doesn't go straight to the tool; it goes through the <b>agent gateway</b>, the control point. Over <b>MCP</b> — the Model Context Protocol — the gateway knows which tools and servers exist and their schemas, so it validates the arguments against the tool's schema, authenticates and authorizes the call (is this agent allowed to invoke this tool, with these scopes), enforces the <b>tool boundary</b> and any policy (allow/deny lists, PII redaction, rate limits), applies a timeout, invokes the MCP server, and returns the result to the model, which incorporates it and continues. Every call is logged for audit.</p>
+        <p>The security crux is that the model&rsquo;s output is <b>untrusted input</b>: a prompt-injection can make the model <em>emit</em> a malicious tool call, so the real control isn&rsquo;t the model behaving &mdash; it&rsquo;s the gateway&rsquo;s allow-list, argument validation, scopes, and human-in-the-loop for dangerous or irreversible actions. Tool <em>results</em> are untrusted too (they re-enter the prompt), so size and sanitise them against a token budget.</p>
+        <p class="arch">The whole point is that the gateway externalizes governance out of the agent's code — auth, tool allow-lists, rate limits, and policy live in the platform, not scattered through prompts. I treat tools as the real security surface of an agent: the model is untrusted input, so the gateway is where least privilege, human-in-the-loop for dangerous actions, and audit get enforced. MCP standardizes tool discovery and schemas so tools are reusable across agents, and A2A is the analogous contract for agent-to-agent calls. This is exactly the pattern in the GenAI work I do on our platform with kagent and agentgateway.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why is the agent gateway &mdash; not the model&rsquo;s own judgement &mdash; treated as the real security boundary for tool calls? <span class="sc-a">Because the model is untrusted input that can be manipulated (e.g. by prompt injection) into emitting a dangerous tool call; relying on the model to &lsquo;decide&rsquo; safely is unsafe, so the gateway enforces least privilege externally &mdash; tool allow-lists, argument/schema validation, scopes, rate limits, and human approval for irreversible actions &mdash; and audits every call.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=AI%20agent%20tool%20call%20MCP%20agent%20gateway%20governance%20security"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: An agent calls a tool via MCP</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">tool call (name + JSON args)</span><span class="term">MCP</span><span class="term">agent gateway</span><span class="term">schema validation</span><span class="term">authZ · tool boundary</span><span class="term">rate limit · timeout</span><span class="term">audit · least privilege</span><span class="term">human-in-the-loop · A2A</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="agent">
+      <div class="s-top"><span class="s-no">13</span><span class="s-tag">LLM platform</span></div>
+      <h3>An LLM request hits the model-routing gateway</h3>
+      <p class="why"><b>Why they ask</b>It shows you frame LLMs as managed endpoints plus governance — not training or hosting.</p>
+      <p class="gist"><b>Analogy</b> One internal switchboard for every outside line: callers dial a single number and the switchboard picks the right provider by cost or quality, caps how much each team can spend, and reroutes if a line drops &mdash; so no one is hard-wired to a single carrier.</p>
+      <div class="answer">
+        <p>The application calls one internal endpoint rather than a specific provider. The <b>LLM gateway</b> (a router/proxy in front of managed endpoints) authenticates the caller and applies per-tenant policy, then <b>routes</b>: pick the model by cost, latency, or capability, or by an A/B rule; check the <b>rate limit and token budget</b> for that tenant so one team can't drain the quota; optionally serve from a <b>semantic cache</b> if a semantically-equivalent prompt was answered recently; and on provider error or overload, <b>fall back</b> to a secondary model or region. It sends the request to the managed endpoint, streams the response back, and <b>meters</b> usage — tokens in and out, cost, latency.</p>
+        <p>Operationally it also owns prompt/response <b>logging with PII redaction</b>, <b>streaming</b> (SSE) pass-through, and per-tenant <b>cost attribution</b>, and it&rsquo;s where quality gating lives &mdash; evals as a release gate plus input/output guardrails. One correctness caveat: a <b>semantic cache</b> can return a near-match that&rsquo;s subtly wrong for a different intent, so cache hits need a similarity threshold tuned conservatively.</p>
+        <p class="arch">I frame our agentic work as platform and governance, not model hosting — we consume LLMs through managed endpoints, so the value I add is the gateway: centralized auth, model routing, cost controls and token budgets, caching, fallback for resilience, and observability of every call. And quality gating belongs here too — <b>evals as a release gate</b> the way unit tests gate code, plus guardrails on inputs and outputs. That gives one governed, swappable seam, so we're never locked to a single model and policy is enforced consistently.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> What does fronting LLMs with a routing gateway buy you that calling a provider SDK directly from each service does not? <span class="sc-a">One governed, swappable seam: centralized auth and per-tenant token budgets/rate limits, model routing by cost/latency/capability (and A/B), semantic caching, provider fallback for resilience, usage metering and cost attribution, and consistent guardrails/evals &mdash; so you&rsquo;re never locked to one model and policy is enforced uniformly instead of reimplemented per service.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=LLM%20gateway%20model%20routing%20token%20budget%20semantic%20cache%20fallback"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: The model-routing LLM gateway</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">LLM gateway / router</span><span class="term">managed endpoints</span><span class="term">model routing (cost/latency)</span><span class="term">token budget · rate limit</span><span class="term">semantic cache</span><span class="term">fallback / failover</span><span class="term">usage metering</span><span class="term">evals-as-gate · guardrails</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="agent">
+      <div class="s-top"><span class="s-no">14</span><span class="s-tag">RAG</span></div>
+      <h3>A RAG query runs</h3>
+      <p class="why"><b>Why they ask</b>The most common GenAI-platform design question — and retrieval quality is where it's won.</p>
+      <p class="gist"><b>Analogy</b> Open-book exam, not memory test: the model doesn&rsquo;t recall the answer &mdash; it&rsquo;s handed the most relevant pages (retrieval) and asked to answer <em>from them</em>; if you hand it the wrong pages, it writes a confident wrong essay.</p>
+      <div class="answer">
+        <p>The user's query is first turned into a vector by an <b>embedding</b> model, and that vector searches a <b>vector store</b> for the most similar chunks — semantic retrieval by nearest-neighbor, usually approximate (ANN, often HNSW) for speed. Good systems do <b>hybrid retrieval</b> — combine that with keyword/BM25 search to catch exact terms — then <b>rerank</b> the candidates with a cross-encoder so the truly most-relevant chunks rise to the top. The top chunks are injected into the prompt as context, and the LLM <b>generates</b> an answer grounded in them, ideally with citations back to the sources.</p>
+        <p>Two sharp pitfalls: changing the <b>embedding model</b> means re-embedding the <em>entire</em> index, or query vectors and stored vectors live in different spaces and retrieval silently degrades; and <b>chunking</b> (size/overlap) plus context packing matter because an answer buried in the middle of a stuffed context gets &lsquo;lost in the middle.&rsquo; Access control belongs in retrieval via <b>metadata filtering</b>, not in the prompt.</p>
+        <p class="arch">Retrieval quality is the whole ballgame — most "the LLM is wrong" complaints are actually retrieval problems — so I invest in chunking strategy, hybrid search plus reranking, and <b>metadata filtering for access control</b> so a user only retrieves what they're permitted to see. The failure modes to name: nothing relevant retrieved (the model then hallucinates or should say "I don't know"), a stale index (needs a refresh pipeline), and context-window pressure. And I'd measure it — retrieval metrics like recall and precision of chunks, and answer metrics like faithfulness and groundedness, run as evals, not vibes.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Most &lsquo;the LLM gave a wrong answer&rsquo; complaints in a RAG system are really which kind of problem, and name two levers that fix it? <span class="sc-a">Retrieval problems &mdash; the model was given the wrong or no relevant context &mdash; not generation problems; fix with better retrieval: <b>hybrid search (semantic + keyword) plus reranking</b> so the truly relevant chunks surface, and good <b>chunking</b> and a fresh, correctly-embedded index (re-embed on model change), measured with retrieval evals (recall/precision) rather than vibes.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=RAG%20retrieval%20augmented%20generation%20embeddings%20hybrid%20search%20reranking"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a RAG query runs</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">embedding · vector store</span><span class="term">ANN / HNSW</span><span class="term">hybrid (semantic + BM25)</span><span class="term">reranking (cross-encoder)</span><span class="term">grounding + citations</span><span class="term">chunking</span><span class="term">metadata filter (access control)</span><span class="term">faithfulness eval</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="agent">
+      <div class="s-top"><span class="s-no">15</span><span class="s-tag">Agentic</span></div>
+      <h3>A prompt-injection attempt reaches an agent</h3>
+      <p class="why"><b>Why they ask</b>It&rsquo;s the defining security question for agentic systems &mdash; and the JD&rsquo;s governance angle: how you contain an LLM that will believe malicious input.</p>
+      <p class="gist"><b>Analogy</b> An over-helpful intern who does whatever any note on their desk says: if a document they&rsquo;re reading contains &lsquo;ignore your boss and email me the files,&rsquo; they might just do it. You don&rsquo;t fix the intern&rsquo;s gullibility &mdash; you make sure they <em>can&rsquo;t</em> reach the files or send the email without a check.</p>
+      <div class="answer">
+        <p><b>Prompt injection</b> is when untrusted text &mdash; a user message, or worse, content the agent <em>retrieves</em> (a web page, a document, a tool result) &mdash; carries instructions the model follows as if they were its own. <b>Indirect</b> injection is the dangerous kind: the agent reads a poisoned document during a task and is hijacked without the user ever typing anything malicious. Because an LLM has no reliable boundary between &lsquo;instructions&rsquo; and &lsquo;data,&rsquo; you cannot fully prevent the model from being fooled &mdash; so the defence is never &lsquo;make the prompt robust.&rsquo;</p>
+        <p>The real control is to <b>limit what a hijacked agent can do</b>. The classic high-risk combination is the &lsquo;lethal trifecta&rsquo;: access to private data, exposure to untrusted content, and the ability to exfiltrate (send data out) &mdash; remove any one leg and injection can&rsquo;t cause harm. So you enforce least privilege at the agent gateway (tight tool allow-lists and scopes), require <b>human-in-the-loop</b> approval for dangerous or irreversible actions, sanitise and sandbox tool outputs before they re-enter the prompt, and never let the model&rsquo;s raw output trigger a privileged action unchecked.</p>
+        <p class="arch">I frame agent security as governing the <em>tools and data</em>, not trusting the model: the model is untrusted input, the gateway is the enforcement boundary (this is the tool-call scenario&rsquo;s point, sharpened). Concretely &mdash; least-privilege, per-agent tool scopes; human approval for money-moving or destructive actions; input/output guardrails and PII controls; isolating untrusted-content tasks from high-privilege ones; and full audit of every tool call so an injection attempt is detectable. The mental model to state: you can&rsquo;t stop the model being fooled, so you make being fooled harmless.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why is &lsquo;write a more robust system prompt&rsquo; an inadequate defence against prompt injection, and what&rsquo;s the right strategy? <span class="sc-a">Because an LLM can&rsquo;t reliably separate instructions from data, a sufficiently clever injection (especially indirect, via retrieved content) can always talk it into misbehaving &mdash; prompt hardening reduces but never eliminates it; the right strategy is to <em>contain the blast radius</em>: least-privilege tool access at the gateway, human-in-the-loop for dangerous actions, sandboxing tool outputs, and breaking the lethal trifecta (private data + untrusted content + exfiltration) so a fooled agent simply can&rsquo;t cause harm.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=prompt%20injection%20indirect%20lethal%20trifecta%20agent%20security%20guardrails"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Prompt injection & containing agents</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">prompt injection (direct/indirect)</span><span class="term">instructions vs data (no boundary)</span><span class="term">lethal trifecta</span><span class="term">least-privilege tools</span><span class="term">human-in-the-loop</span><span class="term">sanitise tool outputs</span><span class="term">contain, don&rsquo;t prevent</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 4 · KUBERNETES DEEPER ===== -->
+  <section class="track" data-track="k8s">
+    <div class="track-head">
+      <div class="tno">Track 04 — Control plane, deeper</div>
+      <h2>Kubernetes, the harder corners</h2>
+      <p>The scenarios past the happy path: why a pod won't start, why a config change did nothing, why a namespace won't die, and what actually happens when etcd or a stateful workload is in trouble.</p>
+    </div>
+
+    <article class="scenario" data-cat="k8s">
+      <div class="s-top"><span class="s-no">16</span><span class="s-tag">Kubernetes</span></div>
+      <h3>A pod is stuck in <code>Pending</code></h3>
+      <p class="why"><b>Why they ask</b>The most common "it won't start" — it tests how you reason about the scheduler.</p>
+      <p class="gist"><b>Analogy</b> A guest with a reservation but no table: the maître d&rsquo; (scheduler) can&rsquo;t seat them until a table fits the party &mdash; and the reason they&rsquo;re waiting is written right on the reservation (<code>describe</code> events).</p>
+      <div class="answer">
+        <p><code>Pending</code> means the pod exists in the API but the scheduler hasn't been able to bind it to a node. The scheduler filters out nodes that can't fit, scores the rest, and binds the best — if none pass the filters, the pod stays Pending, and the reason is right there in <code>kubectl describe</code> events. The usual causes: insufficient CPU or memory, where the pod's <b>requests</b> (not its usage — scheduling is on requests) exceed what any node has free; <b>taints</b> the pod doesn't tolerate; node <b>affinity</b> or a nodeSelector no node matches; anti-affinity or topology-spread constraints that can't be satisfied; or an unbound <b>PersistentVolumeClaim</b>, where the pod waits for a volume to be provisioned or attached.</p>
+        <p>A subtlety: scheduling is on <b>requests</b>, not usage, so over-requested pods make nodes <em>look</em> full while sitting idle &mdash; a silent scheduling killer. And <b>PriorityClass</b> plus preemption changes the story: a high-priority pod can evict lower-priority pods to make room, so &lsquo;Pending&rsquo; sometimes resolves by bumping something else out rather than adding a node.</p>
+        <p class="arch">The fix depends on the cause, so I let the events tell me — and the systemic answer is capacity: if it's genuinely no room, the Cluster Autoscaler or Karpenter should add a node, and if it can't (quota, instance limits), that's the real bug. I'd flag over-sized requests as a silent scheduling killer — over-requested pods leave nodes looking full while sitting idle. And distinguish <code>Pending</code> (can't schedule) from <code>ContainerCreating</code> (already scheduled, but pulling the image or mounting a volume) — different problem, different fix.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A pod is <code>Pending</code> on a cluster that looks busy but whose nodes show low CPU <em>usage</em> &mdash; what&rsquo;s the likely cause? <span class="sc-a">Over-sized <b>requests</b>: the scheduler packs by requested resources, not actual usage, so pods that request far more than they use make nodes appear full while CPU sits idle, leaving no node that can fit the new pod&rsquo;s requests; right-size requests (or add capacity) &mdash; the events in <code>kubectl describe</code> name the exact reason.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20pod%20pending%20scheduler%20requests%20taints%20affinity%20priority"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Why a pod is stuck Pending</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Pending vs ContainerCreating</span><span class="term">filter / score / bind</span><span class="term">requests not usage</span><span class="term">taints / tolerations</span><span class="term">affinity · topology spread</span><span class="term">unbound PVC</span><span class="term">describe events</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="k8s">
+      <div class="s-top"><span class="s-no">17</span><span class="s-tag">Kubernetes</span></div>
+      <h3>An image pull fails</h3>
+      <p class="why"><b>Why they ask</b><code>ImagePullBackOff</code> is a daily occurrence — it tests registry and auth understanding.</p>
+      <p class="gist"><b>Analogy</b> A delivery that keeps bouncing (ImagePullBackOff): either the address is wrong (bad tag), the courier lacks the key (no pull secret), the warehouse is unreachable (network), or you&rsquo;ve hit the daily pickup limit (rate limit).</p>
+      <div class="answer">
+        <p>The kubelet asks the runtime to pull the image; when that fails the container sits in <code>ErrImagePull</code>, then <code>ImagePullBackOff</code> as the kubelet retries with exponential backoff. The common causes: the tag or digest doesn't exist — a typo, or CI never pushed it; the registry needs credentials the pod doesn't have — a missing or wrong <code>imagePullSecret</code> for a private registry; the registry is unreachable — network policy, DNS, or a private registry the node can't route to; or you're <b>rate-limited</b>, the classic Docker Hub anonymous pull limit hitting a whole cluster's nodes from one egress IP.</p>
+        <p>The confusing version is &lsquo;it worked on the old nodes but not the new ones&rsquo; &mdash; usually a missing <code>imagePullSecret</code> on the pod&rsquo;s ServiceAccount or namespace, or a node that can&rsquo;t route to a private registry. Pulling by <b>digest</b> plus a <b>pull-through cache</b> (Harbor/ECR) removes both the &lsquo;tag moved under me&rsquo; and the Docker Hub rate-limit classes of failure.</p>
+        <p class="arch">The standards that prevent it: pull by <b>immutable digest</b>, not a mutable tag, so what you tested is what runs and nothing moves under you; <b>mirror or proxy-cache</b> images through your own registry — Harbor, ECR pull-through — so you're not hostage to Docker Hub limits or an upstream outage; and set <code>imagePullPolicy</code> deliberately. A private-registry credential failure is really a secrets problem, so it loops back to how <code>imagePullSecrets</code> are provisioned — ideally from your secrets manager, not pasted into manifests.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why does mirroring images through your own pull-through cache registry (rather than pulling from Docker Hub directly) prevent a whole class of cluster-wide failures? <span class="sc-a">All your nodes pulling from Docker Hub share one egress identity and hit anonymous <b>rate limits</b>, and you&rsquo;re exposed to upstream outages; a pull-through cache/mirror serves images from your own registry, so you&rsquo;re not rate-limited or hostage to an upstream being down &mdash; and pinning by digest ensures what you tested is exactly what runs.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20ImagePullBackOff%20ErrImagePull%20registry%20rate%20limit%20digest"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Why an image pull fails</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">ErrImagePull / ImagePullBackOff</span><span class="term">exponential backoff</span><span class="term">tag vs digest</span><span class="term">imagePullSecret</span><span class="term">Docker Hub rate limit</span><span class="term">pull-through cache</span><span class="term">imagePullPolicy</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="k8s">
+      <div class="s-top"><span class="s-no">18</span><span class="s-tag">Kubernetes</span></div>
+      <h3>A ConfigMap or Secret changes</h3>
+      <p class="why"><b>Why they ask</b>"Why didn't my config change take effect" is a daily gotcha most people get wrong.</p>
+      <p class="gist"><b>Analogy</b> Changing the recipe card on the wall doesn&rsquo;t change what&rsquo;s already cooking &mdash; the cooks read the recipe when they started their shift (startup); you have to actually send them back to re-read it (a rollout).</p>
+      <div class="answer">
+        <p>It depends entirely on how it's consumed. If the ConfigMap or Secret is <b>mounted as a volume</b>, the kubelet eventually updates the files in the pod in place — there's a propagation delay — but the app only benefits if it watches those files and reloads, and most apps read config once at startup and never notice. If it's injected as <b>environment variables</b>, the value is captured at container start and never updates — frozen until the pod restarts. Either way, changing the object does <b>not</b> restart pods on its own.</p>
+        <p>So to actually roll a config change you trigger a <b>rollout restart</b> of the Deployment, which cycles pods through the normal rolling update so they pick up the new values. A common pattern hashes the config into a pod-template annotation, so any change forces a new rollout automatically — that's what Helm's checksum annotation does.</p>
+        <p>Two gotchas worth banking: a ConfigMap mounted via <b>subPath</b> does <em>not</em> get the in-place update (only whole-volume mounts do), so those really need a restart; and marking ConfigMaps/Secrets <b>immutable</b> both protects against accidental edits and reduces API-server watch load. The config-hash-in-the-pod-annotation trick (what Helm&rsquo;s checksum does, or the Reloader controller) is what makes a change auto-roll.</p>
+        <p class="arch">The model to state plainly: Kubernetes deliberately doesn't couple config changes to workload restarts — that's your job, and doing it through a rollout gives you the same safety as a code deploy (readiness gates, rollback). For secrets I'd deliver them via something that handles rotation and restart — external-secrets or the Vault injector — rather than hand-editing raw Secrets, and I treat config as code: versioned in Git, applied through GitOps, never <code>kubectl edit</code>.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You edited a ConfigMap but the app&rsquo;s behaviour didn&rsquo;t change &mdash; give the two consumption modes and why each didn&rsquo;t pick it up. <span class="sc-a">As <b>env vars</b>, values are captured at container start and never update &mdash; frozen until the pod restarts; as a <b>mounted volume</b>, the files update in place after a delay, but only helps if the app watches and reloads them (most read config once at startup). Either way the object change doesn&rsquo;t restart pods &mdash; you must trigger a rollout restart.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20configmap%20secret%20change%20rollout%20restart%20env%20vs%20volume"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Why a config change did nothing</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">mounted volume vs env var</span><span class="term">in-place update + delay</span><span class="term">env frozen at start</span><span class="term">no auto-restart</span><span class="term">rollout restart</span><span class="term">config-hash annotation</span><span class="term">external-secrets / Vault rotation</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="k8s">
+      <div class="s-top"><span class="s-no">19</span><span class="s-tag">Kubernetes</span></div>
+      <h3>A namespace won't delete (stuck <code>Terminating</code>)</h3>
+      <p class="why"><b>Why they ask</b>Finalizers are a genuine gotcha that trips even experienced operators.</p>
+      <p class="gist"><b>Analogy</b> A document that won&rsquo;t leave the building until every department signs off (finalizers) &mdash; and if one department&rsquo;s clerk has quit (a dead controller), the document sits in the out-tray forever.</p>
+      <div class="answer">
+        <p>Deletion is two-phase because of <b>finalizers</b>. When you delete an object, the API server first sets a <code>deletionTimestamp</code> — the object goes into <code>Terminating</code> — and it isn't actually removed until its <b>finalizers</b> list is empty. A finalizer is a string that says "some controller has cleanup to do first" — detach a volume, deregister a load-balancer target, delete cloud resources. The responsible controller does its cleanup, then removes its finalizer, and only then does the object vanish. Deletion also <b>cascades</b> — deleting a Deployment garbage-collects its ReplicaSets and Pods through owner references, foreground or background.</p>
+        <p>The stuck case: a namespace sits in <code>Terminating</code> forever because some resource in it has a finalizer whose controller is gone or wedged — a broken CRD's operator is the classic — so nothing ever removes it. You diagnose by finding the resource with the lingering finalizer; the blunt fix is to remove the finalizer by hand, but that skips the cleanup it represented.</p>
+        <p>There are really two finalizer levels: a stuck <em>resource</em> inside the namespace whose controller is gone, and the namespace&rsquo;s own <code>kubernetes</code> finalizer handled by a controller that enumerates all API resource types &mdash; which stalls if an <b>aggregated APIService</b> (e.g. metrics-server&rsquo;s API) is unavailable, because it can&rsquo;t list what might still live in the namespace. So &lsquo;stuck Terminating&rsquo; often points at a broken API extension, not a rogue object.</p>
+        <p class="arch">Finalizers are the right pattern — they guarantee external cleanup runs before an object disappears, which is how you avoid leaking cloud resources. The operational lesson is that a dead operator becomes a deletion deadlock, so I treat "stuck Terminating" as a signal to go find the missing controller, not to reflexively force-remove finalizers and orphan the very resources they were protecting.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why is force-removing a finalizer to clear a stuck <code>Terminating</code> namespace usually the wrong first move? <span class="sc-a">The finalizer represents real cleanup that hasn&rsquo;t run &mdash; detaching a volume, deregistering a load-balancer target, deleting cloud resources &mdash; so stripping it lets the object vanish while <em>orphaning</em> those external resources; the right move is to find the missing/wedged controller (or unavailable APIService) and fix it so cleanup completes properly.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20namespace%20stuck%20terminating%20finalizer%20orphaned%20apiservice"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Why a namespace won&rsquo;t delete</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">deletionTimestamp · Terminating</span><span class="term">finalizer</span><span class="term">controller cleanup</span><span class="term">owner references</span><span class="term">cascading deletion</span><span class="term">stuck namespace</span><span class="term">orphaned resources</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="k8s">
+      <div class="s-top"><span class="s-no">20</span><span class="s-tag">Kubernetes</span></div>
+      <h3>You drain a node for maintenance</h3>
+      <p class="why"><b>Why they ask</b>The voluntary counterpart to "a node dies" — it tests PDBs and graceful eviction.</p>
+      <p class="gist"><b>Analogy</b> Closing a motorway lane for roadworks the safe way: first put up &lsquo;no entry&rsquo; (cordon), then wave existing cars off one at a time &mdash; but never drop below the minimum lanes the traffic needs (the PDB).</p>
+      <div class="answer">
+        <p><code>kubectl drain</code> does two things. First it <b>cordons</b> the node — marks it unschedulable — so no new pods land there. Then it <b>evicts</b> the existing pods through the Eviction API, which respects <b>PodDisruptionBudgets</b>: if evicting a pod would drop a workload below its minimum available replicas, the eviction blocks until a replacement is Ready elsewhere, so you never take the service below its floor. Evicted pods get the normal graceful termination — SIGTERM, preStop, grace period — and their controllers reschedule replacements onto other nodes. DaemonSet pods are skipped by default, and bare pods with no controller need <code>--force</code> because nothing will recreate them.</p>
+        <p>The PDB is the whole safety mechanism: an eviction that would take a workload below its <code>minAvailable</code> <em>blocks</em> until a replacement is Ready elsewhere &mdash; which is exactly what makes rolling node upgrades and autoscaler scale-down safe. The common snag is a singleton with <code>minAvailable: 1</code>, which blocks the drain forever &mdash; useful as a forcing function to go fix the single point of failure.</p>
+        <p class="arch">This is the difference between voluntary and involuntary disruption — a drain is planned, so unlike a crash it honors PDBs and waits for replacements, which is exactly what makes rolling node upgrades and autoscaler scale-down safe. The prerequisite is that workloads actually declare PDBs and run more than one replica spread across nodes; a singleton with a PDB of <code>minAvailable: 1</code> blocks the drain forever — which is a useful forcing function to go fix the single point of failure rather than a bug in drain.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> What&rsquo;s the difference between a node drain and a node crash, and why does only one of them respect PodDisruptionBudgets? <span class="sc-a">A drain is a <b>voluntary</b>, planned disruption, so it goes through the Eviction API and honours PDBs &mdash; blocking until replacements are Ready so the service never dips below its floor; a crash is an <b>involuntary</b> disruption with no chance to coordinate, so pods just die and controllers reschedule them, with no PDB guarantee during the gap.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubectl%20drain%20cordon%20eviction%20api%20pod%20disruption%20budget"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Draining a node safely</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">cordon (unschedulable)</span><span class="term">Eviction API</span><span class="term">PodDisruptionBudget</span><span class="term">graceful termination</span><span class="term">reschedule</span><span class="term">DaemonSet skipped</span><span class="term">voluntary disruption</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="k8s">
+      <div class="s-top"><span class="s-no">21</span><span class="s-tag">Kubernetes</span></div>
+      <h3>etcd loses quorum</h3>
+      <p class="why"><b>Why they ask</b>Pure platform-architect signal — etcd is the control plane's foundation.</p>
+      <p class="gist"><b>Analogy</b> A committee that can only make binding decisions with a majority present (quorum): lose too many members and it can&rsquo;t pass anything &mdash; the cluster&rsquo;s &lsquo;memory&rsquo; freezes, though work already underway keeps running.</p>
+      <div class="answer">
+        <p>etcd is the cluster's source of truth, a <b>Raft</b>-based distributed key-value store. Raft needs a <b>quorum</b> — a strict majority of members — to elect a leader and to commit any write. So in a three-member etcd you tolerate one failure (two is still a majority); lose two and there's no quorum: etcd can't commit writes, so the API server can't persist changes. The control plane effectively <b>freezes</b> — no new scheduling, no updates — though existing pods keep running, because the kubelets and the data plane don't depend on etcd being writable moment to moment.</p>
+        <p>A real operational gotcha beyond quorum: etcd&rsquo;s keyspace grows with every write and must be <b>compacted and defragmented</b>, or it hits its storage limit and goes <em>read-only</em> &mdash; a self-inflicted control-plane freeze with no node loss at all. And etcd is the API server&rsquo;s latency floor, so slow etcd disks make the whole control plane sluggish; it needs fast disks, low-latency peering, and regular snapshot backups.</p>
+        <p class="arch">This is why etcd runs in <b>odd</b> numbers — three or five — across failure domains: odd because a fourth member raises the quorum requirement without raising fault tolerance. The operational essentials I'd stress: etcd is latency-sensitive (fast disks, low-latency links between members); it must be backed up regularly, because losing it is losing the cluster's state, and disaster recovery is restore-from-snapshot. It also frames a scaling reality — the API server and etcd are the control plane's scaling limits, which is an argument for many smaller clusters over one giant one.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> In a 3-member etcd cluster, how many members can you lose and still serve writes, and why the odd number? <span class="sc-a">You can lose <b>one</b> (two of three is still a majority); lose two and there&rsquo;s no quorum, so no writes commit and the control plane freezes. Odd numbers are used because a 4th member raises the majority needed (3) without improving fault tolerance (still only 1) &mdash; you pay for a member that buys no extra resilience.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=etcd%20raft%20quorum%20leader%20election%20control%20plane%20kubernetes"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: What happens when etcd loses quorum</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Raft</span><span class="term">quorum (majority)</span><span class="term">odd members (3/5)</span><span class="term">leader election</span><span class="term">write commit</span><span class="term">control-plane freeze</span><span class="term">snapshot backup/restore</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="k8s">
+      <div class="s-top"><span class="s-no">22</span><span class="s-tag">Kubernetes</span></div>
+      <h3>A StatefulSet pod is rescheduled</h3>
+      <p class="why"><b>Why they ask</b>Stable identity plus storage — the stateful-workload question people fumble.</p>
+      <p class="gist"><b>Analogy</b> Numbered, named lockers (<code>web-0</code>, <code>web-1</code>) each with its own key and contents &mdash; move the occupant and they get the <em>same</em> locker number and the <em>same</em> belongings back, unlike interchangeable hot-desks (a Deployment&rsquo;s pods).</p>
+      <div class="answer">
+        <p>Unlike a Deployment's interchangeable pods, a StatefulSet gives each pod a stable, sticky identity: an <b>ordinal name</b> (<code>web-0</code>, <code>web-1</code>), a stable network identity via a <b>headless Service</b> so <code>web-0</code> always resolves to the same DNS name, and its own <b>PersistentVolumeClaim</b> that follows that identity. When <code>web-0</code> is rescheduled — node failure or a rolling update — the new pod reuses the same name and re-attaches the same PVC, so it comes back as the same member with the same data. Scaling and updates are <b>ordered</b> and one-at-a-time, and scale-down runs in reverse.</p>
+        <p>The catch is storage topology: a <b>ReadWriteOnce</b> volume can only attach to one node, so it must be detached from the dead node before the replacement can mount it — which is why StatefulSet recovery after a hard node failure can be slow or need intervention, since the old node must be confirmed dead, sometimes fenced, before the volume is safe to move.</p>
+        <p>Two details to know: <code>podManagementPolicy</code> chooses ordered (one-at-a-time, for quorum systems) vs parallel startup; and by default a StatefulSet&rsquo;s PVCs <em>survive</em> scale-down (so data isn&rsquo;t lost) &mdash; now tunable via <code>persistentVolumeClaimRetentionPolicy</code>. The hard part remains the <b>RWO</b> volume dance: it must be detached from the dead node (often after fencing) before the replacement can mount it, which is why stateful failover is inherently slower than stateless.</p>
+        <p class="arch">StatefulSets are for workloads where identity and storage matter — databases, Kafka, ZooKeeper — and stable identity plus per-pod PVC is exactly what those need. But I'd be clear that Kubernetes gives you the orchestration primitives, not the data safety: replication, quorum, and failover still live in the application or its operator, and the RWO detach/attach dance is precisely why stateful failover is inherently harder than stateless.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why is recovering a StatefulSet pod after a hard node failure often slower than recovering a stateless Deployment pod? <span class="sc-a">The pod&rsquo;s <b>ReadWriteOnce</b> volume can attach to only one node at a time, so it must be safely detached from the (possibly not-yet-confirmed-dead) old node &mdash; sometimes requiring fencing &mdash; before the replacement can mount it and come back as the same identity; a stateless pod has no such sticky storage, so it just reschedules.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20statefulset%20identity%20headless%20service%20PVC%20RWO%20reschedule"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a StatefulSet pod reschedules</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">stable ordinal identity</span><span class="term">headless Service DNS</span><span class="term">per-pod PVC</span><span class="term">ordered rollout</span><span class="term">RWO detach/attach</span><span class="term">node-failure fencing</span><span class="term">operators for stateful apps</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 5 · NETWORKING & MESH ===== -->
+  <section class="track" data-track="net">
+    <div class="track-head">
+      <div class="tno">Track 05 — The edge &amp; the mesh</div>
+      <h2>Networking &amp; service mesh</h2>
+      <p>The in-cluster networking layer above the load balancer: how Ingress and the Gateway API route north-south traffic, how a mesh sidecar owns east-west traffic, and how NetworkPolicy makes the network zero-trust.</p>
+    </div>
+
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">23</span><span class="s-tag">Networking</span></div>
+      <h3>An Ingress / Gateway routes a request</h3>
+      <p class="why"><b>Why they ask</b>To see if you can place it precisely against the load balancer and the API gateway.</p>
+      <p class="gist"><b>Analogy</b> A receptionist directory inside the building (Ingress rules) acted on by an actual receptionist (the ingress controller): the rules are just a list; the receptionist is the one who reads the visitor&rsquo;s destination (host/path) and walks them to the right office.</p>
+      <div class="answer">
+        <p>An Ingress — or its successor, the <b>Gateway API</b> — is a set of rules; the thing that acts on them is the <b>ingress controller</b>, an actual proxy running in the cluster: NGINX ingress, Envoy, or a cloud one. A request arrives at the controller, usually behind a cloud load balancer, which <b>terminates TLS</b> using a certificate from a Secret, then matches the request by <b>host and path</b> against the rules to pick the target Service, and forwards to one of that Service's ready pod endpoints — often straight to pod IPs rather than through the ClusterIP. It can also do path rewrites, header manipulation, and basic rate limiting depending on the controller.</p>
+        <p>Behind it usually sits a cloud load balancer (a Service of type LoadBalancer) getting traffic into the cluster, with the controller doing the L7 host/path routing and TLS termination (cert wired in by cert-manager). The move to the <b>Gateway API</b> is largely to escape annotation-sprawl and to split roles &mdash; platform owns GatewayClass/Gateway, app teams own HTTPRoute &mdash; which is cleaner for multi-tenant clusters.</p>
+        <p class="arch">I'd place it precisely, because interviewers probe the overlap: the cloud LB gets you to the cluster at L4/basic-L7, the ingress or Gateway does L7 host/path routing to Services inside, and an API gateway adds API-management concerns — auth, quotas — on top. They compose, not compete. I moved from NGINX Ingress to the <b>Gateway API</b> for its role separation — GatewayClass and Gateway owned by the platform team, HTTPRoute owned by app teams — which is cleaner for multi-tenant clusters, and because routing changes there are how I run blue-green cutovers at the routing layer.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Place the cloud load balancer, the ingress/Gateway, and an API gateway in order for a request &mdash; what does each do? <span class="sc-a">The <b>cloud LB</b> gets traffic into the cluster (L4/basic L7); the <b>ingress controller / Gateway</b> does L7 host/path routing to the right in-cluster Service and TLS termination; an <b>API gateway</b> adds API-management (auth, quotas, rate limits) on top. They compose in sequence rather than competing &mdash; each handles a different concern.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20ingress%20controller%20gateway%20api%20http%20routing%20tls"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How Ingress / Gateway routes</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Ingress vs Gateway API</span><span class="term">ingress controller (proxy)</span><span class="term">TLS termination from Secret</span><span class="term">host/path routing</span><span class="term">Service endpoints</span><span class="term">HTTPRoute · GatewayClass</span><span class="term">role separation</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">24</span><span class="s-tag">Service mesh</span></div>
+      <h3>A service-mesh sidecar intercepts traffic</h3>
+      <p class="why"><b>Why they ask</b>Mesh is a major platform topic — and it ties straight to mTLS service-to-service auth.</p>
+      <p class="gist"><b>Analogy</b> Giving every employee a personal translator-bodyguard (the sidecar) who handles all their calls: the employee speaks plainly, while the bodyguard quietly encrypts the line (mTLS), retries dropped calls, and files the paperwork &mdash; no app code changed.</p>
+      <div class="answer">
+        <p>In a sidecar mesh like Istio, every pod gets an injected proxy — <b>Envoy</b> — next to the app container. Traffic is <b>transparently redirected</b>: iptables rules (or, with an ambient/eBPF mesh, without a per-pod sidecar) send the pod's inbound and outbound traffic through the proxy instead of straight to the network. So the app just calls another service normally, but the request actually leaves through its sidecar, travels to the destination's sidecar, and is delivered locally. Because both ends are proxies, the mesh can do things the app never coded: automatic <b>mutual TLS</b> between services — identity via SPIFFE certs the mesh issues and rotates — plus retries, timeouts, circuit breaking, traffic splitting for canaries, and rich L7 telemetry, all driven by a control plane rather than app code.</p>
+        <p>The classic footgun is <b>startup ordering</b>: if the app container starts before its sidecar proxy is ready, early outbound calls fail &mdash; solved by native sidecar containers (or <code>holdApplicationUntilProxyStarts</code>). And mTLS is rolled out <code>PERMISSIVE</code> first (accept plaintext and mTLS) then flipped to <code>STRICT</code>, so you migrate without a hard cutover. The honest cost is latency and resources per pod, which is why ambient (sidecar-less) meshes exist.</p>
+        <p class="arch">The value is moving cross-cutting concerns — mTLS, retries, observability — out of every service and into the platform, uniformly and in any language. This is the pattern behind zero-trust service-to-service auth with automatic cert rotation, so teams stop managing certs by hand. The trade-off I'd name honestly is cost: a sidecar per pod adds latency, resource overhead, and operational complexity — which is exactly why ambient, sidecar-less meshes exist, and why for a small system a mesh can be over-engineering. North-south is the gateway; east-west is the mesh.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> What cross-cutting capability does a service mesh add between services <em>without any application code change</em>, and what&rsquo;s the main cost? <span class="sc-a">Automatic <b>mutual TLS</b> (identity-based, with certs the mesh issues and rotates) plus retries, timeouts, circuit breaking, traffic splitting, and L7 telemetry &mdash; all driven by the control plane, uniformly and in any language; the main cost is the per-pod sidecar&rsquo;s added latency, resource overhead, and operational complexity (which ambient/eBPF meshes aim to reduce).</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=service%20mesh%20istio%20sidecar%20envoy%20mtls%20traffic%20management"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a mesh sidecar intercepts traffic</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">sidecar proxy (Envoy)</span><span class="term">transparent iptables/eBPF redirect</span><span class="term">automatic mTLS (SPIFFE)</span><span class="term">retries / circuit breaking</span><span class="term">traffic splitting</span><span class="term">control plane</span><span class="term">ambient mesh · east-west</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">25</span><span class="s-tag">Networking</span></div>
+      <h3>A NetworkPolicy is applied</h3>
+      <p class="why"><b>Why they ask</b>Default-deny and CNI enforcement — the Kubernetes network-security mechanism.</p>
+      <p class="gist"><b>Analogy</b> A building that starts with every internal door unlocked; the first keycard rule you post on a room instantly locks <em>all</em> its doors except the ones you explicitly allow &mdash; and the locks only work if the building&rsquo;s security system (the CNI) actually supports keycards.</p>
+      <div class="answer">
+        <p>By default Kubernetes networking is wide open — any pod can talk to any pod. A <b>NetworkPolicy</b> changes that. It's a namespaced object that selects pods by label and declares allowed <b>ingress and egress</b> — which sources (by pod label, namespace, or IP block) may connect, on which ports. The key semantics: the moment any policy selects a pod, that pod flips to <b>default-deny</b> for the direction(s) the policy covers, and only explicitly allowed traffic passes. Policies are additive and allow-only — there's no explicit deny rule; you deny by not allowing. And they're enforced by the <b>CNI plugin</b> — Calico, Cilium — not by the API server, so if your CNI doesn't implement NetworkPolicy, the objects do nothing at all.</p>
+        <p>Key semantics to bank: policies are namespaced, additive, and allow-only (you deny by not allowing), they don&rsquo;t cover host-network pods, and a pod becomes default-deny only for the direction(s) a selecting policy covers. A practical baseline is a per-namespace default-deny plus an explicit allow for DNS egress &mdash; and L7-aware policy needs an identity-aware CNI like Cilium, not just L3/4.</p>
+        <p class="arch">The posture I target is zero-trust networking: a baseline default-deny per namespace, then explicit allows for the connections that should exist, so a compromised pod can't freely pivot across the cluster — that's lateral movement. I'd generate a default-deny plus DNS-allow baseline for every namespace as policy-as-code (this pairs with Kyverno's generate rules from Volume I), and reach for Cilium when I need L7-aware or identity-based policy. The gotcha to call out out loud: forgetting to allow DNS egress silently breaks everything, because pods can no longer resolve names.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> After applying a NetworkPolicy, pods in that namespace can no longer resolve DNS &mdash; what did the policy most likely forget? <span class="sc-a">To allow <b>egress to DNS</b> (CoreDNS on UDP/TCP 53): once any egress policy selects the pods they flip to default-deny for egress, so unless DNS is explicitly allowed, name resolution breaks and everything appears down &mdash; the classic default-deny gotcha; the baseline should pair default-deny with an explicit DNS-allow rule.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20network%20policy%20default%20deny%20cni%20calico%20cilium%20zero%20trust"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a NetworkPolicy takes effect</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">default-open → default-deny</span><span class="term">pod/namespace selectors</span><span class="term">ingress / egress</span><span class="term">allow-only (additive)</span><span class="term">CNI enforcement (Calico/Cilium)</span><span class="term">zero-trust · lateral movement</span><span class="term">DNS egress gotcha</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 6 · DELIVERY DEEPER ===== -->
+  <section class="track" data-track="cd">
+    <div class="track-head">
+      <div class="tno">Track 06 — Packaging &amp; change</div>
+      <h2>Delivery, deeper</h2>
+      <p>Below the pipeline: how an image is actually built, how Helm packages a release, how a canary self-decides with metrics, and the schema-migration discipline that makes zero-downtime and rollback truly safe.</p>
+    </div>
+
+    <article class="scenario" data-cat="cd">
+      <div class="s-top"><span class="s-no">26</span><span class="s-tag">Containers</span></div>
+      <h3>A container image is built</h3>
+      <p class="why"><b>Why they ask</b>Layer and cache fundamentals decide your build speed, image size, and attack surface.</p>
+      <p class="gist"><b>Analogy</b> A stack of transparent sheets (layers), each a diff on the one below: change a sheet near the bottom and every sheet above must be redrawn (cache busts) &mdash; so you put the rarely-changing sheets (dependencies) low and the fast-changing one (your code) on top.</p>
+      <div class="answer">
+        <p>A build reads the Dockerfile top to bottom, and each instruction that changes the filesystem creates a <b>layer</b> — a content-addressed diff stacked on the previous one. The builder caches layers: if an instruction and its inputs are unchanged, it reuses the cached layer, and <b>cache invalidation cascades</b> — the first instruction whose inputs changed invalidates it and every layer after. That's why <b>layer order matters</b>: you copy dependency manifests and install dependencies before copying your source, so a code change doesn't bust the expensive dependency layer. <b>Multi-stage</b> builds use a big toolchain image to compile, then copy just the artifact into a tiny runtime image, so the shipped image is small and carries no build tools. Modern BuildKit adds parallelism, better caching, and cache mounts.</p>
+        <p>Beyond ordering and multi-stage, modern builds pin the base image <b>by digest</b> for reproducibility, generate an <b>SBOM</b> at build time (feeding the later scan/sign), and ship <b>distroless or scratch</b> runtime images &mdash; no shell, tiny attack surface. BuildKit cache mounts speed dependency installs without baking them into a layer.</p>
+        <p class="arch">The standards I set: order instructions for cache efficiency; multi-stage to keep runtime images minimal — smaller attack surface, faster pulls, less to scan; pin base images by digest for reproducibility; run as non-root; and use a <code>.dockerignore</code> so the build context stays small. The image is an immutable, content-addressed artifact identified by digest — and that digest is what flows through the pipeline, what you deploy, and what you sign, which is where supply-chain provenance begins.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why do you copy dependency manifests and install dependencies <em>before</em> copying your application source in a Dockerfile? <span class="sc-a">Because the build cache invalidates from the first changed instruction downward &mdash; if source (which changes constantly) is copied before the dependency install, every code change busts the expensive dependency layer and reinstalls everything; copying manifests + installing deps first keeps that layer cached across code changes, so only the cheap copy-source layer rebuilds.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=docker%20image%20build%20layers%20cache%20multistage%20buildkit%20distroless"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a container image is built</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">layers (content-addressed)</span><span class="term">build cache + cascade</span><span class="term">layer ordering</span><span class="term">multi-stage build</span><span class="term">BuildKit</span><span class="term">minimal / non-root base</span><span class="term">digest immutability</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="cd">
+      <div class="s-top"><span class="s-no">27</span><span class="s-tag">Packaging</span></div>
+      <h3>A Helm chart is installed or upgraded</h3>
+      <p class="why"><b>Why they ask</b>The Kubernetes package-management mechanism — releases, revisions, rollback.</p>
+      <p class="gist"><b>Analogy</b> A fill-in-the-blanks template for a deployment, plus an undo button: Helm renders your values into real manifests and records each install as a numbered revision you can roll back to.</p>
+      <div class="answer">
+        <p>Helm is templating plus release management. A <b>chart</b> is templated Kubernetes YAML with a <b>values</b> file; on install or upgrade Helm renders the templates with your values into concrete manifests client-side, applies them to the cluster, and records the result as a <b>release revision</b> stored in-cluster. Because it tracks revisions, <code>helm rollback</code> can revert to a previous revision's manifests. Upgrades compute a three-way merge across the chart, the live state, and your values. <b>Hooks</b> run jobs at lifecycle points — a pre-upgrade migration, a post-install setup — and subchart dependencies are pulled in and templated together.</p>
+        <p>Two real-world edges: a failed upgrade can strand a release in <code>pending-upgrade</code>, needing a rollback or <code>--atomic</code> (which auto-rolls-back on failure); and Helm notoriously doesn&rsquo;t manage <b>CRD</b> upgrades well, so those are often handled out-of-band. In a GitOps world Helm is increasingly used purely as the <em>templating engine</em> whose rendered output Argo/Flux reconciles &mdash; getting packaging plus drift detection and audit.</p>
+        <p class="arch">Helm's strength is packaging and parameterizing a deployable unit so one chart serves dev, staging, and prod via values, with versioned, revisionable releases. The honest trade-offs: Go-templated YAML gets unreadable at scale, which is why some teams prefer Kustomize's overlays, or render the Helm output and commit it for GitOps rather than letting Helm apply directly. In an Argo CD or Flux world Helm is often used purely as the templating engine whose output the GitOps controller reconciles — so you get Helm's packaging together with GitOps's drift detection and audit.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> In an Argo CD / Flux setup, why is Helm often used only to <em>render</em> manifests rather than to <code>helm install</code> directly? <span class="sc-a">So you keep Helm&rsquo;s packaging and parameterization but hand the rendered manifests to the GitOps controller, which gives you drift detection, self-healing, and Git-as-audit-history that letting Helm apply directly wouldn&rsquo;t &mdash; one declarative source of truth and reconciliation instead of imperative in-cluster Helm state.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=helm%20chart%20values%20release%20revision%20rollback%20kustomize%20gitops"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a Helm chart installs & rolls back</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">chart + values</span><span class="term">client-side render</span><span class="term">release revision</span><span class="term">rollback</span><span class="term">three-way merge</span><span class="term">hooks · subcharts</span><span class="term">Kustomize · Helm-under-GitOps</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="cd">
+      <div class="s-top"><span class="s-no">28</span><span class="s-tag">Delivery</span></div>
+      <h3>A canary progresses with automated analysis</h3>
+      <p class="why"><b>Why they ask</b>It extends blue-green into the incremental, metric-driven case they love to probe.</p>
+      <p class="gist"><b>Analogy</b> Dipping a toe before diving: send 5% of swimmers in, watch them for a few minutes against the ones on the beach (baseline), and automatically pull everyone out at the first sign of trouble &mdash; no lifeguard staring at a screen.</p>
+      <div class="answer">
+        <p>A canary shifts a small slice of traffic — say 5% — to the new version while the rest stays on stable, then increases in steps. With a progressive-delivery controller like <b>Argo Rollouts</b> or Flagger, each step is gated by <b>automated analysis</b>: after routing 5%, it queries your metrics — error rate, p95 latency, from Prometheus — for a few minutes and compares the canary against the baseline. If the canary stays healthy it promotes to the next step (25, 50, 100%); if a metric breaches the threshold it <b>automatically rolls back</b>, shifting traffic off the canary and scaling it down, with no human in the loop. The traffic shifting itself is weighted routing at the ingress or mesh layer.</p>
+        <p>The make-or-break prerequisite is <b>enough traffic</b>: at 5% of a low-traffic service the canary&rsquo;s error/latency numbers aren&rsquo;t statistically meaningful, so analysis tells you nothing &mdash; canary suits high-traffic services. And since both versions run at once, changes must be backward-compatible, exactly as with rolling and blue-green; session affinity can also skew which users land on the canary.</p>
+        <p class="arch">Canary limits blast radius — a bad release hurts 5% of users for a few minutes instead of everyone — and automated analysis makes the rollback objective and fast, driven by SLIs rather than someone staring at a dashboard. The prerequisites I'd name: good, low-latency metrics and well-chosen guardrail SLIs; backward-compatible changes, since both versions run at once, same as rolling and blue-green; and enough traffic for the canary's metrics to be statistically meaningful — canarying a low-traffic service tells you almost nothing. It's the incremental sibling of blue-green: blue-green flips 0→100 for instant rollback, canary ramps with analysis to catch problems before full exposure.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why does automated canary analysis fail to protect a low-traffic service, and what makes canary better than a blind rolling update? <span class="sc-a">At low traffic, the small canary slice doesn&rsquo;t generate enough requests for its error/latency metrics to be statistically meaningful, so the pass/fail decision is noise; canary beats a blind rollout because it limits blast radius (a bad release hits ~5% briefly) and gates promotion on objective SLIs with automatic rollback &mdash; but only when there&rsquo;s enough traffic to measure.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=canary%20deployment%20argo%20rollouts%20flagger%20automated%20analysis%20slo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a canary self-decides</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">traffic slice · step promotion</span><span class="term">Argo Rollouts / Flagger</span><span class="term">automated analysis (SLIs)</span><span class="term">threshold + auto-rollback</span><span class="term">weighted routing</span><span class="term">blast radius</span><span class="term">baseline vs canary</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="cd">
+      <div class="s-top"><span class="s-no">29</span><span class="s-tag">Delivery</span></div>
+      <h3>A deploy ships a schema migration</h3>
+      <p class="why"><b>Why they ask</b>It's the data catch hiding under every zero-downtime deploy — and the reason rollback is safe or not.</p>
+      <p class="gist"><b>Analogy</b> Renovating a house while the family still lives in it: you add the new room first (expand), move everyone over, and only knock down the old room once no one&rsquo;s using it (contract) &mdash; never demolish a room someone&rsquo;s standing in.</p>
+      <div class="answer">
+        <p>The hazard is that during any rolling, blue-green, or canary deploy, the old and new code run against the <b>same database at the same time</b> — so a migration the new code needs must not break the old code still serving. The safe pattern is <b>expand-contract</b> (parallel change), done across separate deploys. <b>Expand</b>: make only additive, backward-compatible changes first — add the new nullable column or new table — while all code still works. Then deploy the new code that writes and reads the new shape, often <b>dual-writing</b> during transition. Only once nothing running depends on the old shape do you <b>contract</b> — a later deploy that drops the old column. A destructive change — rename, drop, add NOT NULL — is never in the same step as the code that assumes it.</p>
+        <p>You also decouple migration from deploy timing: run migrations as an explicit step — a job or hook, usually before the new code rolls — and make them idempotent and, for big tables, online and non-locking, because a schema change that locks a huge table is its own outage.</p>
+        <p>For big tables the migration itself is the risk &mdash; a naive <code>ALTER</code> can lock the table and cause an outage &mdash; so you use <b>online-DDL</b> tooling (gh-ost, pt-osc) that builds the change on a shadow copy and swaps it in. Timing matters too: additive migrations run <em>before</em> the new code, destructive ones a <em>later</em> deploy after nothing depends on the old shape; make them idempotent and forward-only.</p>
+        <p class="arch">The rule I set is that schema changes are always backward-compatible within a release and destructive changes are deferred to a later one — that's what makes zero-downtime deploys and instant rollback actually safe, because you can roll code back and the schema still fits it. I'd flag large-table migrations as a distinct risk (locking, replication lag) needing online-DDL tooling, and treat migrations as versioned, reviewed, forward-only artifacts.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why does expand-contract make zero-downtime deploys <em>and</em> rollback actually safe, given old and new code run against the same database at once? <span class="sc-a">Because every change within a release is additive and backward-compatible (add the new column/table first, dual-write), the old code keeps working during the rollout <em>and</em> the schema still fits the old code if you roll back; destructive changes (drop/rename) are deferred to a later release only after nothing running depends on the old shape &mdash; so no deploy or rollback ever leaves code and schema incompatible.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=zero%20downtime%20database%20schema%20migration%20expand%20contract%20online%20ddl"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Shipping a schema migration safely</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">expand-contract / parallel change</span><span class="term">additive-first · backward-compatible</span><span class="term">dual-write</span><span class="term">deferred destructive change</span><span class="term">migrate-before-deploy</span><span class="term">idempotent · online DDL</span><span class="term">rollback safety</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 7 · SECURITY DEEPER ===== -->
+  <section class="track" data-track="sec">
+    <div class="track-head">
+      <div class="tno">Track 07 — Trust &amp; supply chain</div>
+      <h2>Security, deeper</h2>
+      <p>Two mechanisms a platform owner is expected to explain cold: how a stateless token is trusted without calling home, and how you prove an image is safe before it ever runs.</p>
+    </div>
+
+    <article class="scenario" data-cat="sec">
+      <div class="s-top"><span class="s-no">30</span><span class="s-tag">Security</span></div>
+      <h3>A JWT is validated</h3>
+      <p class="why"><b>Why they ask</b>It bridges the API gateway and Spring-Security worlds — the stateless-auth mechanism.</p>
+      <p class="gist"><b>Analogy</b> A tamper-evident sealed envelope stamped by a trusted notary: anyone can open and read it (it&rsquo;s only signed, not secret), but they can instantly tell if it was altered or forged &mdash; without phoning the notary each time.</p>
+      <div class="answer">
+        <p>A JWT is a signed token in three parts — header, payload of <b>claims</b>, and signature — base64url-encoded and dot-separated. When a request arrives with a Bearer token, the resource server validates it <b>without calling the issuer</b>: it verifies the signature to prove the token wasn't tampered with and came from the trusted issuer. For asymmetric signing (RS256/ES256) it verifies with the issuer's <b>public key</b>, fetched from the issuer's <b>JWKS</b> endpoint — a published set of public keys — and cached, matched by the token's <code>kid</code> header. That <code>kid</code> match is what lets the issuer <b>rotate</b> signing keys without redeploying every service. Then it checks the claims: <code>exp</code> (not expired), <code>iss</code> (right issuer), <code>aud</code> (this API is the intended audience), plus any scopes or roles for authorization.</p>
+        <p>The key property is that it's <b>stateless</b> — no session store, no per-request call to the auth server — which is why it scales, but the flip side is that <b>revocation is hard</b>: a JWT is valid until it expires, so you keep lifetimes short and use refresh tokens, or maintain a denylist for the exceptional case.</p>
+        <p>Because a JWT is only <em>signed, not encrypted</em>, its payload is readable by anyone &mdash; never put secrets in it. The hard property is revocation: it&rsquo;s valid until <code>exp</code>, so you keep lifetimes short with rotating refresh tokens (and a denylist for emergencies). And you must <b>pin the expected algorithm</b> and always check <code>aud</code>/<code>iss</code>, because <code>alg:none</code> and key-confusion attacks exploit trusting the token&rsquo;s own word on how to verify it.</p>
+        <p class="arch">I'd frame the trade-off: stateless JWTs scale beautifully and are ideal for service-to-service and gateway-enforced auth, but "can't easily revoke" is the price, so short expiry plus JWKS rotation is the discipline. Validate at the edge (the API gateway) and re-validate in services for defense in depth, always check <code>aud</code> and <code>iss</code> — skipping them is a classic vulnerability — and pin the expected algorithm, because <code>alg:none</code> and key-confusion attacks are exactly why you never trust a token's own word on how to verify it.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> How does a resource server validate a JWT without calling the issuer on every request, and what does the <code>kid</code> header enable? <span class="sc-a">It verifies the signature using the issuer&rsquo;s <b>public key</b> fetched once from the issuer&rsquo;s JWKS endpoint and cached (then checks <code>exp</code>/<code>iss</code>/<code>aud</code>/scopes) &mdash; no per-request call to the issuer, which is what makes it stateless and scalable; the <code>kid</code> (key ID) header tells it which published key to use, so the issuer can <b>rotate</b> signing keys without redeploying every service.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=JWT%20validation%20signature%20JWKS%20kid%20rotation%20exp%20aud%20alg%20none"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a JWT is validated statelessly</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">header / claims / signature</span><span class="term">Bearer token</span><span class="term">signature verification</span><span class="term">JWKS + kid rotation</span><span class="term">RS256 asymmetric</span><span class="term">exp / iss / aud</span><span class="term">stateless (hard revocation)</span><span class="term">alg pinning</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="sec">
+      <div class="s-top"><span class="s-no">31</span><span class="s-tag">Supply chain</span></div>
+      <h3>An image scan gates admission</h3>
+      <p class="why"><b>Why they ask</b>It deepens security into the supply chain and ties signing to Kyverno admission.</p>
+      <p class="gist"><b>Analogy</b> A food-safety check done twice: the kitchen inspects ingredients before cooking (scan in CI) and stamps the dish with a tamper-proof seal (signing); the waiter at the pass refuses to serve any plate without a valid seal and a passing-inspection sticker (admission verification).</p>
+      <div class="answer">
+        <p>Two things happen at two points. In the pipeline, after the image is built, a <b>scanner</b> — Trivy, Grype — inspects it: it reads the image's <b>SBOM</b>, the software bill of materials listing every package and version, and matches those against vulnerability databases (CVEs), failing the build on, say, criticals. The build also <b>signs</b> the image — cosign produces a cryptographic signature and attestations that say this image was built by this pipeline from this source — stored alongside it. Then at deploy time an admission controller — Kyverno, or a Sigstore policy controller — <b>verifies at the gate</b>: is this image signed by a trusted key, does it carry a passing-scan attestation, and it blocks the pod if not. So provenance is checked twice: shift-left in CI, and enforced at admission so nothing unsigned or unscanned ever runs.</p>
+        <p>Two things to add: a CI-time scan is a <b>snapshot</b> &mdash; new CVEs are disclosed after deploy &mdash; so mature setups add <b>continuous/registry re-scanning</b> and runtime scanning, and re-gate; and <b>VEX</b> (exploitability statements) cuts the noise of unreachable CVEs so teams don&rsquo;t drown in findings. SLSA formalises the provenance levels you&rsquo;re attesting to.</p>
+        <p class="arch">This is supply-chain security — the concern that you must trust not just your own code but everything that went into the artifact and the path it took. The controls I'd set: SBOM generation and scanning as a pipeline gate; signing and attestation for provenance; admission-time verification (<code>verifyImages</code> in Kyverno) so the cluster only runs images that are signed and scanned, with frameworks like SLSA formalizing the levels; and pulling only from a trusted internal registry. It ties straight back to the Kyverno admission story and to immutable digests — because you sign and admit a specific digest, never a movable tag.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Provenance is checked at two points in this flow &mdash; name them and why both are needed. <span class="sc-a">Shift-left in <b>CI</b> (scan the image against CVEs via its SBOM, and sign it with attestations) so problems are caught early; and at <b>admission</b>, where a controller (Kyverno/Sigstore policy) verifies the image is signed by a trusted key and carries a passing-scan attestation before it runs &mdash; so nothing unsigned or unscanned can be deployed even if CI is bypassed; defence in depth across build and deploy.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=container%20image%20scanning%20SBOM%20cosign%20signing%20admission%20verify%20SLSA"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How an image scan gates admission</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">scan (Trivy/Grype)</span><span class="term">SBOM · CVE matching</span><span class="term">cosign signing + attestation</span><span class="term">admission verifyImages</span><span class="term">provenance</span><span class="term">shift-left + enforce</span><span class="term">SLSA · trusted registry</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="sec">
+      <div class="s-top"><span class="s-no">32</span><span class="s-tag">Security</span></div>
+      <h3>An OAuth2 / OIDC login flow runs</h3>
+      <p class="why"><b>Why they ask</b>It&rsquo;s the &lsquo;how does login actually work&rsquo; question that sits one level below JWTs &mdash; and bridges the gateway, Spring Security, and SSO.</p>
+      <p class="gist"><b>Analogy</b> A nightclub that checks IDs at a separate, trusted ID booth (the identity provider): the bouncer (your app) never sees your actual ID card or password &mdash; the booth verifies you and hands the bouncer a signed wristband (tokens) saying &lsquo;admit this person, these areas.&rsquo;</p>
+      <div class="answer">
+        <p><b>OAuth2</b> is a delegation protocol (grant an app limited access on your behalf); <b>OIDC</b> layers authentication (who you are) on top. The secure default is the <b>authorization-code flow with PKCE</b>. The app redirects the user to the <b>identity provider</b> (Okta, Entra, Keycloak) with a request and a PKCE challenge; the user authenticates <em>there</em> (the app never sees the password); the IdP redirects back with a short-lived <b>authorization code</b>; the app exchanges that code (plus the PKCE verifier) at the token endpoint for an <b>ID token</b> (who the user is, OIDC), an <b>access token</b> (what they may do, for calling APIs), and usually a <b>refresh token</b>.</p>
+        <p>From there it connects to the JWT story: the access token is typically a JWT the resource server/API gateway validates statelessly (signature via JWKS, <code>exp</code>/<code>iss</code>/<code>aud</code>, scopes). <b>PKCE</b> matters because it binds the code to the client that started the flow, defeating code-interception attacks &mdash; which is why it&rsquo;s now recommended for <em>all</em> clients, not just mobile. The scopes and audience limit what the token can do, enforcing least privilege.</p>
+        <p class="arch">I&rsquo;d insist on the authorization-code-plus-PKCE flow everywhere and treat the identity provider as the single source of auth, so apps never handle passwords and SSO/MFA are centralized. The access token (a JWT) is then validated at the gateway and re-validated in services (defence in depth), always checking <code>aud</code> and <code>iss</code> and pinning the algorithm. The trade-offs to name: short access-token lifetimes with refresh-token rotation to bound a leak, and never using the legacy implicit or password-grant flows, which expose tokens or credentials &mdash; this is exactly the OAuth/JWT/RBAC chain a platform&rsquo;s API security rests on.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> In the authorization-code flow, what does the app receive from the redirect, and why exchange it for tokens instead of getting tokens directly &mdash; and what does PKCE add? <span class="sc-a">It receives a short-lived, single-use <b>authorization code</b>, which it exchanges server-to-server (with its credentials + PKCE verifier) at the token endpoint for the ID/access/refresh tokens &mdash; so the tokens never travel through the browser redirect where they could be intercepted; <b>PKCE</b> binds the code to the client that initiated the flow, so a stolen code can&rsquo;t be redeemed by an attacker (defeating code-interception).</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=oauth2%20oidc%20authorization%20code%20flow%20pkce%20access%20token%20id%20token"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How an OAuth2 / OIDC login works</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">OAuth2 (authz) vs OIDC (authn)</span><span class="term">authorization-code flow</span><span class="term">PKCE</span><span class="term">identity provider (never sees password)</span><span class="term">ID / access / refresh tokens</span><span class="term">scopes & audience</span><span class="term">token = JWT validated downstream</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <p class="noresult" id="noresult">No scenarios match that. Clear the search or pick another track.</p>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>How to rehearse:</b> read each answer aloud once at pace — the mechanism paragraphs, then the architect layer. Time yourself; each should land in 2–3 minutes.<br>
+    This is Volume II — the observability, data, agentic, and deep-platform layer. Volume I covers the request path, the control plane, and Linux fundamentals. Filter by track to drill one area at a time.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  var q=document.getElementById('q');
+  var chips=Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var scenarios=Array.prototype.slice.call(document.querySelectorAll('.scenario'));
+  var sections=Array.prototype.slice.call(document.querySelectorAll('section.track'));
+  var countEl=document.getElementById('count');
+  var activeCat='all';
+
+  scenarios.forEach(function(s){ s._text=(s.textContent||'').toLowerCase(); });
+
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase();
+    var shown=0;
+    scenarios.forEach(function(s){
+      var okCat=activeCat==='all' || s.getAttribute('data-cat')===activeCat;
+      var okText=!term || s._text.indexOf(term)!==-1;
+      var vis=okCat && okText;
+      s.hidden=!vis;
+      if(vis) shown++;
+    });
+    sections.forEach(function(sec){
+      var any=Array.prototype.some.call(sec.querySelectorAll('.scenario'),function(s){return !s.hidden;});
+      sec.hidden=!any;
+    });
+    countEl.innerHTML='<b>'+shown+'</b> shown';
+    document.body.classList.toggle('empty', shown===0);
+  }
+
+  chips.forEach(function(c){
+    c.addEventListener('click',function(){
+      activeCat=c.getAttribute('data-cat');
+      chips.forEach(function(x){x.setAttribute('aria-pressed', x===c ? 'true':'false');});
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+})();
+</script>
+
+</body>
+</html>

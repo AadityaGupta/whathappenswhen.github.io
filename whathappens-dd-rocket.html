@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>The Rocket Equation — Why Reaching Orbit Is a Mass-Ratio Problem · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#4A4F9E; --accent-ink:#FFFFFF; --accent-wash:#E8E9F6;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#9A9EE4; --accent-ink:#241405; --accent-wash:#1D1E33;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#9A9EE4; --accent-ink:#241405; --accent-wash:#1D1E33;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 04 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>The Rocket Equation: Why Reaching Orbit Is a Mass-Ratio Problem</h1>
+    <p class="dek">In space there is nothing to push against, so you move only by throwing mass away &mdash; and because the propellant must accelerate the propellant above it, the price of speed is exponential, which is the whole reason a rocket is mostly fuel and throws itself away in pieces.</p>
+    <div class="meta">
+      <span>&approx; 17 min read</span>
+      <span>rockets · propulsion · space systems</span>
+      <span>companion to <b>DSA in Embedded, Drones, Robotics, Marine &amp; Space</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">To reach low orbit you have to change your velocity by roughly eight kilometres a second and hold onto it &mdash; and you must do it in a place with no road to grip, no air to bite, nothing at all to push against. A rocket&rsquo;s only lever is the stuff it carries: it throws propellant backward very fast and recoils forward. That single fact, pushed through one line of bookkeeping, produces an equation of startling consequence &mdash; the velocity you gain depends not on how much fuel you carry but on the <em>logarithm</em> of how much, which means the cost of speed compounds exponentially. It is why a launch vehicle is about ninety-five percent propellant by mass, why no single-stage rocket has ever flown a payload to orbit, and why every orbital rocket ever built sheds itself in pieces on the way up. This piece builds that equation from the one fact, then turns to the half the textbooks skip: how you actually size a launcher, what makes a design fail to &ldquo;close,&rdquo; how the logarithm shapes every choice on the vehicle, and the things that only bite you when the numbers meet real hardware.</p>
+
+    <h2><span class="sn">1</span>The constraint: nothing to push against, so you throw mass</h2>
+    <p>Start with where you are. A car pushes on the road, a propeller and a jet push on the air, a swimmer pushes on the water &mdash; every everyday way of accelerating works by shoving against something that stays behind. In space there is no road and no air; the only thing within reach is the ship itself and whatever it brought along. Newton&rsquo;s third law is the entire toolkit: to gain momentum in one direction you must give equal and opposite momentum to something else. So you carry propellant and hurl it out the back at high speed; the ship recoils forward. There is no other mechanism. A rocket does not &ldquo;push on its exhaust&rdquo; the way a car pushes on the road &mdash; it simply throws mass away and keeps the recoil.</p>
+    <p>That reframes the whole enterprise as an accounting problem. Every bit of speed you want is bought by throwing away mass, and the two things you can trade are <em>how much</em> mass you throw and <em>how fast</em> you throw it. The sharp question &mdash; the one the rest of the piece answers &mdash; is simple to state: for a given tankful of propellant expelled at a given speed, how much velocity change, how much <b>&Delta;<i>v</i></b>, does the ship actually get?</p>
+
+    <h2><span class="sn">2</span>The reframe: momentum bookkeeping, one differential at a time</h2>
+    <p>Don&rsquo;t think about the whole burn at once &mdash; think about one instant of it. At some moment the ship (fuel still aboard) has mass <span class="m"><i>m</i></span> and velocity <span class="m"><i>v</i></span>. In a tiny slice of time it expels a small lump of propellant of mass <span class="m">|d<i>m</i>|</span> at exhaust velocity <span class="m"><i>v</i><sub>e</sub></span> <em>relative to the ship</em>, and in reaction the ship&rsquo;s velocity ticks up by <span class="m">d<i>v</i></span>. Momentum is conserved for the ship-plus-lump system, so the forward momentum the ship gains equals the backward momentum carried off by the lump:</p>
+    <div class="eq"><span class="m"><i>m</i> d<i>v</i> = &minus;<i>v</i><sub>e</sub> d<i>m</i></span><span class="lbl">d<i>m</i> &lt; 0: the ship is losing mass</span></div>
+    <p>The minus sign is doing honest work: <span class="m">d<i>m</i></span> is <em>negative</em> because the ship&rsquo;s mass falls as it burns, so <span class="m">&minus;<i>v</i><sub>e</sub> d<i>m</i></span> comes out positive &mdash; a forward kick. Now stop looking at one instant and add them all up. Rearrange to <span class="m">d<i>v</i> = &minus;<i>v</i><sub>e</sub> d<i>m</i>/<i>m</i></span> and integrate from the fuelled mass <span class="m"><i>m</i><sub>0</sub></span> down to the empty (burnout) mass <span class="m"><i>m</i><sub>f</sub></span>. The integral of <span class="m">d<i>m</i>/<i>m</i></span> is a logarithm, and out drops Konstantin Tsiolkovsky&rsquo;s 1903 result:</p>
+    <div class="eq"><span class="m">&Delta;<i>v</i> = <i>v</i><sub>e</sub> ln <span class="frac"><span class="nu"><i>m</i><sub>0</sub></span><span><i>m</i><sub>f</sub></span></span></span><span class="lbl">the Tsiolkovsky equation</span></div>
+    <p>Two features already stand out. The velocity gain depends only on the <em>ratio</em> of full to empty mass, not on the absolute size of the rocket &mdash; a model rocket and a Saturn V with the same mass ratio and the same exhaust speed get the same <span class="m">&Delta;<i>v</i></span>. And it depends on that ratio through a <b>logarithm</b>, which is the whole drama of the subject, as the next section makes concrete. One piece of vocabulary before we go on: engineers rarely quote <span class="m"><i>v</i><sub>e</sub></span> directly. They quote <b>specific impulse</b> <span class="m"><i>I</i><sub>sp</sub> = <i>v</i><sub>e</sub>/<i>g</i><sub>0</sub></span> in seconds, where <span class="m"><i>g</i><sub>0</sub></span> = 9.81 m/s&sup2; is just a conversion constant &mdash; a measure of how much impulse you get per unit weight of propellant. It is the engine&rsquo;s headline efficiency number, and since <span class="m"><i>v</i><sub>e</sub> = <i>I</i><sub>sp</sub> <i>g</i><sub>0</sub></span>, you can read the equation either way.</p>
+
+    <h2><span class="sn">3</span>The core result: the tyranny of the logarithm</h2>
+    <p>Everything the rest of rocketry fights about is contained in one line, so it is worth setting apart:</p>
+    <div class="key">
+      <span class="kl">The result the whole field is organised around</span>
+      <div class="eq"><span class="m">&Delta;<i>v</i> = <i>v</i><sub>e</sub> ln <span class="frac"><span class="nu"><i>m</i><sub>0</sub></span><span><i>m</i><sub>f</sub></span></span> = <i>I</i><sub>sp</sub> <i>g</i><sub>0</sub> ln <span class="frac"><span class="nu"><i>m</i><sub>0</sub></span><span><i>m</i><sub>f</sub></span></span></span></div>
+      <p>The velocity you can gain is the exhaust speed times the logarithm of the mass ratio. Faster exhaust helps linearly; more propellant helps only logarithmically &mdash; and that asymmetry decides almost everything.</p>
+    </div>
+    <p>Sit with the logarithm, because it is the villain of the story. To go faster you need <em>exponentially</em> more propellant, and the reason is physical, not mathematical sleight of hand: the propellant you add to go faster must itself be carried and accelerated by the propellant beneath it, which in turn needs its own propellant to move, and so on down the stack. Each extra <span class="m"><i>v</i><sub>e</sub></span> of <span class="m">&Delta;<i>v</i></span> does not <em>add</em> a fixed slug of fuel &mdash; it <em>multiplies</em> the mass ratio by <span class="m"><i>e</i></span> (&approx; 2.72). Invert the equation and the cruelty is explicit: the mass ratio you need is <span class="m"><i>m</i><sub>0</sub>/<i>m</i><sub>f</sub> = exp(&Delta;<i>v</i>/<i>v</i><sub>e</sub>)</span> &mdash; an exponential in the very thing you are trying to buy. Want twice the <span class="m">&Delta;<i>v</i></span>? You must <em>square</em> the mass ratio, not double it.</p>
+
+    <div class="simwrap">
+      <div class="simcap">The tyranny of the logarithm — &Delta;v climbs, but only as ln of the mass ratio</div>
+      <canvas class="sim" data-sim="rocketeq" data-c="#4A4F9E" aria-label="logarithmic curve of delta-v versus mass ratio from the Tsiolkovsky rocket equation"></canvas>
+      <div class="ctrls" data-sim="rocketeq"></div>
+    </div>
+    <p class="simnote">Drag the <em>mass ratio</em> <span class="m"><i>m</i><sub>0</sub>/<i>m</i><sub>f</sub></span> and watch <span class="m">&Delta;<i>v</i> = <i>v</i><sub>e</sub> ln(<i>m</i><sub>0</sub>/<i>m</i><sub>f</sub>)</span> crawl up the curve. The first few units of mass ratio buy enormous speed; after that the curve flattens brutally &mdash; each additional <span class="m"><i>v</i><sub>e</sub></span> of <span class="m">&Delta;<i>v</i></span> costs you another <em>factor of <span class="m"><i>e</i></span></em> in mass ratio. Raise the <em>exhaust velocity</em> instead and the whole curve lifts in proportion: that is why engineers will trade almost anything for a few more seconds of <span class="m"><i>I</i><sub>sp</sub></span>.</p>
+
+    <div class="limit">
+      <b>Limit check — read the equation at its ends</b>
+      Three sanity checks pin the physics down. <b>No propellant</b> (<span class="m"><i>m</i><sub>f</sub> &rarr; <i>m</i><sub>0</sub></span>): the mass ratio is 1, <span class="m">ln 1 = 0</span>, and <span class="m">&Delta;<i>v</i> &rarr; 0</span> &mdash; an empty rocket goes nowhere, as it must. <b>One exhaust-velocity of &Delta;v</b> (<span class="m"><i>m</i><sub>0</sub>/<i>m</i><sub>f</sub> = <i>e</i></span>): here <span class="m">&Delta;<i>v</i></span> equals exactly <span class="m"><i>v</i><sub>e</sub></span> &mdash; and the price is steep, because <span class="m"><i>m</i><sub>f</sub>/<i>m</i><sub>0</sub> = 1/<i>e</i> &approx; 0.37</span> means you burned roughly <b>63% of your entire launch mass</b> just to gain a single exhaust-speed. <b>All propellant, no structure</b> (<span class="m"><i>m</i><sub>f</sub> &rarr; 0</span>): <span class="m">&Delta;<i>v</i> &rarr; &infin;</span> &mdash; the equation says infinite speed is possible, which is exactly the fantasy real hardware kills. Tanks, engines, plumbing and payload all have mass, so <span class="m"><i>m</i><sub>f</sub></span> can never reach zero. That floor on the empty mass is the hinge the whole next section turns on.</p>
+    </div>
+
+    <h2><span class="sn">4</span>The consequence: why rockets throw themselves away in pieces</h2>
+    <p>Real structure is the villain&rsquo;s accomplice. A stage is not just propellant; it is tanks to hold it, engines to burn it, pumps, plumbing, avionics and a skin to keep it rigid &mdash; and all of that is dead weight once the tanks run dry. Capture it in one number, the <b>structural coefficient</b> <span class="m">&epsilon; = <i>m</i><sub>dry</sub> / (<i>m</i><sub>dry</sub> + <i>m</i><sub>prop</sub>)</span>, the fraction of a fuelled stage that is <em>not</em> propellant. Good engineering pushes <span class="m">&epsilon;</span> down to roughly <b>0.06&ndash;0.12</b> &mdash; a stage that is six to twelve percent hardware, the rest fuel. It never reaches zero, and that is the problem.</p>
+    <p>Now put numbers on the target. Reaching low Earth orbit takes a <span class="m">&Delta;<i>v</i></span> of about <b>9.4 km/s</b> &mdash; roughly 7.8 km/s of actual orbital velocity plus another 1.5&ndash;2 km/s eaten by gravity, drag and steering on the way up (more on those losses later). A good chemical engine gives <span class="m"><i>I</i><sub>sp</sub> &approx; 350 s</span>, so <span class="m"><i>v</i><sub>e</sub> &approx; 3.4 km/s</span>. The mass ratio required is <span class="m">exp(9.4/3.4) &approx; 16</span> &mdash; the rocket must be about <b>94% propellant</b> by mass (<span class="m">1 &minus; 1/16</span>), leaving six percent for everything else: structure, engines <em>and</em> payload combined.</p>
+    <p>Here is where the structural floor bites. Ask a single stage to do the whole job carrying zero payload &mdash; the most generous case imaginable. Its very best mass ratio is <span class="m">1/&epsilon;</span> (all the non-propellant mass is unavoidable structure), so the most <span class="m">&Delta;<i>v</i></span> a single stage can ever produce is:</p>
+    <div class="eq"><span class="m">&Delta;<i>v</i><sub>SSTO,max</sub> = <i>v</i><sub>e</sub> ln(1/&epsilon;) &approx; 3.4 &times; ln(12.5) &approx; 8.6 km/s</span><span class="lbl">&epsilon; = 0.08, zero payload</span></div>
+    <p>Eight-point-six against a requirement of nine-point-four &mdash; a <b>single stage falls short of orbit even with no payload at all</b>, and that gap is <em>structural</em>, not a question of adding more fuel: more fuel means bigger tanks, which means more dead mass, which the logarithm punishes. This is the wall the single-stage-to-orbit dream keeps hitting. The escape is almost embarrassingly direct: <b>staging</b>. Build the rocket in sections, and the instant a section&rsquo;s tanks are dry, throw it away &mdash; its now-useless engines and tanks stop riding along as dead weight the upper stages have to keep accelerating. Because <span class="m">&Delta;<i>v</i></span> simply <em>adds</em> across stages (each stage starts fresh with its own full/empty ratio on top of the speed it inherited), two stages comfortably clear the 9.4 km/s to LEO while still delivering a few percent of liftoff mass as payload. That is the entire reason every orbital rocket in history stages: not elegance, but the only way around a logarithm and a structural floor that together make a single stage impossible.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Why one stage can&rsquo;t reach orbit — payload fraction vs number of stages</div>
+      <canvas class="sim" data-sim="staging" data-c="#4A4F9E" aria-label="payload fraction to orbit versus number of stages, showing single stage to orbit falling short"></canvas>
+      <div class="ctrls" data-sim="staging"></div>
+    </div>
+    <p class="simnote">Hold the orbital <span class="m">&Delta;<i>v</i></span> target fixed and vary the <em>number of stages</em>. At <b>one</b> stage the achievable payload fraction sits at zero or below &mdash; SSTO cannot close even empty. Split the same vehicle into <b>two</b> and a positive payload fraction appears (a few percent); a <b>third</b> stage adds a little more and then diminishing returns set in, as each new stage brings its own structure and separation hardware. Nudge the structural coefficient <span class="m">&epsilon;</span> or the exhaust velocity and watch the whole feasibility picture shift &mdash; staging is the lever that turns an impossible <span class="m">&Delta;<i>v</i></span> into a payload.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives in the design, and how a design fails</h2>
+    <p>In mission design the rocket equation is not an afterthought you check at the end &mdash; it is the <em>first</em> thing you compute, and it governs everything downstream. The move is to build a <b>&Delta;<i>v</i> budget</b>: list every maneuver the vehicle must perform &mdash; launch to orbit, orbit raising, plane changes, the landing or capture burn, deorbit, and a margin for the unexpected &mdash; and add up the <span class="m">&Delta;<i>v</i></span> cost of each. That total <span class="m">&Delta;<i>v</i></span> goes into the equation and comes out as a required mass ratio, which fixes the propellant mass, which fixes the vehicle size. Mass ratio is the hinge between &ldquo;what the mission needs&rdquo; and &ldquo;how big the rocket is.&rdquo; When a design goes wrong, it announces itself in a short, recognisable vocabulary:</p>
+    <dl class="speclist">
+      <dt>The design won&rsquo;t &ldquo;close&rdquo; &mdash; payload shrinks to nothing as you grow the rocket</dt><dd>The <span class="m">&Delta;<i>v</i></span> budget exceeds what the mass ratio can deliver, so every kilo of extra fuel is almost entirely eaten by its own tankage. You must change the architecture: <b>add a stage</b>, raise <span class="m"><i>I</i><sub>sp</sub></span>, cut dry mass (<span class="m">&epsilon;</span>), cut payload, or accept a lower orbit. More fuel alone never fixes it.</dd>
+      <dt>Rocket barely leaves the pad; huge gravity losses</dt><dd>Liftoff <b>thrust-to-weight is too low</b> &mdash; below about 1.2. Every second spent hovering is pure gravity loss; you need more thrust or less mass, not more <span class="m"><i>I</i><sub>sp</sub></span>.</dd>
+      <dt>Upper stage underperforms versus its spec</dt><dd>Usually <b>sea-level vs vacuum <span class="m"><i>I</i><sub>sp</sub></span></b>: a nozzle sized for vacuum is being quoted (or run) in the wrong regime, or the nozzle expansion ratio is mismatched to the altitude it actually fires at.</dd>
+      <dt>Payload fraction is tiny &mdash; only 2&ndash;4%</dt><dd><b>That is normal for LEO, not a bug.</b> The logarithm plus the structural floor caps orbital payload fractions in the low single digits for chemical rockets. If you expected 20%, you misread the equation, not the design.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How the logarithm shapes the whole vehicle</h2>
+    <p>Because <span class="m">&Delta;<i>v</i></span> depends on <span class="m"><i>I</i><sub>sp</sub></span> and <span class="m">&epsilon;</span> through a logarithm and an exponential, small improvements in either produce <em>outsized</em> gains in payload &mdash; and that single fact drives the culture of the whole field. Engineers fight for every second of specific impulse and every kilogram of dry mass, because near the closing point a few percent off the structure can double the payload. &ldquo;<b>Mass growth is the enemy</b>&rdquo; is not a slogan; it is the direct reading of an exponential. The same sensitivity decides the big architectural forks. It drives <b>propellant choice</b>: liquid hydrogen gives the highest <span class="m"><i>I</i><sub>sp</sub></span> (~450 s) but is bulky and cryogenic and boils off, forcing big insulated tanks that eat the <span class="m"><i>I</i><sub>sp</sub></span> advantage back as dry mass; kerosene and methane are denser and nearly storable, trading some <span class="m"><i>I</i><sub>sp</sub></span> for small, light tanks; hypergolics are storable for years but toxic and modest. It sets the <b>staging count</b> &mdash; how many times you&rsquo;re willing to pay separation hardware to shed dead structure. And it frames the <b>reusability trade</b>: bringing a booster back costs propellant for the return burns and extra dry mass for legs, grid fins and margins &mdash; a payload hit of perhaps 30&ndash;40% &mdash; which the logarithm makes painful, yet recovering the most expensive piece of the rocket can still slash cost per flight. Ultimately the equation decides the hardest question of all: whether a given mission is <em>feasible</em>, before a single bolt is drawn.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>The equation governs anything that maneuvers by expelling mass: launch vehicles and their upper stages, satellite station-keeping and orbit raising, landers, interplanetary transfers, and the deorbit burn at end of life. The propulsion choice follows the mission through the same equation &mdash; <b>electric propulsion</b>, for instance, reaches <span class="m"><i>I</i><sub>sp</sub></span> of 2000&ndash;3000 s (a spectacular mass-ratio bargain) but produces only milli-newtons of thrust, which makes it superb for spreading a large <span class="m">&Delta;<i>v</i></span> over months in space and useless for fighting gravity off a pad. When you size or select a system, these are the parameters that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Specific impulse <span class="m"><i>I</i><sub>sp</sub></span></dt><dd>The engine-and-propellant efficiency (<span class="m"><i>v</i><sub>e</sub> = <i>I</i><sub>sp</sub> <i>g</i><sub>0</sub></span>). Quote it in the right regime &mdash; sea-level for a first stage, vacuum for an upper stage.</dd>
+      <dt>Thrust &amp; thrust-to-weight</dt><dd>Must exceed <b>1 at liftoff</b> or you don&rsquo;t fly; a first stage typically runs <b>1.2&ndash;1.4</b>. Upper stages can run below 1 because they ignite already moving.</dd>
+      <dt>Structural coefficient <span class="m">&epsilon;</span></dt><dd>Dry mass over fuelled mass, ~0.06&ndash;0.12. The number mass discipline lives or dies on; it sets the SSTO ceiling and the payload fraction.</dd>
+      <dt>Staging</dt><dd>Number of stages and the <span class="m">&Delta;<i>v</i></span> split between them &mdash; the top-level architecture decision, and rarely an even split.</dd>
+      <dt>Propellant density</dt><dd>Sets tank size and therefore dry mass &mdash; why a dense kerosene stage can beat a higher-<span class="m"><i>I</i><sub>sp</sub></span> hydrogen one down low.</dd>
+      <dt><span class="m">&Delta;<i>v</i></span> budget + margins</dt><dd>Every maneuver summed, plus <b>~1.8 km/s of losses to LEO</b> and a reserve. The input the whole size calculation hangs on.</dd>
+      <dt>Restart &amp; throttle</dt><dd>Needed for multi-burn missions, landings and precise insertions &mdash; a real constraint on engine choice, not a free option.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the textbook derivation won&rsquo;t tell you</span>
+      <ul>
+        <li>The <b>9.4 km/s to LEO is not the orbital speed</b> &mdash; that&rsquo;s only ~7.8. The extra ~1.5&ndash;2 km/s is <em>losses</em>: gravity loss (fighting your own weight while you climb), aerodynamic drag low down, and steering loss from not thrusting perfectly along the velocity vector. Budget them explicitly or your design silently comes up short.</li>
+        <li><b>Thrust-to-weight must exceed 1 at liftoff</b>, full stop. A rocket with T/W of 0.9 doesn&rsquo;t rise slowly &mdash; it sits on the pad burning fuel. Every second spent below liftoff T/W is pure gravity loss, so first stages are built with real thrust margin.</li>
+        <li><b>Electric propulsion&rsquo;s <span class="m"><i>I</i><sub>sp</sub></span> is enormous but its thrust is milli-newtons.</b> The equation promises huge <span class="m">&Delta;<i>v</i></span>, and it delivers &mdash; over <em>months</em>. A plasma thruster can take a satellite from transfer orbit to station in a slow spiral, but it will never leave a launch pad.</li>
+        <li>The <b>payload fraction to orbit is brutally small</b> &mdash; a few percent of liftoff mass for LEO, and it only shrinks for higher orbits or escape. A rocket that looks like it&rsquo;s &ldquo;all tank&rdquo; is doing exactly what the equation demands.</li>
+        <li>The <b>optimal stage split is not equal <span class="m">&Delta;<i>v</i></span>.</b> How you divide the total between stages depends on each stage&rsquo;s <span class="m"><i>I</i><sub>sp</sub></span> and <span class="m">&epsilon;</span>; the lower stage usually takes a different (often smaller) share than naive intuition suggests. Optimising it is a real calculation, not a guess.</li>
+        <li><b>Hydrogen&rsquo;s <span class="m"><i>I</i><sub>sp</sub></span> edge is partly an illusion at the pad.</b> Its sky-high specific impulse is real, but its low density forces big, heavy, insulated tanks (dry mass, worse <span class="m">&epsilon;</span>) and it boils off while you wait. Hydrogen wins on upper stages; dense propellants often win down low.</li>
+        <li>The equation <b>punishes mass growth exponentially</b>, so a program is governed more by margins and mass discipline than by raw engine performance. The teams that win are the ones that refuse to let dry mass creep &mdash; a kilogram added late in design can cost many kilograms of payload.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">the numbers and the procedure — so you can apply it, not just follow it</span></div>
+
+    <h2><span class="sn">9</span>Build it: size a launcher</h2>
+    <p>Enough principle &mdash; here is an actual launcher, sized end to end, so you can copy the shape and reuse it. The job: put a payload into LEO, two stages, chemical propulsion. The <span class="m">&Delta;<i>v</i></span> budget is 9.4 km/s (7.8 orbital plus ~1.8 of losses). Split it roughly 4.5 / 4.9 km/s between a dense first stage and a higher-<span class="m"><i>I</i><sub>sp</sub></span> second stage, give each a structural coefficient of 0.08, and every number below is a one-line formula you plug into &mdash; the equation already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a two-stage launcher to LEO</span>
+      <dl class="speclist">
+        <dt>&Delta;<i>v</i> budget</dt><dd><b>9.4 km/s</b> total &mdash; ~7.8 orbital + ~1.8 gravity/drag/steering losses. This is the whole requirement.</dd>
+        <dt>Stage split</dt><dd>&asymp; <b>4.5 / 4.9 km/s</b> (stage 1 / stage 2). Not equal &mdash; tuned to each stage&rsquo;s <span class="m"><i>I</i><sub>sp</sub></span> and <span class="m">&epsilon;</span>; they sum to 9.4.</dd>
+        <dt>Stage 1 (kerolox)</dt><dd><span class="m"><i>I</i><sub>sp</sub></span> 300 s &rarr; <span class="m"><i>v</i><sub>e</sub></span> = 300&times;9.81 &approx; <b>2.94 km/s</b>; mass ratio <span class="m">MR<sub>1</sub> = exp(4500/2940) &approx; 4.6</span> &mdash; dense propellant, good T/W down low.</dd>
+        <dt>Stage 2</dt><dd><span class="m"><i>I</i><sub>sp</sub></span> 345 s &rarr; <span class="m"><i>v</i><sub>e</sub></span> &approx; <b>3.38 km/s</b>; mass ratio <span class="m">MR<sub>2</sub> = exp(4900/3380) &approx; 4.26</span> &mdash; the higher-efficiency stage does the harder half.</dd>
+        <dt>Payload fraction</dt><dd>With <span class="m">&epsilon; &approx; 0.08</span> on each stage, the two payload fractions multiply out to an overall <b>&approx; 3% of liftoff mass</b> &mdash; small, and entirely normal for LEO.</dd>
+        <dt>SSTO check</dt><dd><span class="m"><i>v</i><sub>e</sub> ln(1/&epsilon;)</span> = 3.38&times;ln(12.5) &approx; <b>8.6 km/s</b> &lt; 9.4 &mdash; a single stage can&rsquo;t reach orbit even empty. Staging isn&rsquo;t a choice here; it&rsquo;s the only way the design closes.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a <span class="m">&Delta;<i>v</i></span> budget and two engine choices hand you the mass ratios, the propellant fractions, the payload you can expect, and a hard proof that one stage won&rsquo;t do it &mdash; no calculus at the keyboard. The plug-in set is small: <span class="m">&Delta;<i>v</i> = <i>I</i><sub>sp</sub> <i>g</i><sub>0</sub> ln(<i>m</i><sub>0</sub>/<i>m</i><sub>f</sub>)</span>; <span class="m"><i>v</i><sub>e</sub> = <i>I</i><sub>sp</sub>&times;9.81</span>; mass ratio <span class="m">MR = exp(&Delta;<i>v</i>/<i>v</i><sub>e</sub>)</span>; propellant fraction <span class="m">= 1 &minus; 1/MR</span>; the single-stage ceiling <span class="m">&Delta;<i>v</i><sub>SSTO,max</sub> = <i>v</i><sub>e</sub> ln(1/&epsilon;)</span>; and the liftoff gate <span class="m">T/W = <i>F</i>/(<i>m</i> <i>g</i><sub>0</sub>) &gt; 1</span>.</p>
+
+    <p><b>Size one in this order.</b> The sequence matters; skipping a step just relocates the pain:</p>
+    <ol class="recipe">
+      <li><b>List every maneuver &rarr; the <span class="m">&Delta;<i>v</i></span> budget</b> &mdash; sum the burns, add margin, and add the losses (~1.8 km/s to LEO). This total drives all of it.</li>
+      <li><b>Pick propellant and <span class="m"><i>I</i><sub>sp</sub></span> per stage</b> &mdash; dense/high-T/W low down, high-<span class="m"><i>I</i><sub>sp</sub></span> up high; this sets each <span class="m"><i>v</i><sub>e</sub></span>.</li>
+      <li><b>Choose the staging</b> &mdash; number of stages and the <span class="m">&Delta;<i>v</i></span> split between them (not an even one).</li>
+      <li><b>Work top-down from the payload</b> &mdash; start with the mass you must deliver and build each stage&rsquo;s mass outward through its mass ratio and <span class="m">&epsilon;</span>.</li>
+      <li><b>Check T/W &gt; 1 at every ignition</b> &mdash; especially liftoff. A stage that can&rsquo;t lift its own loaded weight is a non-starter.</li>
+      <li><b>Iterate on dry mass (<span class="m">&epsilon;</span>)</b> &mdash; if it won&rsquo;t close, the lever is almost always structure. Mass growth kills designs; guard <span class="m">&epsilon;</span> jealously.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>How many stages</dt><dd>More stages win back <span class="m">&Delta;<i>v</i></span> by shedding dead structure &mdash; but each adds separation hardware, cost and failure modes. Two is the usual LEO answer; three for high-energy orbits.</dd>
+      <dt>Which propellant</dt><dd>Hydrogen for peak <span class="m"><i>I</i><sub>sp</sub></span> (but low density, cryogenic, boil-off); kerosene or methane for density and T/W down low; hypergolic for long-term storability at modest <span class="m"><i>I</i><sub>sp</sub></span>.</dd>
+      <dt>Reusable vs expendable</dt><dd>Recovery costs return-burn <span class="m">&Delta;<i>v</i></span> and extra dry mass (a 30&ndash;40% payload hit the logarithm makes hurt) &mdash; but it can slash cost per flight. An economics call, made through the equation.</dd>
+      <dt>Chemical vs electric</dt><dd>Chemical for thrust (launch, landing, anything time-critical); electric for <span class="m"><i>I</i><sub>sp</sub></span> (large in-space <span class="m">&Delta;<i>v</i></span> spread over weeks or months). Thrust vs efficiency, decided by where the burn happens.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do with real tools</b>
+      This page sizes the vehicle and makes the feasibility-and-architecture call &mdash; it does not fly the trajectory or design the engine. A real <span class="m">&Delta;<i>v</i></span> budget needs <b>trajectory-specific gravity, drag and steering losses</b> from a trajectory simulation, not the ~1.8 km/s rule of thumb; the <b>structural masses</b> that set <span class="m">&epsilon;</span> come from actual structural and propulsion design; and combustion, nozzle expansion, thermal protection and guidance are each their own deep fields. Do the real work on proper tools &mdash; <b>NASA GMAT</b> and <b>AGI STK</b> for mission and trajectory, the open-source <b>pykep</b> and <b>poliastro</b> for astrodynamics and porkchop plots, <b>OpenRocket</b> for hobby and sounding rockets. Your job here is to land the right <span class="m"><i>I</i><sub>sp</sub></span>, staging and <span class="m">&Delta;<i>v</i></span> split, and to know what every one of those downstream knobs <em>means</em> &mdash; which, after this, you do.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">An SSTO design barely reaches orbit with zero payload, and a colleague says &ldquo;just add more fuel.&rdquo; Why won&rsquo;t that work, and what will?</p><span class="a">Adding fuel adds tanks &mdash; more propellant needs more tankage, which is dry mass, so <span class="m">&epsilon;</span> doesn&rsquo;t improve and the extra fuel mostly carries itself. A single stage&rsquo;s best possible <span class="m">&Delta;<i>v</i></span> is capped at <span class="m"><i>v</i><sub>e</sub> ln(1/&epsilon;)</span> <em>regardless of how much fuel you load</em>, because you must accelerate that structure too; more fuel just climbs a flatter and flatter part of the logarithm. The real limit is the log plus the structural floor, not the fuel quantity. The fixes are architectural: <b>stage</b> (shed the dry mass mid-flight), raise <span class="m"><i>I</i><sub>sp</sub></span>, or drive <span class="m">&epsilon;</span> lower.</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">Engine A: <span class="m"><i>I</i><sub>sp</sub></span> 450 s (hydrogen), but the stage comes out at <span class="m">&epsilon;</span> = 0.12 because of big insulated tanks. Engine B: <span class="m"><i>I</i><sub>sp</sub></span> 340 s (kerosene), <span class="m">&epsilon;</span> = 0.06. For a <em>first</em> stage fighting gravity off the pad, which may win, and why isn&rsquo;t it obvious from <span class="m"><i>I</i><sub>sp</sub></span> alone?</p><span class="a">You can&rsquo;t call it from <span class="m"><i>I</i><sub>sp</sub></span> alone &mdash; the kerosene stage may well win. Hydrogen&rsquo;s low density forces large, heavy, insulated tanks, so its <span class="m">&epsilon;</span> is worse (0.12 vs 0.06) and the <span class="m">ln(1/&epsilon;)</span> term gives back much of the <span class="m"><i>I</i><sub>sp</sub></span> advantage; its lower thrust density also hurts <b>T/W</b>, which matters most on a first stage where gravity losses dominate and you must get off the pad fast. Dense propellants with good <span class="m">&epsilon;</span> and T/W typically win low down; hydrogen&rsquo;s efficiency pays off on upper stages, where tanks are smaller relative to <span class="m">&Delta;<i>v</i></span> and T/W is less critical. <span class="m">&epsilon;</span> and T/W bite hardest at liftoff.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">An electric thruster has an <span class="m"><i>I</i><sub>sp</sub></span> of 3000 s &mdash; nearly ten times a chemical engine. Why not just launch with it?</p><span class="a">Because thrust, not <span class="m"><i>I</i><sub>sp</sub></span>, is what leaves a pad. Electric thrusters produce milli-newtons, so their <span class="m">T/W</span> is far below 1 &mdash; they literally cannot lift their own weight. The rocket equation promises that 3000 s a glorious <span class="m">&Delta;<i>v</i></span>, but only if you can <em>apply</em> it, and launch demands <span class="m">T/W &gt; 1</span> sustained over minutes against gravity, not a gentle push spread over months. Electric propulsion is for in-space <span class="m">&Delta;<i>v</i></span> accumulated slowly over long durations; getting off Earth needs brute thrust, which is chemistry&rsquo;s job.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <span class="nextpill"><b>Done:</b> FMCW ranging</span>
+      <span class="nextpill"><b>Done:</b> Field-oriented control</span>
+      <span class="nextpill"><b>Done:</b> Involute gear tooth</span>
+      <span class="nextpill"><b>Next:</b> Propeller thrust &amp; disk loading</span>
+    </div>
+    <p class="footnote"><b>The Rocket Equation — Why Reaching Orbit Is a Mass-Ratio Problem.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (in space you move only by throwing mass away) and the one line of bookkeeping (<span class="m"><i>m</i> d<i>v</i> = &minus;<i>v</i><sub>e</sub> d<i>m</i></span>) from which Tsiolkovsky&rsquo;s <span class="m">&Delta;<i>v</i> = <i>v</i><sub>e</sub> ln(<i>m</i><sub>0</sub>/<i>m</i><sub>f</sub>)</span>, the tyranny of the logarithm, and the inevitability of staging all fall out &mdash; then the practitioner&rsquo;s half: how you build a <span class="m">&Delta;<i>v</i></span> budget, why a design fails to close, how the logarithm shapes propellant, staging and reusability, what to spec, and what the derivation won&rsquo;t tell you. With live simulations of the logarithmic <span class="m">&Delta;<i>v</i></span>-vs-mass-ratio curve and of payload fraction climbing with the number of stages while SSTO falls short.<br>
+    Companion volume in the portal: <b>DSA in Embedded, Drones, Robotics, Marine &amp; Space</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* rocketeq — Tsiolkovsky's logarithmic Δv curve: Δv = v_e·ln(MR). The curve FLATTENS — every
+     extra v_e of Δv costs another ×e on the mass ratio (the tyranny of the rocket equation). The
+     equally-spaced dots at MR = e, e², e³ sit one v_e apart in Δv yet spread out exponentially in
+     MR. A dashed line marks the LEO budget (≈9.4 km/s); MR = e is where Δv equals v_e exactly. */
+  SIMS.rocketeq={
+    controls:[
+      {k:'mr',label:'Mass ratio MR',min:1,max:25,step:0.1,val:9,fmt:function(v){return v.toFixed(1);}},
+      {k:'isp',label:'Specific impulse Isp',min:200,max:450,step:5,val:300,unit:' s'}
+    ],
+    init:function(s,w,h){ s.sweep=0; },
+    step:function(s,dt){ s.sweep=(s.sweep||0)+dt; },
+    draw:function(ctx,w,h,s){
+      var g0=9.81;
+      var mr=s.p.mr, isp=s.p.isp;
+      var ve=isp*g0/1000;                      // exhaust velocity [km/s]
+      var dv=ve*Math.log(mr);                  // Δv at the current mass ratio [km/s]
+      var LEO=9.4;                             // LEO Δv budget [km/s]
+      var XMIN=1, XMAX=25, YMAX=12;            // plot ranges (MR, km/s)
+      var mL=34,mR=14,mT=18,mB=24;
+      var px=mL, pw=Math.max(40,w-mL-mR), py=mT, ph=Math.max(40,h-mT-mB), pb=py+ph;
+      function xM(m){ return px+((m-XMIN)/(XMAX-XMIN))*pw; }
+      function yD(d){ return pb-(clamp(d,0,YMAX)/YMAX)*ph; }      // clamped (markers stay on-chart)
+      function yRaw(d){ return pb-(d/YMAX)*ph; }                 // raw (used only under clip)
+      // axes
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,pb); ctx.lineTo(px+pw,pb); ctx.stroke();
+      // Δv gridlines + ticks every 2 km/s
+      for(var gv=2; gv<=YMAX-0.001; gv+=2){ var yy=yRaw(gv);
+        ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.35; ctx.beginPath(); ctx.moveTo(px,yy); ctx.lineTo(px+pw,yy); ctx.stroke(); ctx.globalAlpha=1;
+        txt(ctx,gv.toFixed(0),px-5,yy+3,PAL.faint,8,'right'); }
+      txt(ctx,'Δv km/s',px-2,py-6,PAL.faint,8.5,'left');
+      // x endpoints
+      txt(ctx,'1',xM(1),pb+12,PAL.faint,8.5,'center');
+      txt(ctx,'25',xM(25),pb+12,PAL.faint,8.5,'center');
+      txt(ctx,'mass ratio MR →',px+pw,pb+12,PAL.faint,8.5,'right');
+      // LEO reference line
+      var yleo=yRaw(LEO);
+      ctx.strokeStyle=PAL.bad; ctx.globalAlpha=0.85; ctx.setLineDash([5,4]); ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(px,yleo); ctx.lineTo(px+pw,yleo); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'LEO ≈ 9.4',px+6,yleo-4,PAL.bad,9,'left');
+      // Δv curve (clipped so the steep low-MR part can run off the top cleanly)
+      ctx.save(); ctx.beginPath(); ctx.rect(px,py,pw,ph); ctx.clip();
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4; ctx.beginPath();
+      var N=140, i;
+      for(i=0;i<=N;i++){ var m=XMIN+(XMAX-XMIN)*i/N; var X=xM(m), Y=yRaw(ve*Math.log(m));
+        if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y); }
+      ctx.stroke();
+      ctx.lineTo(xM(XMAX),pb); ctx.lineTo(px,pb); ctx.closePath();
+      ctx.fillStyle=s.accent; ctx.globalAlpha=0.10; ctx.fill(); ctx.globalAlpha=1;
+      ctx.restore();
+      // ×e guides at MR = e, e², e³ — equal v_e steps in Δv, exploding MR gaps
+      var elbl=['e','e²','e³'];
+      for(var k=1;k<=3;k++){ var mk=Math.exp(k); if(mk>XMAX) break;
+        var gx=xM(mk), gyv=Math.min(k*ve,YMAX), gyp=yRaw(gyv);
+        ctx.strokeStyle=PAL.viol; ctx.globalAlpha=0.35; ctx.setLineDash([2,3]); ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(gx,pb); ctx.lineTo(gx,gyp); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha=1;
+        dot(ctx,gx,gyp,3,(k===1)?PAL.gold:PAL.viol);
+        txt(ctx,elbl[k-1],gx,pb+12,(k===1)?PAL.gold:PAL.viol,8.5,'center');
+      }
+      txt(ctx,'MR = e → Δv = v_e',xM(Math.E)+6,yRaw(Math.min(ve,YMAX))-5,PAL.gold,9,'left');
+      // faint moving climber shows how the rise stalls as MR grows
+      var sp=(((s.sweep||0)*0.17)%1+1)%1, mg=XMIN+(XMAX-XMIN)*sp;
+      dot(ctx,xM(mg),yD(ve*Math.log(mg)),2.3,PAL.faint);
+      // current-MR marker with cross-hairs
+      var xm=xM(mr), ym=yD(dv);
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.5; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(xm,pb); ctx.lineTo(xm,ym); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px,ym); ctx.lineTo(xm,ym); ctx.stroke(); ctx.globalAlpha=1;
+      dot(ctx,xm,ym,4.2,s.accent); dot(ctx,xm,ym,1.8,PAL.surf);
+      // readouts
+      var prop=(1-1/mr)*100;
+      txt(ctx,'MR '+mr.toFixed(1)+'   ·   Δv '+dv.toFixed(2)+' km/s',px+2,12,PAL.ink,10.5,'left');
+      txt(ctx,'propellant '+prop.toFixed(0)+'%',px+pw,12,s.accent,10.5,'right');
+      txt(ctx,'Isp '+isp.toFixed(0)+' s · v_e '+ve.toFixed(2)+' km/s',px+2,h-6,PAL.muted,9,'left');
+      txt(ctx,'Δv = v_e · ln(MR)',px+pw,h-6,PAL.faint,9,'right');
+    }
+  };
+
+  /* staging — why one stage can't reach orbit but several can. For a target Δv (LEO ≈ 9.4 km/s)
+     the overall payload fraction Λ = ((a − ε)/(1 − ε))^N, with a = e^(−Δv/N·v_e), climbs with the
+     number N of equal stages — dropping dead tankage you no longer have to accelerate. a ≤ ε means
+     negative payload (a stage can't even lift itself): INFEASIBLE. The SSTO ceiling v_e·ln(1/ε)
+     falls short of LEO even at zero payload, so N=1 cannot reach orbit while N≥2 can. */
+  SIMS.staging={
+    controls:[
+      {k:'eps',label:'Structural coeff ε',min:0.05,max:0.15,step:0.01,val:0.08,fmt:function(v){return v.toFixed(2);}},
+      {k:'isp',label:'Specific impulse Isp',min:250,max:450,step:5,val:347,unit:' s'},
+      {k:'tgt',label:'Target Δv',min:7,max:12,step:0.1,val:9.4,unit:' km/s',fmt:function(v){return v.toFixed(1);}}
+    ],
+    init:function(s,w,h){ s.sweep=0; },
+    step:function(s,dt){ s.sweep=(s.sweep||0)+dt; },
+    draw:function(ctx,w,h,s){
+      var g0=9.81;
+      var eps=s.p.eps, isp=s.p.isp, tgt=s.p.tgt;
+      var ve=isp*g0/1000;                        // exhaust velocity [km/s]
+      var ceil=ve*Math.log(1/eps);               // SSTO ceiling (payload → 0) [km/s]
+      var lam=[], feas=[], i, n;
+      for(n=1;n<=4;n++){
+        var a=Math.exp(-tgt/(n*ve));             // per-stage mass-fraction term
+        if(a>eps){ feas.push(true); lam.push(Math.pow((a-eps)/(1-eps),n)); }
+        else { feas.push(false); lam.push(0); }
+      }
+      var payMax=0; for(i=0;i<4;i++){ if(feas[i]&&lam[i]>payMax) payMax=lam[i]; }
+      if(payMax<=0) payMax=0.05;
+      payMax*=1.25;
+      var mL=14,mR=14;
+      // ---- Δv budget gauge: SSTO ceiling vs target ----
+      var gy=36, gh=12, gx0=mL+58, gx1=w-mR, GMAX=14;
+      function xG(v){ return gx0+(clamp(v,0,GMAX)/GMAX)*(gx1-gx0); }
+      var short=ceil<tgt;
+      txt(ctx,'Δv budget',mL,gy+4,PAL.muted,9.5,'left');
+      ctx.fillStyle=PAL.surf; rr(ctx,gx0,gy-gh/2,gx1-gx0,gh,3); ctx.fill();
+      ctx.fillStyle=short?PAL.bad:PAL.good; ctx.globalAlpha=0.85;
+      rr(ctx,gx0,gy-gh/2,xG(ceil)-gx0,gh,3); ctx.fill(); ctx.globalAlpha=1;
+      var xt=xG(tgt);
+      ctx.strokeStyle=PAL.ink; ctx.lineWidth=1.6; ctx.setLineDash([3,2]);
+      ctx.beginPath(); ctx.moveTo(xt,gy-gh/2-4); ctx.lineTo(xt,gy+gh/2+4); ctx.stroke(); ctx.setLineDash([]);
+      txt(ctx,'target '+tgt.toFixed(1),xt,gy-gh/2-6,PAL.ink,9,'center');
+      txt(ctx,'SSTO ceiling '+ceil.toFixed(1)+(short?' km/s — short of orbit':' km/s — reaches at 0 payload'),gx1,gy+gh/2+12,short?PAL.bad:PAL.good,9,'right');
+      // ---- payload-fraction bars for N = 1..4 ----
+      var pTop=gy+gh/2+22, pb=h-26, ph=Math.max(30,pb-pTop);
+      var bx0=mL+30, usable=Math.max(40,w-mR-bx0), slot=usable/4, barW=Math.min(46,slot*0.56);
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(bx0,pTop); ctx.lineTo(bx0,pb); ctx.lineTo(bx0+usable,pb); ctx.stroke();
+      for(var gk=1;gk<=3;gk++){ var yy=pb-(gk/3)*ph;
+        ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.3; ctx.beginPath(); ctx.moveTo(bx0,yy); ctx.lineTo(bx0+usable,yy); ctx.stroke(); ctx.globalAlpha=1;
+        txt(ctx,(payMax*gk/3*100).toFixed(1),bx0-4,yy+3,PAL.faint,8,'right'); }
+      var hl=Math.floor((((s.sweep||0)*0.55)%4+4)%4);
+      for(n=1;n<=4;n++){
+        var cx=bx0+slot*(n-1)+slot/2, bl=cx-barW/2;
+        if(feas[n-1]){
+          var hgt=(lam[n-1]/payMax)*ph;
+          ctx.fillStyle=((n-1)===hl)?s.accent:PAL.cool; ctx.globalAlpha=0.9;
+          rr(ctx,bl,pb-hgt,barW,hgt,3); ctx.fill(); ctx.globalAlpha=1;
+          txt(ctx,(lam[n-1]*100).toFixed(1)+'%',cx,pb-hgt-5,PAL.ink,9.5,'center');
+        } else {
+          ctx.fillStyle=PAL.bad; ctx.globalAlpha=0.20; rr(ctx,bl,pb-10,barW,10,3); ctx.fill(); ctx.globalAlpha=1;
+          ctx.strokeStyle=PAL.bad; ctx.lineWidth=1.4; rr(ctx,bl,pb-10,barW,10,3); ctx.stroke();
+          txt(ctx,'×',cx,pb-13,PAL.bad,12,'center');
+          txt(ctx,'no orbit',cx,pb-26,PAL.bad,8.5,'center');
+        }
+        txt(ctx,'N='+n,cx,pb+13,PAL.muted,9.5,'center');
+      }
+      // readouts
+      txt(ctx,'ε '+eps.toFixed(2)+' · Isp '+isp.toFixed(0)+' s',mL,14,PAL.ink,10.5,'left');
+      txt(ctx,'v_e '+ve.toFixed(2)+' km/s',w-mR,14,s.accent,10.5,'right');
+      txt(ctx,'payload Λ (% of liftoff mass)',mL,h-6,PAL.muted,9,'left');
+      txt(ctx,'Λ = ((a-ε)/(1-ε))^N · a = e^(-Δv/N·v_e)',w-mR,h-6,PAL.faint,9,'right');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

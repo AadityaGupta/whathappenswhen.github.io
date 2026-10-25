@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>Bolted-Joint Preload — Why a Bolt Is a Spring You Pre-Stretch · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#7A5230; --accent-ink:#FFFFFF; --accent-wash:#F0E7DB;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#C79A6A; --accent-ink:#241405; --accent-wash:#1C150C;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#C79A6A; --accent-ink:#241405; --accent-wash:#1C150C;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 13 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>Bolted-Joint Preload: Why a Bolt Is a Spring You Pre-Stretch, Not a Hook You Hang Load On</h1>
+    <p class="dek">Bolts snap in service at a fraction of their rated strength, back themselves out under vibration, and let flanges leak &mdash; all while being comfortably &ldquo;strong enough&rdquo; for the load. The fix is never a bigger bolt; it is seeing that a tightened bolt is a stiff spring, pre-stretched to clamp the parts so hard that the fluctuating external load barely reaches it. The <em>preload</em> &mdash; not the bolt&rsquo;s strength &mdash; is what carries the load, kills the fatigue, and stops the loosening.</p>
+    <div class="meta">
+      <span>&approx; 18 min read</span>
+      <span>fasteners · mechanical design · joints</span>
+      <span>companion to <b>The Involute Gear Tooth</b> and <b>Failure &amp; Systems Safety</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">You need to hold two parts together &mdash; a bracket, a flange, an engine head &mdash; so they will not separate, slip, or leak while a load keeps tugging them apart, and the obvious plan is to let the bolt carry the load: find the force, pick a bolt rated above it, torque it down. Yet joints built exactly that way fail in the field all the time &mdash; bolts <b>fatigue-fracture</b> after thousands of cycles at a fraction of their rated strength, they <b>vibrate loose</b> and back themselves out, flanges weep and slip &mdash; all while the bolt never came close to breaking. The naive picture, a bolt as a hook you hang the load on, predicts the wrong failures, which is the surest sign it is the wrong picture. The escape is a single reframe: a tightened bolt is not a hook, it is a stiff spring you have <em>pre-stretched</em>, and that stretch clamps the parts together with a force &mdash; the <b>preload</b> &mdash; so hard that the fluctuating external load barely reaches the bolt at all. From that one move the whole subject falls out: two opposing springs sitting in equilibrium before any load arrives, an external pull that then <em>splits</em> between them by their stiffnesses so the bolt picks up only a small fraction <span class="m"><i>C</i></span> of it, a load factor <span class="m"><i>C</i> = <i>k</i><sub>b</sub>/(<i>k</i><sub>b</sub>+<i>k</i><sub>m</sub>)</span> that is the hinge of everything, and the counterintuitive sting that tightening a bolt <em>harder</em> usually makes it last <em>longer</em>. Then the piece turns to the half the textbooks skip: how preload thinking governs every real structural, pressure, and machine joint, how joints actually fail and why nearly every failure reads &ldquo;preload,&rdquo; not &ldquo;strength,&rdquo; what to put on the drawing, and an M10 8.8 bracket under a 0&ndash;10&nbsp;kN pull worked end to end &mdash; including the ugly truth that you set a <em>torque</em> but you want a <em>tension</em>, and the two are joined only through a friction factor that scatters by a third.</p>
+
+    <h2><span class="sn">1</span>The constraint: &ldquo;strong enough&rdquo; bolts still fail</h2>
+    <p>Start with exactly what you are being asked to do. You must hold two parts together so they do not separate, slip, or leak while a fluctuating load tries to pull them apart. The obvious plan writes itself: the bolt carries the load, so find the worst-case load and pick a bolt rated above it. It is clean, it is sizing-by-catalogue, and it is how a great many joints are quietly designed.</p>
+    <p>And joints designed exactly that way fail constantly. Bolts <b>fatigue-fracture</b> after thousands of cycles at loads far below their static rating &mdash; a clean, sudden break in a bolt that was &ldquo;rated for twice the load.&rdquo; They <b>vibrate loose</b> and back off until the nut spins free. Flanges <b>leak or slip</b> even though the bolt never came near its strength. Something is wrong with the mental model, and you can see it from the symptoms alone: if the bolt simply &ldquo;held the load,&rdquo; a bolt rated at twice the load would be bulletproof &mdash; and it plainly isn&rsquo;t. A picture that says &ldquo;add strength&rdquo; while the real joints keep dying of fatigue and loosening is a picture that predicts the wrong failures. So the constraint sharpens into a real bind: <b>you can make the bolt as strong as you like and the joint still fatigues, loosens, and leaks</b> &mdash; which means strength was never the variable that mattered. The question this piece answers is what was.</p>
+
+    <h2><span class="sn">2</span>The reframe: a bolt is a spring you pre-stretch</h2>
+    <p>Change what the bolt <em>is</em>. When you tighten a bolt you do not just &ldquo;do it up&rdquo; &mdash; you <b>stretch</b> it, elastically, like pulling a very stiff spring, and that stretch pulls the clamped members together with a force called the <b>preload</b>, <span class="m"><i>F</i><sub>i</sub></span>. The members are springs too &mdash; usually far stiffer than the slender bolt &mdash; and they get <b>compressed</b> by that same <span class="m"><i>F</i><sub>i</sub></span>. So a tightened joint is not a bolt holding two parts; it is <b>two opposing springs in equilibrium</b>: the stretched bolt pulling inward, the squeezed members pushing outward, balanced at <span class="m"><i>F</i><sub>i</sub></span>, before any external load shows up at all.</p>
+    <p>Once you see the joint that way, the whole question changes. It is no longer &ldquo;can the bolt take the load&rdquo; but &ldquo;what happens to these two preloaded springs when an external pull is added.&rdquo; And the answer is the entire subject in one sentence: the external load does <em>not</em> go straight into the bolt. It is <b>shared</b> &mdash; it stretches the bolt a little more <em>and</em> lets the members relax a little &mdash; split between the two springs in proportion to their stiffnesses. A load applied to a pre-clamped pair of springs is spent partly on stretching the stiff one further and mostly on un-squeezing the other, and which gets what is decided entirely by the ratio of the two stiffnesses. That is the move the rest of the piece unpacks.</p>
+
+    <h2><span class="sn">3</span>The core: the load factor, and why the bolt barely feels the load</h2>
+    <p>Put it in numbers. Let <span class="m"><i>k</i><sub>b</sub></span> be the bolt&rsquo;s stiffness and <span class="m"><i>k</i><sub>m</sub></span> the members&rsquo; stiffness, and apply an external tensile load <span class="m"><i>P</i></span> across the joint. Because the bolt and the members are clamped together, the load divides between them by their stiffness share, and that share has a name &mdash; the <b>joint stiffness factor</b>, or load factor:</p>
+    <div class="eq"><span class="m"><i>C</i> = <span class="frac"><span class="nu"><i>k</i><sub>b</sub></span><span><i>k</i><sub>b</sub> + <i>k</i><sub>m</sub></span></span></span><span class="lbl">the share of any external load the bolt actually feels</span></div>
+    <p>Then, as long as the joint stays clamped, the bookkeeping is almost embarrassingly simple. The <b>bolt force rises by only</b> <span class="m"><i>C</i>&middot;<i>P</i></span>, and the <b>member clamp force drops by</b> <span class="m">(1&minus;<i>C</i>)&middot;<i>P</i></span>:</p>
+    <div class="eq"><span class="m"><i>F</i><sub>bolt</sub> = <i>F</i><sub>i</sub> + <i>C</i>&middot;<i>P</i></span><span class="lbl">the bolt gains only a fraction C of the load</span></div>
+    <div class="eq"><span class="m"><i>F</i><sub>clamp</sub> = <i>F</i><sub>i</sub> &minus; (1&minus;<i>C</i>)&middot;<i>P</i></span><span class="lbl">most of the load is spent un-clamping the members</span></div>
+    <p>Here is the magic, and it lives in the size of <span class="m"><i>C</i></span>. In a metal-to-metal joint the members are a short, fat, enormously stiff column, while the bolt is a long, slender rod &mdash; so <span class="m"><i>k</i><sub>m</sub> &gg; <i>k</i><sub>b</sub></span>, and <span class="m"><i>C</i></span> comes out <b>small, typically 0.1 to 0.3</b>. That means when you hang a 10&nbsp;kN external load on a preloaded joint, the <em>bolt</em> only picks up 1&ndash;3&nbsp;kN of it; the rest of the load is spent relieving the members&rsquo; compression. The pre-stretched bolt sits up at <span class="m"><i>F</i><sub>i</sub></span> and barely twitches as the external load comes and goes. And a bolt that &ldquo;sees&rdquo; only 20&nbsp;% of a fluctuating load fatigues far, far more slowly than one that sees all of it &mdash; which is exactly why a properly preloaded joint survives while a loose one dies. Strength was never the point; the <em>preload</em> and the <em>stiffness ratio</em> were.</p>
+    <div class="key">
+      <span class="kl">A bolt is a pre-stretched spring, not a hook</span>
+      <div class="eq"><span class="m"><i>F</i><sub>bolt</sub> = <i>F</i><sub>i</sub> + <i>C</i>&middot;<i>P</i>,&nbsp;&nbsp;&nbsp;<i>C</i> = <span class="frac"><span class="nu"><i>k</i><sub>b</sub></span><span><i>k</i><sub>b</sub> + <i>k</i><sub>m</sub></span></span> &approx; 0.1&ndash;0.3</span></div>
+      <p>Tightening creates a <b>preload <span class="m"><i>F</i><sub>i</sub></span></b> that clamps the members; an external load <span class="m"><i>P</i></span> then splits by the stiffness ratio, so the bolt force is only <span class="m"><i>F</i><sub>i</sub> + <i>C</i>&middot;<i>P</i></span>. Because metal members are far stiffer than the slender bolt, <span class="m"><i>C</i></span> is small and the bolt barely feels the fluctuating load &mdash; that is what kills fatigue and loosening. The <b>preload, not the bolt&rsquo;s strength, is the design variable.</b></p>
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">The external load splits by stiffness — the stiff members take most of it off the clamp</div>
+      <canvas class="sim" data-sim="jointdiagram" data-c="#7A5230" aria-label="the bolted-joint diagram: the bolt stretch line and the member compression line meeting at the preload, and an external load splitting between a small rise in bolt force and a large drop in clamp force"></canvas>
+      <div class="ctrls" data-sim="jointdiagram"></div>
+    </div>
+    <p class="simnote">This is the classic <em>joint diagram</em>. The rising line is the bolt&rsquo;s stretch, the falling line the members&rsquo; compression, and they meet at the <b>preload <span class="m"><i>F</i><sub>i</sub></span></b> &mdash; two springs balanced before any load. Drag the <em>external load</em> and watch it split: the bolt force climbs by only <span class="m"><i>C</i>&middot;<i>P</i></span> while the clamp force falls by <span class="m">(1&minus;<i>C</i>)&middot;<i>P</i></span>, the large share. Drag the <em>stiffness ratio</em> and watch the split tilt &mdash; stiffen the members (small <span class="m"><i>C</i></span>) and the bolt line goes nearly flat; soften them with a gasket (large <span class="m"><i>C</i></span>) and the bolt suddenly feels most of the load. Now drag the <em>preload</em> down and watch the clamp line walk toward zero: when it touches, the members have come apart and the diagram stops working &mdash; the joint has separated.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read <span class="m"><i>C</i></span> and <span class="m"><i>F</i><sub>i</sub></span> at their ends</h2>
+    <p>The two numbers earn their keep at the extremes, and reading them there is the fastest way to see both where the protection comes from and where the joint falls on its face.</p>
+    <div class="limit">
+      <b>Limit check — read C and F_i at their ends</b>
+      <b><span class="m"><i>C</i> &rarr; 0</span></b> (members infinitely stiff, or a long, soft bolt): the bolt sees <em>none</em> of the external load until separation &mdash; the entire load just relieves the members&rsquo; compression. Best possible fatigue case; this is the target you design toward. <b><span class="m"><i>C</i> &rarr; 1</span></b> (soft members &mdash; a thick gasket &mdash; or a very stiff, short bolt): the bolt sees <em>all</em> of the external load, <span class="m"><i>F</i><sub>bolt</sub> = <i>F</i><sub>i</sub> + <i>P</i></span>. Worst fatigue case, and precisely why soft gaskets make fatigue-prone joints. <b>Preload <span class="m"><i>F</i><sub>i</sub> &rarr; 0</span></b> (bolt barely snug): no clamp at all. The members separate the instant any load is applied, the bolt takes the <em>full</em> fluctuating load directly, and it slips, loosens, and fatigues &mdash; the under-tightened bolt, not the weak bolt, is the classic failure. <b>Preload too high</b> (past about 90&nbsp;% of proof): the bolt yields or the members crush, and you lose overload margin. The sweet spot is a <em>high</em> preload &mdash; typically <b>~75&nbsp;% of the bolt&rsquo;s proof load</b> &mdash; high enough to clamp hard and protect against fatigue, with margin before yield. <b>Separation</b>: the joint comes apart (clamp &rarr; 0) when <span class="m"><i>P</i> &gt; <i>F</i><sub>i</sub>/(1&minus;<i>C</i>)</span>; past that point the bolt suddenly takes the full load and all the protection vanishes at once, so you always keep a margin below it.
+    </div>
+    <p>Three consequences follow straight from those ends, and they are the whole reason the subject matters. <b>Fatigue first.</b> The bolt&rsquo;s cyclic stress amplitude is only <span class="m">&sigma;<sub>a</sub> = <i>C</i>&middot;(&Delta;<i>P</i>/2)/<i>A</i><sub>t</sub></span> &mdash; a fraction (<span class="m"><i>C</i></span>) of a fraction (the half-swing) of the external load, spread over the thread&rsquo;s stress area. That is why, counterintuitively, <b>tightening a bolt more makes it last longer</b>: a higher preload keeps the joint closed so <span class="m"><i>C</i></span> can do its job, right up until yield. <b>Self-loosening next.</b> Preload is what presses the threads and the faces together hard enough that friction resists the tiny vibration-driven slips that unscrew a nut &mdash; the Junker mechanism &mdash; so lose the preload and the bolt simply walks out. <b>Separation and slip last.</b> Enough clamp lets a shear joint carry its load by <em>friction</em> between the faces (a slip-critical joint) rather than by the bolt shank bearing against the hole. And the sting in all of it: you cannot set tension directly. You tighten to a <b>torque</b>, and torque relates to preload only through an empirical <b>nut factor</b> <span class="m"><i>K</i></span>, as <span class="m"><i>T</i> &approx; <i>K</i>&middot;<i>F</i><sub>i</sub>&middot;<i>d</i></span> with <span class="m"><i>K</i> &approx; 0.2</span> for plain steel &mdash; and <span class="m"><i>K</i></span> scatters by <b>&plusmn;25&ndash;35&nbsp;%</b> with lube, finish, and speed. Half of what you think is preload is friction uncertainty, which is exactly why critical joints reach for angle, stretch, or ultrasonic methods instead.</p>
+
+    <div class="simwrap">
+      <div class="simcap">High preload keeps the joint closed, so the bolt rides a thin band</div>
+      <canvas class="sim" data-sim="loadsplit" data-c="#7A5230" aria-label="an external load cycling while the bolt force rides only a thin band above the preload, until low preload lets the joint separate and the bolt feels the full cyclic load"></canvas>
+      <div class="ctrls" data-sim="loadsplit"></div>
+    </div>
+    <p class="simnote">Here is the fatigue story made visible. Cycle the <em>external load</em> up and down and watch the bolt force: with a healthy preload it rides only a <b>thin band</b> above <span class="m"><i>F</i><sub>i</sub></span>, rising by the small slope <span class="m"><i>C</i></span> &mdash; the cyclic stress amplitude <span class="m">&sigma;<sub>a</sub> = <i>C</i>&middot;(&Delta;<i>P</i>/2)/<i>A</i><sub>t</sub></span> is tiny, so the bolt effectively never fatigues. Now drag the <em>preload</em> down. Nothing dramatic happens at first &mdash; the band just shifts lower &mdash; until the clamp force reaches zero and the joint <b>separates</b>: past that point the bolt abruptly feels the <em>full</em> cyclic load, the thin band explodes into the whole swing from zero to <span class="m"><i>P</i></span>, and the cyclic stress jumps by a factor of five or ten. The lesson is the one that feels backwards: it is the <em>loss</em> of preload, not the presence of load, that destroys the bolt.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: designing a joint, and how it fails</h2>
+    <p>Preload thinking governs every structural, pressure, and machine joint there is &mdash; flanges, engine head and rod bolts, brackets, wind-turbine and bridge connections, aerospace structure. The design sequence is fixed, not a flash of insight: compute the <b>required clamp</b> to stop the worst-case slip, separation, or leak; pick the <b>bolt size and grade</b>; set the <b>target preload</b> (about 75&nbsp;% of proof); pick the <b>tightening method</b> (torque, torque-angle, stretch); and check the <b>stiffness ratio <span class="m"><i>C</i></span></b> for fatigue &mdash; softening the bolt or stiffening the members if <span class="m"><i>C</i></span> is too high. When a joint fails it does so in a short, diagnostic vocabulary, and nearly every entry reads &ldquo;preload,&rdquo; not &ldquo;bolt strength&rdquo;:</p>
+    <dl class="speclist">
+      <dt>Bolt fatigue fracture</dt><dd>Ran fine, then a sudden clean break after many cycles &mdash; <b>preload too low</b>, or <b><span class="m"><i>C</i></span> too high</b> (a soft or gasketed joint): the bolt is feeling too much of the cyclic load. Raise the preload, stiffen the joint, or lengthen/soften the bolt to drop <span class="m"><i>C</i></span>.</dd>
+      <dt>Bolts backing off / loosening</dt><dd><b>Insufficient preload</b> against vibration (the Junker mechanism). The cure is more preload, plus locking features or a re-torque &mdash; not just a lock washer bolted onto the same slack joint.</dd>
+      <dt>Joint leaks or slips in service</dt><dd><b>Clamp lost over time</b> to embedment, creep, or gasket relaxation; the preload decayed below what the joint needs. Re-torque, harder members, a better gasket.</dd>
+      <dt>Bolt snapped during install</dt><dd><b>Over-torqued past yield</b> (or galling spiking the torque so the reading lied). Check the target, the lube, and the nut factor you actually have.</dd>
+      <dt>Thread galling / seizing</dt><dd>Friction, especially with stainless &mdash; lubricate or anti-seize, slow the run-down, and re-target the torque for the new <span class="m"><i>K</i></span> the lube gives you.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How preload shapes the whole joint</h2>
+    <p>Almost every property of a bolted joint is set by just two numbers &mdash; the <b>preload <span class="m"><i>F</i><sub>i</sub></span></b> and the <b>load factor <span class="m"><i>C</i></span></b> &mdash; and the bolt&rsquo;s static strength is nearly a footnote. The preload sets the <b>fatigue life</b> (through how closed the joint stays), the <b>loosening resistance</b> (friction against vibration), the <b>slip resistance</b> (the friction clamp in shear), and the <b>separation margin</b>. The load factor <span class="m"><i>C</i></span> &mdash; governed by grip length, washers, bolt slenderness, and gasket softness &mdash; sets <b>how much of the external load the bolt ever feels</b>, which is the other half of fatigue. And the <b>tightening method</b> sets the <b>preload scatter</b>, which decides how much margin you must carry: a sloppy nut factor forces a conservative target so the low end still clamps and the high end still stays under yield. So &ldquo;design the bolt&rdquo; is really &ldquo;choose a preload and a stiffness ratio, then pick a tightening method accurate enough to land them.&rdquo; Move any one of those and the others move with it; the catalogue strength number barely enters.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>Preloaded joints hold structural steel and bridges, pressure vessels and pipe flanges, engines (head, main, and rod bolts), aerospace structure, machine tools, rail, and wind-turbine flanges &mdash; anywhere a joint must not separate, slip, leak, or fatigue. When you specify one, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Bolt grade / proof strength</dt><dd>e.g. <b>8.8, 10.9, 12.9</b> &mdash; sets the usable preload ceiling; target about <b>75&nbsp;% of proof</b>.</dd>
+      <dt>Target preload (% of proof)</dt><dd>The real design variable &mdash; high enough to clamp hard and protect fatigue, comfortably below yield.</dd>
+      <dt>Tightening method &amp; nut factor</dt><dd>Torque (&plusmn;30&nbsp;%), torque-angle (tighter), stretch or ultrasonic (tightest) &mdash; pick for the accuracy the joint actually needs.</dd>
+      <dt>Grip length / washers / bolt slenderness</dt><dd>Tune the load factor <span class="m"><i>C</i></span>: longer, more slender bolts lower <span class="m"><i>C</i></span> and improve fatigue.</dd>
+      <dt>Gasket / member stiffness</dt><dd>Soft gaskets raise <span class="m"><i>C</i></span> (bad for fatigue) and creep (lose preload); choose stiff gaskets and plan a re-torque.</dd>
+      <dt>Thread locking / anti-loosening</dt><dd>Thread locker, prevailing-torque nuts, wedge-locking washers &mdash; for vibration service, matched to the duty.</dd>
+      <dt>Re-torque schedule &amp; reuse policy</dt><dd>Account for embedment and relaxation; and do not reuse torque-to-yield bolts.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the handbook footnotes bury</span>
+      <ul>
+        <li><b>Tightening a bolt <em>more</em> usually makes it last <em>longer</em>.</b> It feels backwards, but higher preload keeps the joint closed so the bolt rides only the small <span class="m"><i>C</i>&middot;<i>P</i></span> band. Under-tightening, not over-tightening, is the usual fatigue culprit &mdash; right up to yield.</li>
+        <li><b>You control torque but you want tension, and the nut factor scatters &plusmn;30&nbsp;%.</b> A big chunk of your &ldquo;preload&rdquo; is friction uncertainty. For anything critical, use torque-<em>angle</em>, bolt <em>stretch</em>, or <em>ultrasonic</em> measurement &mdash; they bypass friction and read the tension itself.</li>
+        <li><b>Short, fat bolts are fatigue-prone; long, slender ones aren&rsquo;t.</b> A stiffer bolt means a higher <span class="m"><i>C</i></span>, so it feels more of the load. The classic fix for a fatiguing joint is a <em>longer</em> bolt (or a spacer / springy washer) to lower <span class="m"><i>C</i></span> &mdash; counterintuitive, but standard practice.</li>
+        <li><b>Joints lose 5&ndash;10&nbsp;% of preload in the first hours and cycles</b> to embedment (micro-flattening of the mating surfaces) and gasket creep. Design the margin in, or re-torque after it has settled.</li>
+        <li><b>Lubricate threads for a consistent nut factor &mdash; then <em>lower</em> the torque target.</b> Lube drops <span class="m"><i>K</i></span>, so the same torque now gives a <em>higher</em> preload; forget to retarget and you yield the bolt.</li>
+        <li><b>Gaskets are fatigue killers and creepers.</b> A soft gasket means a high <span class="m"><i>C</i></span>, so the bolt feels the full load, and the gasket relaxes and sheds preload besides. Use spiral-wound or metal gaskets and plan a re-torque pass.</li>
+        <li><b>A shear joint should carry load by friction, not by the bolt.</b> Clamp hard enough that the faces do not slip (slip-critical); relying on the shank bearing in the hole invites fretting and fatigue.</li>
+        <li><b>Don&rsquo;t reuse torque-to-yield bolts.</b> Many modern engine bolts are tightened past yield on purpose, for a consistent preload, and are single-use; reuse them and you get an unknown, degraded preload.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">an M10 8.8 bracket under a fluctuating pull</span></div>
+
+    <h2><span class="sn">9</span>Build it: an M10 8.8 bracket under a 0&ndash;10&nbsp;kN fluctuating pull</h2>
+    <p>Enough principle &mdash; here is a real joint worked end to end, so you can copy the shape and reuse it. The job: a bracket clamped by a single M10 class-8.8 bolt, with an external tensile load that cycles from 0 to 10&nbsp;kN. Every line below reads straight off the two numbers you already own, <span class="m"><i>F</i><sub>i</sub></span> and <span class="m"><i>C</i></span>.</p>
+    <div class="worked">
+      <span class="wl">Worked example — an M10 8.8 bolt, 0&ndash;10 kN external load</span>
+      <dl class="speclist">
+        <dt>Bolt capacity</dt><dd>M10 8.8: proof strength <span class="m">&approx; 580&nbsp;MPa</span>, tensile stress area <span class="m"><i>A</i><sub>t</sub> &approx; 58&nbsp;mm&sup2;</span> &rarr; proof load <span class="m"><i>F</i><sub>p</sub> &approx; 580 &times; 58 &approx; <b>33.6&nbsp;kN</b></span>. Target preload <span class="m"><i>F</i><sub>i</sub> &approx; 0.75&middot;<i>F</i><sub>p</sub> &approx; <b>25&nbsp;kN</b></span>.</dd>
+        <dt>Stiffness ratio</dt><dd>Estimate bolt stiffness <span class="m"><i>k</i><sub>b</sub> = <i>A</i>&middot;<i>E</i>/<i>L</i></span> and member stiffness <span class="m"><i>k</i><sub>m</sub></span> by the pressure-cone method; a typical metal joint gives <span class="m"><i>k</i><sub>m</sub> &approx; 4&middot;<i>k</i><sub>b</sub></span> &rarr; <span class="m"><i>C</i> = <i>k</i><sub>b</sub>/(<i>k</i><sub>b</sub>+<i>k</i><sub>m</sub>) = 1/5 = <b>0.2</b></span>.</dd>
+        <dt>Bolt load under the 10 kN pull</dt><dd><span class="m"><i>F</i><sub>bolt</sub> = <i>F</i><sub>i</sub> + <i>C</i>&middot;<i>P</i> = 25 + 0.2&times;10 = <b>27&nbsp;kN</b></span>. Peak bolt stress <span class="m">= 27&thinsp;000 / 58 &approx; <b>466&nbsp;MPa</b></span>, safely under proof (580). <em>The bolt gained only 2&nbsp;kN from a 10&nbsp;kN external load.</em></dd>
+        <dt>Fatigue</dt><dd>Alternating stress amplitude <span class="m">&sigma;<sub>a</sub> = <i>C</i>&middot;(&Delta;<i>P</i>/2)/<i>A</i><sub>t</sub> = 0.2 &times; 5000 / 58 &approx; <b>17&nbsp;MPa</b></span>. Tiny &mdash; that is why it survives. With <em>zero</em> preload the bolt would swing <span class="m">0&rarr;172&nbsp;MPa</span> every cycle and fatigue out.</dd>
+        <dt>Separation check</dt><dd>The joint opens when <span class="m"><i>P</i> &gt; <i>F</i><sub>i</sub>/(1&minus;<i>C</i>) = 25/0.8 = <b>31&nbsp;kN</b></span> &mdash; far above the 10&nbsp;kN load. Big margin; the joint never unclamps.</dd>
+        <dt>Tightening</dt><dd>Torque <span class="m"><i>T</i> = <i>K</i>&middot;<i>F</i><sub>i</sub>&middot;<i>d</i> = 0.2 &times; 25&thinsp;000 &times; 0.010 = <b>50&nbsp;N&middot;m</b></span> (nut factor 0.2). But <span class="m"><i>K</i></span> scatters &plusmn;30&nbsp;%, so the real preload is <span class="m">~17&ndash;33&nbsp;kN</span>: check the <em>low</em> end still clamps (it does) and the <em>high</em> end stays under yield (it does).</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a bolt size, a grade, and a cyclic load hand you the proof load, the target preload, the stiffness ratio, the peak bolt stress, the fatigue amplitude, the separation margin, and &mdash; loudly &mdash; the fact that your real uncertainty is not the 10&nbsp;kN load but the &plusmn;30&nbsp;% band on the preload you can actually land with a torque wrench. The plug-in set is small and you already have all of it:</p>
+    <div class="eq"><span class="m"><i>C</i> = <span class="frac"><span class="nu"><i>k</i><sub>b</sub></span><span><i>k</i><sub>b</sub> + <i>k</i><sub>m</sub></span></span>,&nbsp;&nbsp;&nbsp;<i>k</i><sub>b</sub> = <span class="frac"><span class="nu"><i>A</i>&middot;<i>E</i></span><span><i>L</i></span></span></span><span class="lbl">load factor, and the bolt stiffness that feeds it</span></div>
+    <div class="eq"><span class="m"><i>F</i><sub>bolt</sub> = <i>F</i><sub>i</sub> + <i>C</i>&middot;<i>P</i>,&nbsp;&nbsp;&nbsp;<i>F</i><sub>clamp</sub> = <i>F</i><sub>i</sub> &minus; (1&minus;<i>C</i>)&middot;<i>P</i></span><span class="lbl">bolt force up a little, clamp force down a lot</span></div>
+    <div class="eq"><span class="m"><i>P</i><sub>sep</sub> = <span class="frac"><span class="nu"><i>F</i><sub>i</sub></span><span>1&minus;<i>C</i></span></span>,&nbsp;&nbsp;&nbsp;&sigma;<sub>a</sub> = <i>C</i>&middot;<span class="frac"><span class="nu">&Delta;<i>P</i>/2</span><span><i>A</i><sub>t</sub></span></span></span><span class="lbl">separation load, and the bolt&rsquo;s cyclic stress amplitude</span></div>
+    <div class="eq"><span class="m"><i>F</i><sub>i</sub> &approx; 0.75&middot;<i>F</i><sub>proof</sub>,&nbsp;&nbsp;<i>F</i><sub>proof</sub> = <i>S</i><sub>proof</sub>&middot;<i>A</i><sub>t</sub>,&nbsp;&nbsp;<i>T</i> &approx; <i>K</i>&middot;<i>F</i><sub>i</sub>&middot;<i>d</i></span><span class="lbl">target preload, and the torque that (roughly) lands it; K &approx; 0.2 plain, ~0.12&ndash;0.16 lubed</span></div>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment the joint leaks, loosens, or a bolt lets go after a few thousand cycles:</p>
+    <ol class="recipe">
+      <li><b>Set the clamp requirement.</b> From the worst-case external load, pick the preload that keeps the joint closed (a <span class="m"><i>P</i><sub>sep</sub></span> margin) and resists slip or leak &mdash; that is your target <span class="m"><i>F</i><sub>i</sub></span>, not the bolt&rsquo;s rating.</li>
+      <li><b>Pick grade and check proof.</b> Choose the grade so <span class="m"><i>F</i><sub>i</sub> &approx; 0.75&middot;<i>F</i><sub>proof</sub></span> lands comfortably, then verify the peak bolt stress <span class="m"><i>F</i><sub>i</sub> + <i>C</i>&middot;<i>P</i></span> stays under proof.</li>
+      <li><b>Estimate <span class="m"><i>C</i></span> and check fatigue.</b> Compute <span class="m"><i>k</i><sub>b</sub></span> and <span class="m"><i>k</i><sub>m</sub></span>, get <span class="m"><i>C</i></span>, and confirm <span class="m">&sigma;<sub>a</sub> = <i>C</i>&middot;(&Delta;<i>P</i>/2)/<i>A</i><sub>t</sub></span> is well inside the bolt&rsquo;s endurance limit. If not, <em>lengthen or soften the bolt</em> or <em>stiffen the members</em> to drop <span class="m"><i>C</i></span>.</li>
+      <li><b>Choose the tightening method for the accuracy you need.</b> Torque for routine work; torque-angle or stretch/ultrasonic where preload scatter would eat your margin. Set the nut factor by lubricating consistently.</li>
+      <li><b>Tighten, then re-torque after settling.</b> Account for the 5&ndash;10&nbsp;% embedment and relaxation loss with a re-torque pass, or design the margin in.</li>
+      <li><b>Verify on critical joints.</b> Spot-check the actual preload with an ultrasonic bolt gauge or a stretch measurement; do not trust torque alone where it matters.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Torque vs torque-angle vs stretch/ultrasonic</dt><dd>Torque is cheap but &plusmn;30&nbsp;% scatter; torque-angle (snug, then turn a set angle) is tighter; bolt-stretch and ultrasonic are tightest &mdash; they measure the tension directly &mdash; for critical joints.</dd>
+      <dt>Bolt grade (8.8 / 10.9 / 12.9)</dt><dd>A higher grade gives more preload from the same size, but more notch and hydrogen-embrittlement sensitivity and less ductility. Go up in grade before up in size when space is tight.</dd>
+      <dt>Tune <span class="m"><i>C</i></span>: long/slim bolt &amp; washers vs short stiff bolt</dt><dd>To fight fatigue, lower <span class="m"><i>C</i></span> with a longer, more slender bolt or a compliant (Belleville) element; a short stiff bolt is fine for a static joint but poor under cyclic load.</dd>
+      <dt>Gasket &amp; locking choices</dt><dd>Stiff (spiral-wound / metal) gaskets for a low <span class="m"><i>C</i></span> and less creep; wedge-locking washers, prevailing-torque nuts, or thread locker for vibration &mdash; matched to the service, not added by reflex.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do on the bench</b>
+      This page gets you the right <b>preload target</b>, a sound <b>stiffness ratio</b>, a <b>bolt grade</b>, and a <b>tightening method</b> &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% is friction scatter, real stiffness, and settling. <b>The nut factor is empirical and drifts</b> with lube, finish, temperature, and reuse &mdash; measure it on <em>your</em> hardware, or sidestep it with angle, stretch, or ultrasonic on critical joints; never treat a handbook <span class="m"><i>K</i></span> as exact. <b>Member stiffness (the pressure cone) is an estimate</b>; complex or gasketed joints need VDI&nbsp;2230 or FEA to pin <span class="m"><i>C</i></span>, and <span class="m"><i>C</i></span> is half your fatigue answer. <b>Plan for preload loss</b> &mdash; embedment and creep shed 5&ndash;10&nbsp;% early, so re-torque or design the margin in, and re-torque gaskets specifically. <b>Verify critical joints</b> with ultrasonic bolt tension or stretch measurement; torque alone is a proxy you cannot fully trust where failure is expensive. Tools to stand on: a <b>calibrated torque wrench with an angle gauge</b>, an <b>ultrasonic bolt-tension meter</b> or stretch micrometer for the ones that matter, <b>VDI&nbsp;2230</b> (the bolted-joint calculation standard), and <b>FEA</b> for complex joints. The two-spring idea in Part&nbsp;I never changes; the last mile is landing a real preload you can trust on a real joint that settles.
+    </div>
+
+    <h2><span class="sn">10</span>The honest last mile &mdash; check yourself</h2>
+    <p>Three questions &mdash; reason them out from the two-spring model, don&rsquo;t recall them:</p>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">A bolt keeps fatigue-failing in a vibrating joint. A junior engineer says &ldquo;use a stronger, bigger bolt.&rdquo; Using the preload model, explain why that may not help &mdash; and name the two changes that actually would.</p><p class="a">Fatigue is driven by the bolt&rsquo;s cyclic stress <span class="m">&sigma;<sub>a</sub> = <i>C</i>&middot;(&Delta;<i>P</i>/2)/<i>A</i><sub>t</sub></span> and by whether the joint stays closed &mdash; not by static strength. A bigger, stiffer bolt can actually <em>raise</em> <span class="m"><i>C</i></span> (it is now stiffer relative to the members, so it feels a larger share of the swing) and make the fatigue <em>worse</em>. The real fixes are the two numbers that matter: raise the <b>preload</b> &mdash; keep the joint closed so <span class="m"><i>C</i></span> does its job, up to about 75&nbsp;% of proof &mdash; and <b>lower <span class="m"><i>C</i></span></b> with a longer or more slender bolt, a spacer or compliant washer, or stiffer members, so the bolt feels less of the swing in the first place.</p></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">Two identical joints carry the same 0&rarr;8&nbsp;kN cyclic load. One has a thin rubber gasket, the other is bare metal-to-metal. Which bolt sees the bigger cyclic stress and is more fatigue-prone, and why?</p><p class="a">The <b>gasketed</b> one. A soft gasket lowers the member stiffness <span class="m"><i>k</i><sub>m</sub></span>, which <em>raises</em> <span class="m"><i>C</i> = <i>k</i><sub>b</sub>/(<i>k</i><sub>b</sub>+<i>k</i><sub>m</sub>)</span>, so the bolt feels a larger share of the external swing &mdash; and the cyclic stress <span class="m">&sigma;<sub>a</sub> = <i>C</i>&middot;(&Delta;<i>P</i>/2)/<i>A</i><sub>t</sub></span> grows right along with <span class="m"><i>C</i></span>. The bare metal joint has stiff members, a small <span class="m"><i>C</i></span>, and a tiny cyclic bolt stress. Soft gaskets are fatigue killers; worse, they also creep and shed preload over time, so the joint loses clamp just as it is asking the bolt to carry more.</p></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">You lubricate the threads on a joint but keep the same torque spec that was written for dry threads. Why might you now snap the bolt or crush the joint?</p><p class="a">Torque relates to preload only through the nut factor, <span class="m"><i>T</i> &approx; <i>K</i>&middot;<i>F</i><sub>i</sub>&middot;<i>d</i></span>. Lubrication <em>lowers</em> <span class="m"><i>K</i></span> (from ~0.2 dry toward ~0.12&ndash;0.16), so for the <em>same</em> torque the preload <span class="m"><i>F</i><sub>i</sub></span> goes <em>up</em> &mdash; the same twisting effort now buys far more tension because less of it is being burned as friction. That extra preload can push the bolt past its proof load into yield, or crush the members. Lubed threads need a <em>reduced</em> torque target to hit the same preload the dry spec intended.</p></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-differential.html"><b>&larr; Prev:</b> The Differential</a>
+      <span class="nextpill"><b>Coming next:</b> The Hohmann Transfer</span>
+    </div>
+    <p class="footnote"><b>Bolted-Joint Preload — Why a Bolt Is a Spring You Pre-Stretch, Not a Hook You Hang Load On.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (&ldquo;strong enough&rdquo; bolts still fatigue, loosen, and leak, so strength was never the variable) and the one reframe (a tightened bolt is a pre-stretched spring whose preload clamps two members, and an external load then <em>splits</em> by the stiffness ratio) from which the load factor <span class="m"><i>C</i> = <i>k</i><sub>b</sub>/(<i>k</i><sub>b</sub>+<i>k</i><sub>m</sub>)</span>, the bolt force <span class="m"><i>F</i><sub>bolt</sub> = <i>F</i><sub>i</sub> + <i>C</i>&middot;<i>P</i></span>, the clamp force <span class="m"><i>F</i><sub>clamp</sub> = <i>F</i><sub>i</sub> &minus; (1&minus;<i>C</i>)&middot;<i>P</i></span>, the separation load <span class="m"><i>P</i><sub>sep</sub> = <i>F</i><sub>i</sub>/(1&minus;<i>C</i>)</span>, the fatigue amplitude <span class="m">&sigma;<sub>a</sub> = <i>C</i>&middot;(&Delta;<i>P</i>/2)/<i>A</i><sub>t</sub></span>, and the torque&ndash;tension relation <span class="m"><i>T</i> &approx; <i>K</i>&middot;<i>F</i><sub>i</sub>&middot;<i>d</i></span> all fall out &mdash; then the practitioner&rsquo;s half: how preload governs every real joint, why nearly every failure reads &ldquo;preload&rdquo; not &ldquo;strength,&rdquo; what to spec, and an M10 8.8 bracket under a 0&ndash;10&nbsp;kN pull worked end to end. With live simulations of the joint diagram splitting an external load between a small rise in bolt force and a large drop in clamp, and of the bolt riding a thin band above the preload until low preload lets the joint separate and its cyclic stress explodes. The honest truth of it: this gets you the right preload, stiffness ratio, bolt grade, and tightening method &mdash; friction scatter, real member stiffness, and settling are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The Involute Gear Tooth</b> and <b>Failure &amp; Systems Safety</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* jointdiagram — the classic triangular joint diagram. Deflection on x, force (kN) on y.
+     The BOLT spring rises from the origin (slope k_b) and the stiffer MEMBER spring rises from a
+     point to the left (slope k_m = ratio·k_b); both meet at the apex (δ_b, F_i) — the preload state.
+     An external load P splits by stiffness: load factor C = 1/(1+ratio) = k_b/(k_b+k_m). The bolt
+     gains only C·P (short rise along the bolt line) while the clamp loses (1−C)·P (big drop along the
+     member line). Separation when F_clamp ≤ 0, i.e. P ≥ P_sep = F_i/(1−C); past that the bolt takes
+     the full load. Axes fit per setting (static diagram). s.accent = bolt line, unicode literals only. */
+  SIMS.jointdiagram={
+    controls:[
+      {k:'preload',label:'Preload F_i',min:5,max:35,step:1,val:25,unit:' kN'},
+      {k:'load',label:'External load P',min:0,max:40,step:1,val:10,unit:' kN'},
+      {k:'ratio',label:'Member/bolt stiffness k_m/k_b',min:0.3,max:10,step:0.1,val:4.0,fmt:function(v){return v.toFixed(1);}}
+    ],
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var Fi=clamp(s.p.preload,5,35);
+      var P=clamp(s.p.load,0,40);
+      var ratio=clamp(s.p.ratio,0.3,10);
+      var kb=1, km=ratio;
+      var C=1/(1+ratio);
+      var oneMinusC=1-C;                 // = ratio/(1+ratio), always >0 for ratio>=0.3
+      var Fbolt_closed=Fi+C*P;
+      var Fclamp=Fi-oneMinusC*P;
+      var separated=Fclamp<=0;
+      var Fbolt=Math.max(Fbolt_closed,P);     // once separated the bolt tracks the full load
+      var Fclamp_draw=Math.max(0,Fclamp);
+      var Psep=(oneMinusC>1e-9)?(Fi/oneMinusC):Infinity;
+      var dFbolt=C*P, dFmem=oneMinusC*P;
+
+      // deflections (kb = 1 unit): apex at (db,Fi); member intercept to the left at xm
+      var db=Fi/kb, dm=Fi/km, xm=db-dm;
+      var boltOpD=Fbolt/kb;
+      var memOpD=xm+Fclamp_draw/km;
+
+      // fit both axes to the data
+      var minX=Math.min(0,xm,db,boltOpD,memOpD);
+      var maxX=Math.max(0,xm,db,boltOpD,memOpD);
+      var spanX=maxX-minX; if(!(spanX>1e-6)) spanX=1;
+      var yMax=Math.max(Fi,Fbolt)*1.15; if(!(yMax>1e-6)) yMax=1;
+
+      var mL=40,mR=16,mT=26,mB=30;
+      var x0=mL, x1=Math.max(mL+20,w-mR), yTop=mT, yBot=Math.max(mT+20,h-mB);
+      function xOf(d){ return clamp(x0+(d-minX)/spanX*(x1-x0),x0,x1); }
+      function yOf(f){ return clamp(yBot-clamp(f,0,yMax)/yMax*(yBot-yTop),yTop,yBot); }
+
+      // frame + faint grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,yTop,x1-x0,yBot-yTop);
+      ctx.globalAlpha=0.5;
+      for(var gi=1;gi<4;gi++){ var gy=clamp(yTop+(yBot-yTop)*gi/4,yTop,yBot);
+        ctx.beginPath(); ctx.moveTo(x0,gy); ctx.lineTo(x1,gy); ctx.stroke(); }
+      ctx.globalAlpha=1;
+
+      // axis labels + y ticks
+      txt(ctx,'force (kN)',x0+2,yTop-3,PAL.muted,8.5,'left');
+      txt(ctx,'deflection →',x1-2,yBot+12,PAL.muted,8,'right');
+      for(var yi=0;yi<=4;yi++){ var fv=yMax*yi/4; txt(ctx,fv.toFixed(0),x0-3,yOf(fv)+3,PAL.faint,7,'right'); }
+
+      // preload reference line at F_i
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.7; ctx.setLineDash([3,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(x0,yOf(Fi)); ctx.lineTo(x1,yOf(Fi)); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'F_i '+Fi.toFixed(0),x0+3,yOf(Fi)-3,PAL.faint,7.5,'left');
+
+      // member spring (steeper, PAL.cool): from (xm,0) up to apex (db,Fi)
+      ctx.strokeStyle=PAL.cool; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.moveTo(xOf(xm),yOf(0)); ctx.lineTo(xOf(db),yOf(Fi)); ctx.stroke();
+
+      // bolt spring (accent, the hero): from origin (0,0) through apex out to the bolt op point
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.moveTo(xOf(0),yOf(0)); ctx.lineTo(xOf(boltOpD),yOf(Fbolt)); ctx.stroke();
+
+      // spring labels
+      txt(ctx,'bolt k_b',xOf(0)+4,yOf(0)-5,s.accent,7.5,'left');
+      txt(ctx,'member k_m',xOf(xm)+2,clamp(yOf(0)-5,yTop+8,yBot-2),PAL.cool,7.5,'left');
+
+      // apex = preload state
+      dot(ctx,xOf(db),yOf(Fi),3.2,PAL.ink);
+
+      // the split: bolt gains only C·P (short), clamp loses (1−C)·P (big)
+      // bolt connector (accent, up from F_i to F_bolt)
+      ctx.strokeStyle=s.accent; ctx.lineWidth=1.4; ctx.globalAlpha=0.9;
+      ctx.beginPath(); ctx.moveTo(xOf(boltOpD),yOf(Fi)); ctx.lineTo(xOf(boltOpD),yOf(Fbolt)); ctx.stroke();
+      // clamp connector (bad, down from F_i to F_clamp)
+      ctx.strokeStyle=PAL.bad; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(xOf(memOpD),yOf(Fi)); ctx.lineTo(xOf(memOpD),yOf(Fclamp_draw)); ctx.stroke();
+      ctx.globalAlpha=1;
+
+      // operating points
+      dot(ctx,xOf(boltOpD),yOf(Fbolt),3.6,s.accent);
+      dot(ctx,xOf(memOpD),yOf(Fclamp_draw),3.6,separated?PAL.bad:PAL.good);
+
+      // delta annotations
+      txt(ctx,'ΔF_bolt = C·P  (bolt gains only C·P)',clamp(xOf(boltOpD)+5,x0+2,x1-4),clamp(yOf(Fbolt)-5,yTop+8,yBot-2),s.accent,7.5,'left');
+      txt(ctx,'ΔF_clamp = (1−C)·P  (clamp loses (1−C)·P)',clamp(xOf(memOpD)-4,x0+2,x1-2),clamp(yOf(Fclamp_draw)+12,yTop+10,yBot-3),PAL.bad,7.5,'right');
+
+      // title + readouts
+      txt(ctx,'joint diagram — two springs',8,13,PAL.muted,10,'left');
+      txt(ctx,'C = '+C.toFixed(2)+' · F_bolt '+Fbolt.toFixed(1)+' · F_clamp '+Fclamp_draw.toFixed(1)+' kN',w-8,13,PAL.ink,8,'right');
+      var psepTxt=isFinite(Psep)?('P_sep '+Psep.toFixed(1)+' kN'):'P_sep ∞';
+      txt(ctx,psepTxt+' · ΔF_bolt '+dFbolt.toFixed(1)+' · ΔF_clamp '+dFmem.toFixed(1),w-8,24,PAL.muted,8,'right');
+      if(separated){ txt(ctx,'SEPARATED — bolt now takes the full load',w-8,36,PAL.bad,8.5,'right'); }
+
+      txt(ctx,'the external load splits by stiffness — the stiff members take most of it off the clamp',
+          (x0+x1)/2,h-5,PAL.faint,8,'center');
+    }
+  };
+
+  /* loadsplit — why preload kills fatigue. Force (kN) on y, time on x over a few cycles. An external
+     load P(t) swings 0→amp→0 (drawn faint, doubling as the naive "bolt sees all of P" line). The bolt
+     force F_bolt = F_i + C·P rides a THIN band of height C·amp sitting high above zero (s.accent) — so
+     its cyclic stress amplitude σ_a = C·(amp/2)/A_t (A_t = 58 mm²) is tiny: PROTECTED. But when the
+     swing reaches P_sep = F_i/(1−C) the joint opens and the bolt force breaks upward to follow the full
+     load, F_bolt = max(F_i+C·P, P) — σ_a jumps and the verdict flips to SEPARATED. A dot rides the
+     curves. High preload / low C keeps the band thin; low preload or high C loses the protection.
+     s.accent = bolt force (the hero), unicode literals only. */
+  SIMS.loadsplit={
+    controls:[
+      {k:'preload',label:'Preload F_i',min:0,max:35,step:1,val:25,unit:' kN'},
+      {k:'amp',label:'External load (cycles 0→P)',min:2,max:40,step:1,val:10,unit:' kN'},
+      {k:'C',label:'Load factor C',min:0.05,max:1.0,step:0.05,val:0.2,fmt:function(v){return v.toFixed(2);}}
+    ],
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var Fi=clamp(s.p.preload,0,35);
+      var amp=clamp(s.p.amp,2,40);
+      var Cf=clamp(s.p.C,0.05,1.0);
+      var oneMinusC=1-Cf;
+      var Psep=(oneMinusC>1e-9)?(Fi/oneMinusC):Infinity;
+      var separated=amp>=Psep;
+      function Pt(ph){ var v=amp*0.5*(1-Math.cos(ph)); return (v>0)?v:0; }
+      function Fb(p){ return Math.max(Fi+Cf*p,p); }   // separation handled by the max()
+      var bandBot=Fi, bandTop=Fi+Cf*amp;
+      var sigA=Cf*amp*500/58;                          // MPa: C·(amp·1000/2)/58
+      var yMax=Math.max(bandTop,amp,Fb(amp),Fi)*1.14; if(!(yMax>1e-6)) yMax=1;
+
+      var mL=40,mR=16,mT=26,mB=30;
+      var x0=mL, x1=Math.max(mL+20,w-mR), yTop=mT, yBot=Math.max(mT+20,h-mB);
+      var NCYC=2.5, TWO=Math.PI*2, phMax=TWO*NCYC;
+      function xOfPh(ph){ return clamp(x0+clamp(ph,0,phMax)/phMax*(x1-x0),x0,x1); }
+      function yOf(f){ return clamp(yBot-clamp(f,0,yMax)/yMax*(yBot-yTop),yTop,yBot); }
+
+      // frame + faint grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,yTop,x1-x0,yBot-yTop);
+      ctx.globalAlpha=0.5;
+      for(var gi=1;gi<4;gi++){ var gy=clamp(yTop+(yBot-yTop)*gi/4,yTop,yBot);
+        ctx.beginPath(); ctx.moveTo(x0,gy); ctx.lineTo(x1,gy); ctx.stroke(); }
+      ctx.globalAlpha=1;
+
+      txt(ctx,'force (kN)',x0+2,yTop-3,PAL.muted,8.5,'left');
+      txt(ctx,'time →',x1-2,yBot+12,PAL.muted,8,'right');
+      for(var yi=0;yi<=4;yi++){ var fv=yMax*yi/4; txt(ctx,fv.toFixed(0),x0-3,yOf(fv)+3,PAL.faint,7,'right'); }
+
+      var M=140, j, ph, px;
+
+      // external load area (faint) — under P(t)
+      ctx.fillStyle=PAL.muted; ctx.globalAlpha=0.10;
+      ctx.beginPath(); ctx.moveTo(x0,yOf(0));
+      for(j=0;j<=M;j++){ ph=phMax*j/M; px=xOfPh(ph); ctx.lineTo(px,yOf(Pt(ph))); }
+      ctx.lineTo(x1,yOf(0)); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+
+      // naive "bolt sees all of P" reference (= top of the external-load curve), dashed muted
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=1.2; ctx.globalAlpha=0.8; ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      for(j=0;j<=M;j++){ ph=phMax*j/M; px=xOfPh(ph); if(j===0) ctx.moveTo(px,yOf(Pt(ph))); else ctx.lineTo(px,yOf(Pt(ph))); }
+      ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1;
+
+      // the thin bolt-force band [F_i, F_i+C·amp], accent tint
+      var yb0=yOf(bandBot), yb1=yOf(bandTop);
+      ctx.fillStyle=s.accent; ctx.globalAlpha=0.12;
+      ctx.fillRect(x0,Math.min(yb0,yb1),x1-x0,Math.abs(yb0-yb1)); ctx.globalAlpha=1;
+
+      // bolt force F_bolt(t) = max(F_i+C·P, P) — rides the band, breaks up when separated
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4;
+      ctx.beginPath();
+      for(j=0;j<=M;j++){ ph=phMax*j/M; px=xOfPh(ph); var fy=yOf(Fb(Pt(ph))); if(j===0) ctx.moveTo(px,fy); else ctx.lineTo(px,fy); }
+      ctx.stroke();
+
+      // separation level marker, if it falls on the chart
+      if(isFinite(Psep) && Psep<yMax){
+        ctx.strokeStyle=PAL.bad; ctx.globalAlpha=0.6; ctx.setLineDash([2,3]); ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(x0,yOf(Psep)); ctx.lineTo(x1,yOf(Psep)); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha=1;
+        txt(ctx,'P_sep',x0+3,clamp(yOf(Psep)-3,yTop+8,yBot-2),PAL.bad,7,'left');
+      }
+
+      // riding operating point
+      var phCur=(s.t*(TWO/3.2))%phMax; if(!(phCur>=0)) phCur=0;
+      var pcx=xOfPh(phCur), pNow=Pt(phCur);
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.5; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(pcx,yTop); ctx.lineTo(pcx,yBot); ctx.stroke(); ctx.globalAlpha=1;
+      dot(ctx,pcx,yOf(pNow),2.8,PAL.muted);
+      dot(ctx,pcx,yOf(Fb(pNow)),3.6,s.accent);
+
+      // inline labels
+      txt(ctx,'bolt force (rides the band)',x0+4,clamp(yOf(bandTop)-4,yTop+8,yBot-2),s.accent,7.5,'left');
+      txt(ctx,'naive: bolt sees all of P',x1-4,clamp(yOf(Pt(Math.PI))-4,yTop+8,yBot-2),PAL.muted,7.5,'right');
+
+      // title + readouts + verdict
+      txt(ctx,'preload vs fatigue',8,13,PAL.muted,10,'left');
+      var psepTxt=isFinite(Psep)?(Psep.toFixed(1)+' kN'):'∞ (never)';
+      txt(ctx,'σ_a '+sigA.toFixed(0)+' MPa (A_t 58 mm²) · band '+(Cf*amp).toFixed(1)+' kN',w-8,13,PAL.ink,8,'right');
+      txt(ctx,'P_sep '+psepTxt,w-8,24,PAL.muted,8,'right');
+      if(separated){ txt(ctx,'SEPARATED — bolt feels the full cyclic load → fatigue',w-8,36,PAL.bad,8.5,'right'); }
+      else { txt(ctx,'PROTECTED — bolt rides a thin band',w-8,36,PAL.good,8.5,'right'); }
+
+      txt(ctx,'high preload keeps the joint closed, so the bolt rides a thin band — that’s the fatigue protection',
+          (x0+x1)/2,h-5,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

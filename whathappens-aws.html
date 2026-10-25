@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>What Happens When · AWS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E7ECEE; --surface:#FCFDFD; --surface-2:#F1F4F5;
+    --ink:#151B1F; --ink-soft:#3A454B; --muted:#63717A; --faint:#8A97A0;
+    --line:#D3DBDF; --line-soft:#E2E8EB;
+    --accent:#0E7C86; --accent-ink:#FFFFFF; --accent-wash:#DCEDEE;
+
+    --eks:#3A6EA5;   /* EKS — blue */
+    --net:#2F8055;   /* Networking / VPC — green */
+    --iam:#B23A48;   /* IAM — crimson */
+    --kms:#7A4F9E;   /* KMS — violet */
+    --apigw:#A9721A; /* API Gateway — amber */
+    --elb:#B0517E;   /* Load Balancers — rose */
+    --r53:#4C63B6;   /* Route 53 — indigo */
+
+    --shadow:0 1px 2px rgba(20,30,36,.05), 0 8px 24px -14px rgba(20,30,36,.18);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+      --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+      --line:#273035; --line-soft:#20282D;
+      --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+      --eks:#7AA7DA; --net:#5FB98C; --iam:#E28088; --kms:#B98BD6; --apigw:#D6A24A; --elb:#D983AE; --r53:#8493E0;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+    --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+    --line:#273035; --line-soft:#20282D;
+    --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+    --eks:#7AA7DA; --net:#5FB98C; --iam:#E28088; --kms:#B98BD6; --apigw:#D6A24A; --elb:#D983AE; --r53:#8493E0;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:820px;margin:0 auto;padding-inline:20px;padding-block:0}
+
+  header.top{padding-block:56px 20px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  .vol{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 9px}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(2.1rem,6vw,3.15rem);line-height:1.02;letter-spacing:-.02em;margin:.32em 0 .1em;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.16rem;color:var(--ink-soft);max-width:64ch;margin:.6em 0 0}
+  .metaline{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .metaline b{color:var(--ink);font-weight:600}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  .controls{position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(9px);border-bottom:1px solid var(--line-soft);margin-top:12px}
+  .controls .wrap{padding-block:12px;display:flex;flex-direction:column;gap:11px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .search input{width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--ink)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);padding:5px 12px 5px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:border-color .12s,color .12s,background .12s}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,var(--faint))}
+  .chip[data-cat="all"]{--dot:var(--accent)}
+  .chip[data-cat="eks"]{--dot:var(--eks)}
+  .chip[data-cat="net"]{--dot:var(--net)}
+  .chip[data-cat="iam"]{--dot:var(--iam)}
+  .chip[data-cat="kms"]{--dot:var(--kms)}
+  .chip[data-cat="apigw"]{--dot:var(--apigw)}
+  .chip[data-cat="elb"]{--dot:var(--elb)}
+  .chip[data-cat="r53"]{--dot:var(--r53)}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--ink)}
+
+  section.track{padding-top:40px}
+  .track-head{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:6px}
+  .track-head .tno{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--track,var(--accent));font-weight:600}
+  .track-head h2{font-family:var(--sans);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:.15em 0 .1em}
+  .track-head p{font-family:var(--serif);color:var(--muted);margin:.2em 0 0;font-size:1rem;max-width:62ch}
+  section[data-track="eks"]{--track:var(--eks)}
+  section[data-track="net"]{--track:var(--net)}
+  section[data-track="iam"]{--track:var(--iam)}
+  section[data-track="kms"]{--track:var(--kms)}
+  section[data-track="apigw"]{--track:var(--apigw)}
+  section[data-track="elb"]{--track:var(--elb)}
+  section[data-track="r53"]{--track:var(--r53)}
+
+  .scenario{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--cat,var(--accent));border-radius:12px;padding:22px 24px 20px;margin-top:16px;box-shadow:var(--shadow)}
+  .scenario[data-cat="eks"]{--cat:var(--eks)}
+  .scenario[data-cat="net"]{--cat:var(--net)}
+  .scenario[data-cat="iam"]{--cat:var(--iam)}
+  .scenario[data-cat="kms"]{--cat:var(--kms)}
+  .scenario[data-cat="apigw"]{--cat:var(--apigw)}
+  .scenario[data-cat="elb"]{--cat:var(--elb)}
+  .scenario[data-cat="r53"]{--cat:var(--r53)}
+
+  .s-top{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .s-no{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--cat,var(--accent));flex:none}
+  .s-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:500;margin-left:auto;flex:none}
+  .scenario h3{font-family:var(--sans);font-weight:600;font-size:1.24rem;line-height:1.22;letter-spacing:-.01em;margin:.1em 0 .5em;text-wrap:balance}
+  .why{font-family:var(--sans);font-size:12.5px;color:var(--muted);margin:0 0 14px;padding-left:11px;border-left:2px solid var(--line)}
+  .why b{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;display:block;margin-bottom:2px}
+  .answer{font-family:var(--serif);font-size:1.075rem;line-height:1.62;color:var(--ink-soft)}
+  .answer p{margin:0 0 .85em}
+  .answer p:last-child{margin-bottom:0}
+  .answer .arch{color:var(--ink)}
+  .answer .arch::before{content:"Architect lens";font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;display:inline-block;margin-right:9px;padding:2px 7px;border-radius:5px;background:var(--surface-2);vertical-align:1px}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);color:var(--ink);padding:1px 5px;border-radius:5px;border:1px solid var(--line-soft)}
+  .terms{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .terms .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:8px;display:block}
+  .termlist{display:flex;flex-wrap:wrap;gap:6px}
+  .term{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;line-height:1.3}
+
+  .gist{
+    font-family:var(--serif);font-size:1.02rem;font-style:italic;line-height:1.5;
+    color:var(--ink-soft);margin:0 0 14px;padding:9px 13px;
+    background:var(--surface-2);border-radius:8px;border-left:2px solid var(--cat,var(--accent));
+  }
+  .gist>b:first-child{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;margin-right:8px}
+  .selfcheck{
+    font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--ink-soft);
+    margin:15px 0 0;padding:11px 13px;border-radius:8px;background:var(--accent-wash);
+  }
+  .selfcheck>b:first-child{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;display:block;margin-bottom:4px}
+  .selfcheck .sc-a{display:block;margin-top:5px;color:var(--muted);font-style:italic}
+  .foot-row{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .ytlink{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);
+    font-size:11.5px;font-weight:500;color:var(--cat,var(--accent));text-decoration:none;margin-bottom:11px}
+  .ytlink svg{width:15px;height:15px;flex:none;opacity:.92}
+  .ytlink:hover{color:var(--accent);text-decoration:underline}
+  .foot-row .terms{margin-top:0;padding-top:0;border-top:none}
+
+  .noresult{display:none;text-align:center;font-family:var(--serif);color:var(--muted);padding:48px 0 12px;font-size:1.05rem}
+  body.empty .noresult{display:block}
+
+  footer.foot{margin-top:52px;padding:26px 0 60px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.7}
+  footer.foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:520px){
+    .scenario{padding:18px 16px 16px}
+    header.top{padding-block:40px 16px}
+    .s-tag{display:none}
+  }
+  @media print{
+    .toggle,.controls{display:none}
+    body{background:#fff;color:#000}
+    .scenario{box-shadow:none;border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid}
+    .answer .arch::before{border:1px solid #999;background:#fff;color:#000}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html" title="Back to all volumes" aria-label="Back to all volumes">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker"><span class="vol">AWS Infrastructure · Basic → Advanced</span> Architect Rehearsal</div>
+    <h1>What Happens <em>When…</em></h1>
+    <p class="lede">The AWS building blocks an architect is expected to explain cold — and they stack into the whole request path: Route 53 steers to a load balancer, which routes into EKS, whose pods get VPC IPs and assume IAM roles, reach services over KMS-encrypted, endpoint-private networks, behind an API Gateway. Same format as the rest of the series — mechanism, architect lens, terms to land — walked basic to advanced.</p>
+    <div class="metaline">
+      <span><b>39</b> scenarios</span>
+      <span><b>7</b> services</span>
+      <span><b>basic → advanced</b>, spoken</span>
+      <span>Companion to the <b>What Happens When…</b> series</span>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Search — e.g. IRSA, VPC CNI, envelope encryption, NLB, alias record, SCP" aria-label="Search scenarios">
+      </label>
+      <span class="count" id="count"><b>39</b> shown</span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by service">
+      <button class="chip" data-cat="all" aria-pressed="true"><span class="dot"></span>All</button>
+      <button class="chip" data-cat="eks" aria-pressed="false"><span class="dot"></span>EKS</button>
+      <button class="chip" data-cat="net" aria-pressed="false"><span class="dot"></span>Networking / VPC</button>
+      <button class="chip" data-cat="iam" aria-pressed="false"><span class="dot"></span>IAM</button>
+      <button class="chip" data-cat="kms" aria-pressed="false"><span class="dot"></span>KMS</button>
+      <button class="chip" data-cat="apigw" aria-pressed="false"><span class="dot"></span>API Gateway</button>
+      <button class="chip" data-cat="elb" aria-pressed="false"><span class="dot"></span>Load Balancers</button>
+      <button class="chip" data-cat="r53" aria-pressed="false"><span class="dot"></span>Route 53</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="list">
+
+  <!-- ===== EKS ===== -->
+  <section class="track" data-track="eks">
+    <div class="track-head">
+      <div class="tno">Service 01 — Managed Kubernetes</div>
+      <h2>Amazon EKS</h2>
+      <p>Upstream Kubernetes with the control plane operated by AWS. The interesting parts are where Kubernetes meets AWS: pods getting real VPC IPs, assuming IAM roles, and turning Services into ELBs.</p>
+    </div>
+
+    <article class="scenario" data-cat="eks">
+      <div class="s-top"><span class="s-no">01</span><span class="s-tag">EKS · core</span></div>
+      <h3>You create an EKS cluster</h3>
+      <p class="why"><b>Why it matters</b>The control-plane / data-plane split is the foundation of everything EKS.</p>
+      <p class="gist"><b>Analogy</b> You rent the engine room of a ship fully crewed and maintained (the control plane AWS runs), but you still bring and steer your own cargo &mdash; the containers on deck (your nodes) are yours to load, balance, and keep afloat.</p>
+      <div class="answer">
+        <p>When you create an EKS cluster, AWS stands up and fully manages the Kubernetes <b>control plane</b> — API server, etcd, scheduler, controller-manager — running redundantly across multiple Availability Zones, patched and scaled by AWS, exposed to you as a single managed API endpoint. You never see or SSH those nodes. What you bring is the <b>data plane</b>: the worker nodes that run your pods — EC2 via managed node groups, self-managed nodes, or serverless <b>Fargate</b>. So EKS is "managed control plane, your data plane," and you pay a per-cluster hourly fee plus the cost of your nodes.</p>
+        <p>Two details seniors add: the control plane runs in an <b>AWS-owned account</b> and reaches into your VPC through <b>cross-account ENIs</b>, and its API endpoint has an <b>access mode</b> you choose &mdash; public, public+private, or private-only &mdash; which is a real security lever (a private-only endpoint keeps <code>kubectl</code> traffic off the internet). The newer <b>EKS Auto Mode</b> blurs the old line by letting AWS manage nodes, scaling, and core add-ons too &mdash; closer to &lsquo;managed data plane&rsquo; for teams who don&rsquo;t want to run Karpenter and the CNI themselves.</p>
+        <p class="arch">The split is the whole point: AWS takes the operationally hardest, most failure-sensitive part — a highly-available etcd and API server — off your plate, while you keep control of the compute where workloads run. Control-plane HA is AWS's problem (multi-AZ, no single point of failure); node capacity, autoscaling, patching, and networking are yours. It's the same "managed infra, not managed workload" line as RDS: EKS gives you conformant upstream Kubernetes with the control plane handled, but your cluster's reliability still depends on how you run the data plane. And because it's real Kubernetes, everything from the platform volumes — <code>kubectl apply</code>, the scheduler, controllers — applies unchanged.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Someone wants <code>kubectl</code> to never traverse the public internet and the API server unreachable from outside the VPC &mdash; what EKS setting delivers that, and what&rsquo;s the operational catch? <span class="sc-a">Set the cluster endpoint access to <b>private-only</b> (disable public access); the API endpoint then resolves to a private IP reachable only from the VPC/peered networks. The catch: your CI, bastions, and admins must now reach it over VPN/Direct Connect/peering or a jump host, so you need that connectivity in place or you lock yourself out.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=amazon%20eks%20control%20plane%20data%20plane%20architecture%20endpoint%20access%20explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: EKS: managed control plane vs your data plane</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">managed control plane (API/etcd multi-AZ)</span><span class="term">data plane (your nodes)</span><span class="term">node groups / self-managed / Fargate</span><span class="term">single API endpoint</span><span class="term">per-cluster fee</span><span class="term">conformant upstream k8s</span><span class="term">"managed control plane, your data plane"</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="eks">
+      <div class="s-top"><span class="s-no">02</span><span class="s-tag">EKS · core</span></div>
+      <h3>A worker node joins the cluster</h3>
+      <p class="why"><b>Why it matters</b>How nodes are provisioned, authorized, and scaled is core EKS operations — and a classic lockout gotcha.</p>
+      <p class="gist"><b>Analogy</b> A new employee can&rsquo;t just walk in: they need the right uniform and onboarding script (AMI + bootstrap), a company badge (the node IAM role), and their name on the door list (access entry) &mdash; miss the list and they&rsquo;re in the lobby forever.</p>
+      <div class="answer">
+        <p>A node needs three things to join: the right <b>AMI and bootstrap</b> (the EKS-optimized AMI runs a script pointing the kubelet at the cluster endpoint and CA), an <b>IAM role</b> (the node instance role, to register and pull images), and <b>authorization</b> in the cluster — historically the <code>aws-auth</code> ConfigMap mapping the node's IAM role to a Kubernetes identity, now the newer EKS <b>access entries</b> API. Managed node groups automate all this (AWS provisions, bootstraps, and rolls/patches them); self-managed you wire yourself; Fargate runs pods with no nodes at all. For scaling, <b>Cluster Autoscaler</b> or <b>Karpenter</b> add and remove nodes as pods need capacity.</p>
+        <p>The hardening detail I&rsquo;d add is <b>IMDSv2 and the hop limit</b>: set the instance metadata hop limit to <code>1</code> so ordinary (non-host-network) pods can&rsquo;t reach the node&rsquo;s metadata endpoint and steal the <em>node</em> instance-role credentials via SSRF &mdash; which is also why you push app permissions to IRSA/Pod Identity, not the node role. And the bootstrap itself has modernised: AL2023 nodes use <code>nodeadm</code> driven by a config object rather than the old AL2 <code>bootstrap.sh</code> arguments.</p>
+        <p class="arch">The join flow is where AWS meets Kubernetes — IAM (the node identity and the <code>aws-auth</code>/access-entry mapping, the classic "my nodes won't join" or "I locked myself out of the cluster" gotcha) and autoscaling. I default to managed node groups for the automation (rolling updates that respect PodDisruptionBudgets), and reach for Karpenter when I want fast, right-sized provisioning — it picks instance types to fit pending pods rather than scaling fixed groups. Fargate when I want zero node management and per-pod isolation, accepting its constraints. The access-entry/<code>aws-auth</code> mapping is the thing I treat carefully, because a bad edit there can lock everyone out of the cluster.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why do EKS hardening guides tell you to set the EC2 metadata (IMDS) hop limit to 1 on worker nodes? <span class="sc-a">A hop limit of 1 means a packet to the metadata endpoint from inside a container (an extra network hop) exceeds its TTL and fails, so pods can&rsquo;t reach IMDS and assume the broad <b>node instance role</b> &mdash; closing an SSRF/credential-theft path and forcing per-pod permissions through IRSA/Pod Identity instead.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=eks%20worker%20node%20join%20aws-auth%20access%20entries%20IMDSv2%20hop%20limit%20nodeadm"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How a node joins (and the lockout trap)</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">EKS-optimized AMI + bootstrap</span><span class="term">node instance IAM role</span><span class="term">aws-auth → access entries</span><span class="term">managed node groups / self-managed / Fargate</span><span class="term">Cluster Autoscaler vs Karpenter</span><span class="term">PDB-aware rolling</span><span class="term">lockout gotcha</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="eks">
+      <div class="s-top"><span class="s-no">03</span><span class="s-tag">EKS · advanced</span></div>
+      <h3>A pod gets an IP (the VPC CNI)</h3>
+      <p class="why"><b>Why it matters</b>EKS's networking model is unique, and its IP-density limits bite in production.</p>
+      <p class="gist"><b>Analogy</b> Every pod gets a real apartment with its own street address drawn from the building&rsquo;s block of numbers &mdash; wonderful until the block runs out and new tenants (pods) are left standing on the pavement marked <code>Pending</code>.</p>
+      <div class="answer">
+        <p>EKS's default networking is the <b>AWS VPC CNI</b>, and it's distinctive: every pod gets a <b>real VPC IP</b>, from the same subnet range as the nodes, attached as secondary IPs on the node's elastic network interfaces (ENIs). So pods are first-class on your VPC network — a pod IP is routable, reachable, and shows in VPC flow logs — with no overlay/encapsulation like Calico or Flannel. The catch is <b>density</b>: each instance type supports a limited number of ENIs and IPs, so pods-per-node is capped by that (the "max pods" limit), and you can exhaust VPC IPs fast. <b>Prefix delegation</b> (assigning /28 prefixes instead of single IPs) raises density, and security groups for pods let you attach SGs at pod granularity.</p>
+        <p>Beyond prefix delegation, two levers matter at scale. The CNI keeps a <b>warm pool</b> of pre-attached IPs governed by <code>WARM_IP_TARGET</code>/<code>WARM_ENI_TARGET</code> &mdash; tune it down and you conserve scarce VPC IPs, up and you schedule pods faster. And <b>custom networking</b> lets pods draw IPs from a <em>different</em> subnet than the nodes &mdash; typically a non-routable secondary CIDR like <code>100.64.0.0/10</code> &mdash; so you escape exhausting your primary routable space entirely.</p>
+        <p class="arch">The tradeoff is native VPC integration versus IP exhaustion. Real VPC IPs mean pods integrate cleanly with VPC networking, security groups, and observability — no overlay overhead, and other AWS resources can reach a pod directly — but I must plan the VPC CIDR and subnet sizing for pod scale (a common incident is running out of IPs and pods stuck <code>Pending</code> with no address), and use prefix delegation for dense nodes. It's a real design decision at cluster creation: size subnets for peak pod count, not node count. This is also why pod-to-pod and pod-to-AWS-service networking "just works" on EKS — the pod is genuinely on the network.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your routable VPC CIDR is nearly full but you must keep adding pods. How can custom networking let pods keep getting IPs without consuming more of that primary space? <span class="sc-a">Add a <b>secondary CIDR</b> to the VPC (e.g. the non-routable <code>100.64.0.0/10</code> range) and configure VPC CNI <b>custom networking</b> (via <code>ENIConfig</code>) so pods draw their IPs from that secondary subnet instead of the node subnet &mdash; pods still get real VPC IPs, but out of space that doesn&rsquo;t drain your limited routable range.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=eks%20vpc%20cni%20ip%20exhaustion%20prefix%20delegation%20custom%20networking%20WARM_IP_TARGET"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: VPC CNI density: prefixes &amp; custom networking</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">AWS VPC CNI</span><span class="term">pods get real VPC IPs (ENI secondary IPs)</span><span class="term">no overlay</span><span class="term">max-pods (ENI/IP limit)</span><span class="term">IP exhaustion → Pending</span><span class="term">prefix delegation</span><span class="term">security groups for pods</span><span class="term">subnet CIDR sizing</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="eks">
+      <div class="s-top"><span class="s-no">04</span><span class="s-tag">EKS · advanced</span></div>
+      <h3>A pod assumes an AWS IAM role (IRSA / Pod Identity)</h3>
+      <p class="why"><b>Why it matters</b>Giving pods scoped AWS access without node-wide keys is the EKS security keystone — and where EKS meets IAM.</p>
+      <p class="gist"><b>Analogy</b> Instead of the whole floor sharing one master keycard (the node role), each worker shows their personal company badge (the ServiceAccount token) to the key desk (STS), which hands back a card that opens only their own office and expires by lunchtime.</p>
+      <div class="answer">
+        <p>A pod often needs AWS permissions (read S3, write DynamoDB). The wrong way is baking in keys or using the node's instance role (every pod on the node gets the same broad access). The right way is per-pod IAM. <b>IRSA</b> (IAM Roles for Service Accounts) uses <b>OIDC federation</b>: the cluster has an OIDC provider registered in IAM; you annotate a Kubernetes ServiceAccount with an IAM role ARN; the pod gets a short-lived projected OIDC token; and the AWS SDK exchanges it via STS <code>AssumeRoleWithWebIdentity</code> for temporary credentials scoped to that role. The newer <b>EKS Pod Identity</b> simplifies this with an agent and association API — no per-cluster OIDC setup, easier at scale. Either way, a pod gets exactly the role it needs, with temporary, auto-rotated creds.</p>
+        <p>The security hinges on the role&rsquo;s <b>trust-policy condition</b>: it must pin the OIDC <code>sub</code> to the exact <code>system:serviceaccount:&lt;ns&gt;:&lt;name&gt;</code> and <code>aud</code> to <code>sts.amazonaws.com</code> &mdash; a too-loose condition (a wildcard, or only checking <code>aud</code>) lets <em>any</em> pod in the cluster assume that role, a classic misconfiguration. <b>EKS Pod Identity</b> sidesteps per-cluster OIDC entirely: an on-node agent serves creds over a link-local endpoint, takes precedence in the SDK credential chain, and makes a role reusable across clusters.</p>
+        <p class="arch">This is least privilege and short-lived credentials applied to Kubernetes workloads — the same principle as the Vault/virtual-key story, realized natively on AWS. IRSA/Pod Identity means no long-lived AWS keys in the cluster, per-workload scoping (this pod reads this bucket, nothing else), and automatic rotation via STS — so a compromised pod is bounded to its role, not the whole node. I keep the node instance role minimal (just enough to be a node) and push all application permissions to IRSA/Pod Identity. It's the cleanest example of EKS meeting IAM, and exactly what I'd point to when asked how workloads get cloud permissions securely.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> An IRSA role&rsquo;s trust policy only checks the OIDC <code>aud</code> claim (<code>sts.amazonaws.com</code>) and not the <code>sub</code>. Why is that a privilege-escalation risk? <span class="sc-a">Every ServiceAccount token in the cluster carries the same <code>aud</code>, so checking only <code>aud</code> means <em>any</em> pod can assume that role &mdash; a compromised unrelated workload gets its permissions. The <code>sub</code> condition (<code>system:serviceaccount:ns:name</code>) is what scopes the role to one specific ServiceAccount; without it the role is effectively cluster-wide.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=eks%20irsa%20oidc%20trust%20policy%20sub%20aud%20condition%20pod%20identity%20explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: IRSA &amp; Pod Identity, the trust-policy detail</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">per-pod IAM (not node role)</span><span class="term">IRSA (OIDC + SA annotation + projected token)</span><span class="term">STS AssumeRoleWithWebIdentity</span><span class="term">EKS Pod Identity (agent, no OIDC)</span><span class="term">temporary auto-rotated creds</span><span class="term">least privilege per workload</span><span class="term">minimal node role</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="eks">
+      <div class="s-top"><span class="s-no">05</span><span class="s-tag">EKS · advanced</span></div>
+      <h3>A Service or Ingress provisions an AWS load balancer</h3>
+      <p class="why"><b>Why it matters</b>How Kubernetes objects become real AWS load balancers is the key EKS-to-AWS integration point.</p>
+      <p class="gist"><b>Analogy</b> You pin a work order to the board (&lsquo;I need an ALB&rsquo;) and a dedicated clerk (the controller) quietly builds the real thing to match &mdash; and crucially won&rsquo;t declare a new desk &lsquo;open for customers&rsquo; until the receptionist can actually route callers to it.</p>
+      <div class="answer">
+        <p>When you create a Service of type LoadBalancer or an Ingress in EKS, the <b>AWS Load Balancer Controller</b> (running in the cluster, watching those objects) provisions a real AWS load balancer to match. A Service of type LoadBalancer → a Network Load Balancer (L4); an Ingress → an Application Load Balancer (L7, with host/path routing). The controller manages target registration: with <b>target-type IP</b>, it registers pod IPs directly as targets (possible because the VPC CNI gives pods real IPs — the LB talks straight to pods, skipping the node hop), versus <b>target-type instance</b> (traffic to a NodePort, then kube-proxy). It wires health checks, security groups, and TLS (ACM certs) from annotations on the k8s object.</p>
+        <p>The detail that makes rollouts truly zero-downtime is <b>pod readiness gates</b>: in IP target mode the Load Balancer Controller injects a gate so a new pod isn&rsquo;t counted <code>Ready</code> until it&rsquo;s actually <em>registered and healthy in the ALB/NLB target group</em> &mdash; otherwise a rolling update could kill old pods before the LB knows the new ones exist, dropping traffic. You can also attach an existing target group to pods directly with the <b>TargetGroupBinding</b> CRD, and the ecosystem is converging on the Kubernetes <b>Gateway API</b> for this.</p>
+        <p class="arch">This is the seam where a Kubernetes abstraction becomes AWS infrastructure — you declare intent in Kubernetes and the controller reconciles an ALB/NLB into existence, the same declarative model as everything else. The choices I make: IP target-type (direct-to-pod, fewer hops, works with pod readiness) versus instance; ALB for HTTP routing (path/host rules, one ALB fronting many services via Ingress groups to save cost), NLB for raw TCP/low-latency/static-IP; TLS terminated at the ALB with ACM. It ties the EKS, load-balancer, and networking stories together: the k8s object, the AWS LB, and the pod IPs the VPC CNI made routable.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Without readiness gates, how can a rolling update on EKS drop requests even though Kubernetes thinks every new pod is &lsquo;Ready&rsquo;? <span class="sc-a">Kubernetes marks a pod Ready as soon as its probes pass, but the ALB/NLB may not have <em>registered and health-checked</em> it yet; the rollout then terminates old pods while the LB still has no healthy new targets, so traffic lands nowhere. The readiness gate holds the pod &lsquo;not Ready&rsquo; until the load balancer target is confirmed healthy, keeping old pods in service until the new ones truly receive traffic.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20load%20balancer%20controller%20pod%20readiness%20gate%20targetgroupbinding%20ingress"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: K8s object to ALB: the readiness-gate trick</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">AWS Load Balancer Controller</span><span class="term">Service LoadBalancer → NLB</span><span class="term">Ingress → ALB</span><span class="term">target-type IP (direct to pods) vs instance</span><span class="term">ACM TLS</span><span class="term">Ingress groups (share one ALB)</span><span class="term">declarative reconcile</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="eks">
+      <div class="s-top"><span class="s-no">06</span><span class="s-tag">EKS · advanced</span></div>
+      <h3>An EKS cluster is upgraded</h3>
+      <p class="why"><b>Why it matters</b>Version upgrades are a recurring, high-stakes reality — and the order and API-deprecation checks are what keep them safe.</p>
+      <p class="gist"><b>Analogy</b> Climbing a ladder you can&rsquo;t skip rungs on, while the floors below you expire on a timer: stay too long on an old rung and you&rsquo;re forced into a rushed, expensive scramble to catch up.</p>
+      <div class="answer">
+        <p>Kubernetes releases roughly quarterly and EKS supports a sliding window of versions, so you upgrade regularly. The order matters: first the <b>control plane</b> (AWS upgrades it in place, one minor version at a time — you can't skip), then the managed <b>add-ons</b> (CoreDNS, kube-proxy, the VPC CNI — kept compatible), then the <b>data plane</b> (node groups rolled to the new Kubernetes/AMI). Kubernetes allows limited <b>version skew</b> (kubelet can be a couple minors behind the API server, not ahead), which is why the control plane goes first. Managed node group upgrades cordon-and-drain nodes respecting PodDisruptionBudgets and roll new ones in.</p>
+        <p>Two concrete things the answer skips. Versions drop out of standard support into <b>extended support</b> (more months, but at a higher per-cluster hourly price, and you&rsquo;re auto-enrolled) &mdash; so letting a cluster age literally costs more. And you don&rsquo;t hunt deprecated APIs by hand: tools like <b>kube-no-trouble (kubent)</b> or Pluto scan manifests, and <b>EKS cluster insights</b> flags upgrade blockers in-console. For a risky multi-version jump, standing up a <b>blue-green cluster</b> and shifting traffic can beat an in-place upgrade.</p>
+        <p class="arch">I treat upgrades as a routine, staged, tested process, not a scary event — precisely because you can't skip minors and support windows expire (a cluster left too long forces rushed multi-step or AWS-forced upgrades). So I upgrade regularly, in non-prod first, watching for <b>deprecated API removals</b> — the thing that actually breaks apps, a removed API version in the new release — and I make sure workloads have PDBs so the data-plane node drain stays graceful (the drain scenario from the platform volume, in AWS). The sequence — control plane, add-ons, nodes — and API-deprecation checking are the two things that separate a smooth upgrade from an outage.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> How do you find out <em>before</em> upgrading whether a new Kubernetes version will break your workloads, rather than discovering it after? <span class="sc-a">Scan your manifests and live objects for <b>removed/deprecated API versions</b> with a tool like kube-no-trouble (kubent) or Pluto, and check <b>EKS cluster insights</b>, which flags known upgrade blockers for the target version &mdash; then fix the API versions in non-prod first. API removal (not the control-plane bump itself) is what actually breaks apps.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=eks%20cluster%20upgrade%20order%20extended%20support%20deprecated%20api%20kubent%20blue%20green"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Upgrading EKS without an outage</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">quarterly releases + support window</span><span class="term">order: control plane → add-ons → nodes</span><span class="term">no skipping minors</span><span class="term">version skew (kubelet behind not ahead)</span><span class="term">managed add-ons (CoreDNS/kube-proxy/CNI)</span><span class="term">API-deprecation breakage</span><span class="term">PDB-aware drain</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="eks">
+      <div class="s-top"><span class="s-no">07</span><span class="s-tag">EKS · advanced</span></div>
+      <h3>Karpenter provisions right-sized capacity</h3>
+      <p class="why"><b>Why they ask</b> It&rsquo;s the modern EKS autoscaler, and &lsquo;how do nodes actually appear?&rsquo; separates people who&rsquo;ve run it from people who&rsquo;ve only read about it.</p>
+      <p class="gist"><b>Analogy</b> Cluster Autoscaler is a car park with fixed-size floors you add or remove whole; Karpenter is a valet who sees the exact cars waiting and conjures a bay that fits them &mdash; then reshuffles cars to close half-empty floors.</p>
+      <div class="answer">
+        <p>Karpenter watches for <b>unschedulable (Pending) pods</b> directly, reads their combined CPU/memory/architecture/zone/taint requirements, and provisions a <b>right-sized EC2 instance</b> to fit them &mdash; calling the EC2 Fleet API in seconds rather than scaling fixed Auto Scaling Groups the way Cluster Autoscaler does. You give it one or more <b>NodePools</b> (allowed instance families, zones, capacity type, limits) and an <b>EC2NodeClass</b> (AMI, subnets, security groups, node role), and it picks the cheapest instance that satisfies the pending pods.</p>
+        <p>Its second job is <b>consolidation</b>: Karpenter continuously looks for nodes it can remove, or replace with cheaper/smaller ones, by repacking pods &mdash; so the cluster stays bin-packed as workloads come and go. It leans hard on <b>Spot</b> (draining ahead of the reclaim notice) and on instance-type diversity, and it respects <b>PodDisruptionBudgets</b> and <code>do-not-disrupt</code> annotations when it moves pods.</p>
+        <p class="arch">The trade I&rsquo;d name is agility and cost versus churn: Karpenter&rsquo;s workload-aware, ASG-free provisioning gives faster scheduling and tighter bin-packing (real savings with Spot and diverse types), but aggressive consolidation means more node movement &mdash; so I bound it with disruption budgets, a consolidation policy (<code>WhenEmptyOrUnderutilized</code> with a stabilization window), and sensible NodePool limits. I keep a small on-demand NodePool for system and stateful pods, and make sure PDBs and graceful termination are set, because Karpenter <em>will</em> move pods to pack nodes &mdash; which is exactly the drain story, driven by cost.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> How does Karpenter decide what instance to launch when pods are Pending, and how does that differ fundamentally from Cluster Autoscaler? <span class="sc-a">Karpenter reads the actual resource and constraint requirements of the pending pods and provisions a right-sized instance directly via the EC2 Fleet API &mdash; choosing family, size, zone, and Spot/on-demand to fit them most cheaply. Cluster Autoscaler can only grow or shrink <b>pre-defined, fixed-shape Auto Scaling Groups</b>, so it&rsquo;s coarser and bound to the instance types you configured in advance.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=karpenter%20eks%20node%20autoscaling%20consolidation%20nodepool%20spot%20vs%20cluster%20autoscaler"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How Karpenter provisions nodes</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">watches Pending pods</span><span class="term">NodePool + EC2NodeClass</span><span class="term">right-sized via EC2 Fleet API</span><span class="term">consolidation (bin-packing)</span><span class="term">Spot + interruption draining</span><span class="term">PDB / do-not-disrupt aware</span><span class="term">vs Cluster Autoscaler ASGs</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== NETWORKING / VPC ===== -->
+  <section class="track" data-track="net">
+    <div class="track-head">
+      <div class="tno">Service 02 — The virtual network</div>
+      <h2>AWS Networking (VPC)</h2>
+      <p>Your own software-defined datacenter network. Everything else sits inside it, so the CIDR, the public/private split, the two firewall layers, and how you connect and stay private are foundational.</p>
+    </div>
+
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">08</span><span class="s-tag">VPC · core</span></div>
+      <h3>A VPC is created and a packet routes</h3>
+      <p class="why"><b>Why it matters</b>The VPC is the foundation every AWS architecture sits inside — and the CIDR is the one decision that's painful to change.</p>
+      <p class="gist"><b>Analogy</b> Designing a town before building it: you fix the postcode range (CIDR), carve streets into districts (subnets, one per borough/AZ), and post a signpost at each junction (the route table) &mdash; and widening the postcode later is the one change that means digging up roads.</p>
+      <div class="answer">
+        <p>A VPC is your isolated virtual network in a region, defined by a <b>CIDR block</b> (say <code>10.0.0.0/16</code>). You carve it into <b>subnets</b>, each in one Availability Zone (so subnet choice = AZ placement). Each subnet has a <b>route table</b> deciding where packets go: a <code>local</code> route for the VPC's own CIDR (so everything in the VPC can talk) plus routes to gateways. To reach the internet, a subnet's route table points <code>0.0.0.0/0</code> at an <b>Internet Gateway</b>. So a packet from an instance matches <code>local</code> for in-VPC destinations, or follows the default route to the IGW for the internet, where the IGW does public-IP translation.</p>
+        <p>Three facts that save incidents: route tables use <b>longest-prefix match</b>, so a more specific route always wins over <code>0.0.0.0/0</code> (how you carve exceptions). The CIDR isn&rsquo;t fully unfixable &mdash; you can add <b>secondary CIDR blocks</b> later (and a non-routable <code>100.64.0.0/10</code> for pods) &mdash; though planning right up front is still far cleaner. And <b>AZ names are randomised per account</b> (my <code>us-east-1a</code> isn&rsquo;t yours), so for cross-account placement you use the stable <b>AZ IDs</b> (<code>use1-az1</code>).</p>
+        <p class="arch">The model I give is "a VPC is a software-defined datacenter network you fully control" — CIDR, subnets, routing, gateways — and the route table is the heart of it: routing is explicit and per-subnet, which is what actually makes a subnet "public" or "private" (does its route table have a path to an IGW?). I design the CIDR deliberately up front — big enough for growth and for EKS pod IPs, non-overlapping with other VPCs and on-prem so I can peer later — spread subnets across AZs for availability, and treat the route table as the thing that encodes network intent. Get the CIDR wrong and you're rebuilding; it's the one decision that's genuinely painful to change.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A subnet has a default route <code>0.0.0.0/0 &rarr; NAT</code> but you also add <code>10.50.0.0/16 &rarr; a peering connection</code>. For a packet to <code>10.50.1.5</code>, which route wins and why? <span class="sc-a">The peering route wins, because route tables use <b>longest-prefix (most-specific) match</b>: <code>10.50.0.0/16</code> is more specific than <code>0.0.0.0/0</code>, so the packet goes over the peering connection, not the NAT. Specificity, not order, decides.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20vpc%20route%20table%20longest%20prefix%20match%20secondary%20cidr%20availability%20zone%20id"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: VPC routing: CIDR, subnets &amp; longest-prefix</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">VPC = isolated network + CIDR</span><span class="term">subnet per AZ</span><span class="term">route table (local + gateway routes)</span><span class="term">Internet Gateway</span><span class="term">public/private = routing</span><span class="term">CIDR planning (non-overlap, growth)</span><span class="term">AZ spread</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">09</span><span class="s-tag">VPC · core</span></div>
+      <h3>Public vs private subnets &amp; NAT</h3>
+      <p class="why"><b>Why it matters</b>The public/private split with NAT is the standard secure-network blueprint.</p>
+      <p class="gist"><b>Analogy</b> A building where residents can go out the back door to run errands but no stranger can come in that way (NAT) &mdash; and the back door has a hard limit on how many people can be mid-errand to the <em>same</em> shop at once before it jams.</p>
+      <div class="answer">
+        <p>A <b>public subnet</b> has a route to the Internet Gateway and its instances can have public IPs, so they're directly reachable from and to the internet (load balancers, bastions). A <b>private subnet</b> has no route to the IGW, so instances have no inbound internet path — where you put databases, app servers, most workloads. But private instances often still need <b>outbound</b> internet (pull packages, call APIs), so you route their <code>0.0.0.0/0</code> to a <b>NAT Gateway</b> in a public subnet: it lets outbound connections through and returns responses but blocks unsolicited inbound. NAT Gateway is managed, per-AZ, billed per hour plus per GB.</p>
+        <p>The real NAT scaling gotcha isn&rsquo;t bandwidth (a NAT Gateway scales to ~100&nbsp;Gbps) &mdash; it&rsquo;s <b>SNAT port exhaustion</b>: a single NAT Gateway can hold only ~55,000 simultaneous connections to one <em>unique destination</em> (same IP+port), surfacing as the <code>ErrorPortAllocation</code> metric. Many connections to one busy endpoint can exhaust it, and adding NAT Gateways doesn&rsquo;t help a single destination. For IPv6, you skip NAT entirely: an <b>egress-only internet gateway</b> gives stateful outbound without translation.</p>
+        <p class="arch">The pattern is public subnets for the things that must face the internet (ALB, NAT), private subnets for everything else, with NAT giving private workloads egress without exposure — defense in depth by network placement. Two flags: NAT Gateway is a real cost line (per-GB processing adds up, so for S3/DynamoDB I use VPC Gateway endpoints to skip NAT entirely), and NAT is per-AZ for HA (one per AZ, or you create a cross-AZ dependency and blast radius). The "three-tier VPC" — public/private/data subnets across AZs with NAT per AZ — is my default blueprint, and I optimize NAT cost with endpoints. It's the network expression of least exposure.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Thousands of instances all hammer one external API through a NAT Gateway and you start seeing connection failures, yet bandwidth is nowhere near the limit. What&rsquo;s the likely cause? <span class="sc-a"><b>SNAT port exhaustion</b>: a NAT Gateway supports ~55k simultaneous connections to a single unique destination (IP+port), and all that traffic to one endpoint exhausts the port pool (watch <code>ErrorPortAllocation</code>). Adding NAT Gateways won&rsquo;t help one destination; you need more destination diversity, connection reuse/pooling, or to front the target differently.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20nat%20gateway%20SNAT%20port%20exhaustion%20ErrorPortAllocation%20egress%20only%20igw%20ipv6"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: NAT Gateway limits: SNAT port exhaustion</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">public subnet (IGW + public IP)</span><span class="term">private subnet (no IGW)</span><span class="term">NAT Gateway (egress-only, per-AZ)</span><span class="term">inbound blocked</span><span class="term">NAT cost (per-GB)</span><span class="term">Gateway endpoints avoid NAT</span><span class="term">three-tier blueprint</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">10</span><span class="s-tag">VPC · core</span></div>
+      <h3>Security groups vs NACLs</h3>
+      <p class="why"><b>Why it matters</b>The stateful/stateless distinction is a constant source of confusion and a core interview point.</p>
+      <p class="gist"><b>Analogy</b> A security guard who remembers who he let in and automatically lets them back out (stateful SG) versus a turnstile that checks every single passage in each direction with no memory (stateless NACL) &mdash; forget the exit rule on the turnstile and people get trapped inside.</p>
+      <div class="answer">
+        <p>Two firewall layers. A <b>security group</b> is attached to an instance/ENI (or pod, on EKS), is <b>stateful</b> (allow an inbound request and the response is automatically allowed out — no matching outbound rule needed), and is <b>allow-only</b> (you can only permit, never explicitly deny; default deny). A <b>network ACL</b> is attached to a subnet, is <b>stateless</b> (you must allow both directions explicitly, since return traffic isn't tracked — mind ephemeral ports), and supports both allow and deny rules, evaluated in numbered order. So SGs are your primary, fine-grained, instance-level control; NACLs are a coarse, subnet-level backstop.</p>
+        <p>A subtlety that surprises people: security groups do <b>connection tracking</b>, so an already-established flow keeps working even after you <em>remove</em> the rule that allowed it &mdash; the change applies to new connections, not existing tracked ones (so don&rsquo;t expect deleting a rule to cut a live session). And SGs have real <b>quotas</b> (by default 60 inbound + 60 outbound rules each, up to 5 SGs per ENI), which is a genuine ceiling when you try to express fine-grained access with long IP lists &mdash; another reason to reference SGs from SGs rather than enumerate CIDRs.</p>
+        <p class="arch">The fact to state crisply is "security groups are stateful and instance-level; NACLs are stateless and subnet-level." In practice I do almost all access control with security groups — they're stateful (simpler), and you can <b>reference one SG from another</b> (allow the app-tier SG to reach the DB-tier SG), which expresses tiers cleanly without hardcoding IPs. NACLs I reserve for coarse subnet-wide rules or explicit denies (block a CIDR), because their statelessness is error-prone — the classic bug is allowing inbound but forgetting to allow the ephemeral-port range for responses. SG-referencing-SG for tiering is the senior move; NACLs as a rarely-touched backstop.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You delete the inbound rule that was allowing an active SSH session to an instance &mdash; why might that session stay connected, and what would actually drop it? <span class="sc-a">Because security groups are <b>stateful and track established connections</b>: removing the rule stops <em>new</em> connections but the existing tracked flow continues until it ends or idles out. To cut it immediately you&rsquo;d terminate the session at the host (or rely on a stateless NACL deny, which is re-evaluated per packet).</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20security%20group%20stateful%20connection%20tracking%20vs%20nacl%20quotas%20ephemeral%20ports"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: SG vs NACL: state, tracking &amp; quotas</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">security group (stateful, instance-level, allow-only)</span><span class="term">SG-references-SG (tiering)</span><span class="term">NACL (stateless, subnet-level, allow+deny)</span><span class="term">ephemeral-port gotcha</span><span class="term">SG as primary control</span><span class="term">NACL as coarse backstop</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">11</span><span class="s-tag">VPC · advanced</span></div>
+      <h3>You connect VPCs and reach on-prem</h3>
+      <p class="why"><b>Why it matters</b>Multi-VPC and hybrid connectivity is core enterprise-architecture territory.</p>
+      <p class="gist"><b>Analogy</b> Private roads between estates (peering) don&rsquo;t let you cut through a neighbour&rsquo;s drive to reach a third house; build one central roundabout everyone connects to (Transit Gateway) and suddenly everywhere links to everywhere &mdash; from one place you control.</p>
+      <div class="answer">
+        <p>Several tools by shape. <b>VPC peering</b> connects two VPCs directly but is <b>non-transitive</b> — if A peers B and B peers C, A can't reach C through B — so it doesn't scale to many VPCs. <b>Transit Gateway</b> is the hub-and-spoke answer: a central router that VPCs (and VPN/Direct Connect) attach to, giving transitive routing across many networks from one place. For hybrid: <b>Site-to-Site VPN</b> (encrypted over the internet, quick, lower bandwidth) or <b>Direct Connect</b> (a dedicated private physical link, consistent low latency and high bandwidth). <b>PrivateLink</b> (interface endpoints) exposes a specific service across VPCs without full network peering.</p>
+        <p>Two things interviewers probe. <b>Direct Connect is not encrypted</b> &mdash; it&rsquo;s a private link, not a confidential one &mdash; so for sensitive data you run a VPN over it (a public VIF) or use MACsec on supported ports. And Transit Gateway isn&rsquo;t just &lsquo;transitive routing on&rsquo;: its <b>route tables</b> (associations and propagations) are how you <em>segment</em> &mdash; e.g. keep prod and dev spokes from reaching each other, or force all inter-VPC traffic through an inspection VPC. It bills per attachment-hour plus per-GB, so the hub has a cost shape too.</p>
+        <p class="arch">The progression I describe: peering for a couple of VPCs, Transit Gateway once you have many (it replaces an unmanageable mesh of peerings with a hub and centralizes routing and inspection), VPN for quick or backup hybrid links, Direct Connect when hybrid bandwidth/latency/consistency matters (often DX plus a VPN backup). The non-transitivity of peering is the gotcha that pushes people to Transit Gateway. And for exposing just one service across accounts without joining networks, PrivateLink is cleaner and more secure than peering (service-level, not network-level). Non-overlapping CIDRs everywhere is the precondition — which is exactly why VPC CIDR planning up front matters.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Compliance says traffic between on-prem and AWS must be encrypted in transit. You already have Direct Connect &mdash; is that enough, and if not, what do you add? <span class="sc-a">Not enough: Direct Connect is a <b>private but unencrypted</b> link. Add encryption on top &mdash; run a <b>Site-to-Site VPN over the Direct Connect</b> (over a public VIF) or enable <b>MACsec</b> on supported DX ports &mdash; so you keep DX&rsquo;s consistent bandwidth/latency while meeting the encryption requirement.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20transit%20gateway%20route%20tables%20segmentation%20direct%20connect%20encryption%20macsec%20vpn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: VPC-to-VPC &amp; hybrid: TGW, DX &amp; encryption</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">VPC peering (direct, non-transitive)</span><span class="term">Transit Gateway (hub-and-spoke, transitive)</span><span class="term">Site-to-Site VPN vs Direct Connect</span><span class="term">PrivateLink (service-level cross-VPC)</span><span class="term">non-overlapping CIDR precondition</span><span class="term">mesh → hub evolution</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">12</span><span class="s-tag">VPC · advanced</span></div>
+      <h3>A private service is reached without the internet (VPC endpoints)</h3>
+      <p class="why"><b>Why it matters</b>Keeping AWS-service traffic private is a security, cost, and compliance win at once.</p>
+      <p class="gist"><b>Analogy</b> Instead of your staff leaving the building to post letters at the public post office (NAT to the internet), you install a private mail chute straight into the postal network inside your own lobby &mdash; the mail never touches the street.</p>
+      <div class="answer">
+        <p>Normally an instance calling S3 or another AWS service routes out through the NAT Gateway over public AWS endpoints. <b>VPC endpoints</b> keep that traffic inside the AWS network. Two kinds: <b>Gateway endpoints</b> (for S3 and DynamoDB) add a route so traffic to those services goes directly, privately, and free — no NAT, no internet. <b>Interface endpoints</b> (powered by PrivateLink) put an ENI with a private IP in your subnet for a service, so calls resolve to a private address and never leave the VPC (hourly + per-GB cost). Either way, private subnets use AWS services with no internet path.</p>
+        <p>The make-or-break detail for interface endpoints is <b>private DNS</b>: enable it and the service&rsquo;s normal public hostname (<code>secretsmanager.&lt;region&gt;.amazonaws.com</code>) resolves to the endpoint&rsquo;s <em>private</em> IP inside the VPC, so your SDKs need no code change; disable it (or lack <code>enableDnsHostnames</code>) and you must call the clunky endpoint-specific DNS name instead. Note the reach difference too: <b>Gateway endpoints</b> (S3/DynamoDB) work only from <em>inside</em> the VPC &mdash; not from on-prem or peered VPCs &mdash; whereas <b>interface endpoints</b> can be reached across peering/VPN/DX.</p>
+        <p class="arch">I use VPC endpoints for three reasons — security (traffic never traverses the internet, and you can restrict a bucket to only your VPC endpoint via policy), cost (Gateway endpoints for S3/DynamoDB eliminate NAT data-processing charges, often a big saving), and compliance (regulated workloads that must not egress). So for an EKS cluster in private subnets talking to S3, DynamoDB, ECR, Secrets Manager, STS, I add the relevant endpoints so nothing needs a NAT or IGW. It's the "private by default" posture: the workload reaches exactly the AWS services it needs over private links, and the network has no general internet egress at all. Ties straight to the S3 security story.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You add an interface VPC endpoint for Secrets Manager, but your app &mdash; unchanged &mdash; still reaches it over the public path via NAT. What&rsquo;s the most likely missing piece? <span class="sc-a"><b>Private DNS</b> on the endpoint isn&rsquo;t enabled (or the VPC lacks <code>enableDnsSupport</code>/<code>enableDnsHostnames</code>), so the standard service hostname still resolves to a public IP. Turn on private DNS and the normal endpoint name resolves to the endpoint&rsquo;s private IP inside the VPC &mdash; no app change &mdash; and traffic stays off the internet.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20vpc%20interface%20endpoint%20private%20dns%20gateway%20endpoint%20on-prem%20privatelink"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: VPC endpoints &amp; the private-DNS gotcha</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Gateway endpoint (S3/DynamoDB, route-table, free)</span><span class="term">Interface endpoint / PrivateLink (ENI, hourly+GB)</span><span class="term">traffic stays in AWS network</span><span class="term">restrict-bucket-to-endpoint policy</span><span class="term">NAT-cost avoidance</span><span class="term">compliance / no-egress</span><span class="term">private-by-default</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="net">
+      <div class="s-top"><span class="s-no">13</span><span class="s-tag">VPC · debugging</span></div>
+      <h3>You debug &lsquo;why can&rsquo;t A reach B&rsquo;</h3>
+      <p class="why"><b>Why they ask</b> Connectivity debugging is the most common real VPC task, and a structured method beats guessing &mdash; interviewers want the checklist, not a lucky fix.</p>
+      <p class="gist"><b>Analogy</b> A blocked delivery has a fixed line-up of suspects: wrong address book (route table), a locked building door (NACL), a locked office door (security group), or no road at all (missing route) &mdash; you check each layer in order instead of kicking the door.</p>
+      <div class="answer">
+        <p>A packet from A to B must survive every layer, so I walk them in order. <b>Routing</b>: does A&rsquo;s subnet route table have a path to B (a <code>local</code> route, a peering/TGW route, a NAT/IGW for the internet)? <b>NACL</b> (subnet, stateless): is the traffic allowed in <em>both</em> directions, including the ephemeral return ports? <b>Security group</b> (instance, stateful): does B&rsquo;s inbound SG allow A &mdash; by CIDR or by referencing A&rsquo;s SG &mdash; and does A&rsquo;s outbound allow it? Then the non-network suspects: is B actually <b>listening</b>, is there a host firewall, is DNS resolving to the right address?</p>
+        <p><b>VPC Flow Logs</b> turn this from guesswork into evidence: they record accepted and rejected flows per ENI (source, destination, port, protocol, and an <code>ACCEPT</code>/<code>REJECT</code> action). A <code>REJECT</code> on B&rsquo;s ENI points at a security group or NACL; traffic that <em>never appears at all</em> points at routing &mdash; it never got there. <b>Reachability Analyzer</b> goes further: it statically analyses your config and names the exact hop (which SG rule or missing route) that blocks a path, without sending a packet.</p>
+        <p class="arch">The architect value is a repeatable mental checklist &mdash; route table &rarr; NACL (both directions, ephemeral ports) &rarr; security group (stateful, SG-references-SG) &rarr; is the service listening &mdash; plus knowing which tool proves which layer: Flow Logs for &lsquo;what actually happened&rsquo; (a REJECT versus silence distinguishes a firewall drop from a routing gap), Reachability Analyzer for &lsquo;what the config permits&rsquo; before you even deploy. I centralise Flow Logs to CloudWatch or S3 and query with Athena/Log Insights, and I treat &lsquo;silence in the logs&rsquo; as the key tell that the packet never arrived &mdash; a routing or endpoint problem, not a firewall one.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A connection from an app server to a database times out. VPC Flow Logs on the database&rsquo;s ENI show <em>no</em> entries for that traffic &mdash; not even a REJECT. What layer is the problem, and what is it <em>not</em>? <span class="sc-a">If nothing &mdash; not even a <code>REJECT</code> &mdash; reaches the DB&rsquo;s ENI, the packet never arrived, so it&rsquo;s a <b>routing</b> problem (a missing or wrong route-table entry, peering/TGW route, or wrong subnet), <em>not</em> a security-group or NACL block: a firewall drop would show as an explicit <code>REJECT</code> on the ENI. Fix the route, not the SG.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20vpc%20flow%20logs%20reachability%20analyzer%20debug%20connectivity%20security%20group%20nacl%20route"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Debugging VPC connectivity methodically</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">layer order: route &rarr; NACL &rarr; SG &rarr; listening</span><span class="term">NACL stateless (both directions + ephemeral)</span><span class="term">SG stateful, SG-references-SG</span><span class="term">Flow Logs ACCEPT/REJECT per ENI</span><span class="term">REJECT = firewall, silence = routing</span><span class="term">Reachability Analyzer (static path)</span><span class="term">centralise to Athena / Log Insights</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== IAM ===== -->
+  <section class="track" data-track="iam">
+    <div class="track-head">
+      <div class="tno">Service 03 — Who can do what</div>
+      <h2>AWS IAM</h2>
+      <p>The authorization brain of AWS. One evaluation rule explains every access puzzle; roles and temporary credentials replace long-lived keys; and boundaries, SCPs, and federation are how least privilege holds at organizational scale.</p>
+    </div>
+
+    <article class="scenario" data-cat="iam">
+      <div class="s-top"><span class="s-no">14</span><span class="s-tag">IAM · core</span></div>
+      <h3>An API request is authorized by IAM</h3>
+      <p class="why"><b>Why it matters</b>The policy-evaluation model is the foundation of all AWS security — and the key to debugging access.</p>
+      <p class="gist"><b>Analogy</b> A bouncer with a strict rulebook: a single &lsquo;no&rsquo; from anyone with authority ends it, no amount of &lsquo;yes&rsquo; overrides a &lsquo;no&rsquo;, and silence means no &mdash; you don&rsquo;t get in just because nobody said you couldn&rsquo;t.</p>
+      <div class="answer">
+        <p>Every AWS API call is authenticated (who are you), then authorized against the <b>request context</b>: the <b>principal</b>, the <b>action</b> (<code>s3:GetObject</code>), the <b>resource</b>, and <b>conditions</b> (IP, MFA, tags). IAM gathers all applicable policies — <b>identity-based</b> (attached to the user/role) and <b>resource-based</b> (attached to the resource, like a bucket policy) — and evaluates with a strict rule: <b>default deny</b> (implicit deny if nothing allows), an explicit <b>Allow</b> grants it, and an explicit <b>Deny</b> anywhere overrides any allow. So: explicit deny? → deny. Else an allow? → allow. Else → deny.</p>
+        <p>The twist the base answer skips is <b>cross-account</b> evaluation: within one account, an allow in <em>either</em> an identity policy or the resource policy can suffice; but across accounts you need <b>both sides to allow</b> &mdash; an identity policy in the caller&rsquo;s account <em>and</em> a resource policy (or role trust) in the resource&rsquo;s account. The full precedence to recite: an explicit <code>Deny</code> anywhere wins first, then the request must pass the <b>SCP</b>, the resource/identity policy, any <b>permission boundary</b>, and any <b>session policy</b> &mdash; all of them &mdash; or it&rsquo;s denied.</p>
+        <p class="arch">The model to state precisely is "default deny; explicit allow grants; explicit deny always wins." That single rule explains most access puzzles — why a user with an admin policy is still blocked (an explicit deny or an SCP), and why access needs an allow somewhere (nothing is permitted by default). I use identity policies for "what can this principal do" and resource policies for "who can touch this resource" (essential for cross-account, since a resource policy can grant access to a principal in another account). And I debug denials by walking the evaluation — which policy allows, is there a deny, an SCP, a boundary — rather than guessing. Principal / action / resource / condition is the four-part frame for every rule.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A principal in account A has <code>s3:GetObject</code> in its identity policy for a bucket in account B, but gets AccessDenied. The bucket has no policy mentioning account A. Why &mdash; and what&rsquo;s needed? <span class="sc-a">Cross-account access requires <b>both</b> sides to allow: account A&rsquo;s identity policy <em>and</em> account B&rsquo;s resource (bucket) policy must each grant it. With no bucket policy allowing account A&rsquo;s principal, B never consents, so it&rsquo;s denied &mdash; unlike same-account, where one allow can be enough. Add a bucket policy granting A&rsquo;s principal (and the KMS key policy too, if SSE-KMS).</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20iam%20policy%20evaluation%20logic%20cross%20account%20both%20sides%20allow%20precedence"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: IAM evaluation: the cross-account rule</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">authN then authZ</span><span class="term">request context (principal/action/resource/condition)</span><span class="term">identity-based vs resource-based policy</span><span class="term">default deny</span><span class="term">explicit allow</span><span class="term">explicit deny wins</span><span class="term">cross-account via resource policy</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="iam">
+      <div class="s-top"><span class="s-no">15</span><span class="s-tag">IAM · core</span></div>
+      <h3>A role is assumed (STS &amp; temporary credentials)</h3>
+      <p class="why"><b>Why it matters</b>Roles and temporary credentials are the heart of modern AWS security — long-lived keys are the anti-pattern.</p>
+      <p class="gist"><b>Analogy</b> A day-pass, not a permanent key: you show who you are at the desk (trust policy), they check what the pass is good for (permission policy), and hand you a wristband that stops working by the end of the session &mdash; lose it and it&rsquo;s worthless tomorrow.</p>
+      <div class="answer">
+        <p>A <b>role</b> is an identity with permissions but no permanent credentials — a principal <b>assumes</b> it and gets temporary credentials from <b>STS</b> (the Security Token Service). Assuming checks two policies: the role's <b>trust policy</b> (who may assume it — an account, a service, a federated identity) and its <b>permission policy</b> (what it can do once assumed). STS returns short-lived credentials (access key, secret, session token) that expire in minutes to hours. EC2 instance profiles, Lambda execution roles, and EKS IRSA all work this way — the workload assumes a role and gets rotating temporary creds, never a stored long-lived key.</p>
+        <p>Operational edges worth knowing: <b>role chaining</b> (assuming a role <em>from</em> already-assumed-role creds) is hard-capped at a <b>1-hour</b> session and can&rsquo;t be extended, which surprises people doing multi-hop automation. Prefer <b>regional STS endpoints</b> over the single global one (lower latency, smaller blast radius if a region wobbles). And the <b>RoleSessionName</b> you pass shows up in CloudTrail &mdash; set it meaningfully so &lsquo;who did this&rsquo; is answerable when many principals share a role.</p>
+        <p class="arch">The principle is "prefer roles and temporary credentials over long-lived access keys, always." Long-lived IAM user keys are the thing that leaks in a repo and causes a breach; temporary STS credentials auto-expire, are scoped, and are issued just-in-time. So every workload gets a role (instance profile, Lambda role, IRSA/Pod Identity on EKS), humans get roles via SSO/federation, and cross-account access is a role assumption with a trust policy — not shared keys. The trust-policy-vs-permission-policy distinction is the thing people miss: trust says who can assume, permissions say what they can then do. It's the same short-lived-credential theme as Vault and the LLM gateway's virtual keys — issue scoped, expiring credentials, never store durable secrets.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your automation assumes role X, then uses those credentials to assume role Y, and you ask for a 4-hour session on Y but only get 1 hour. Why? <span class="sc-a">This is <b>role chaining</b> (assuming a role using credentials that are themselves from an assumed role), which AWS hard-caps at a <b>1-hour</b> session regardless of the role&rsquo;s max session duration &mdash; it can&rsquo;t be extended. Restructure so the final role is assumed directly (e.g. from a user/instance/OIDC identity) if you need a longer session.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20sts%20assume%20role%20temporary%20credentials%20role%20chaining%20one%20hour%20regional%20endpoints"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: STS roles: sessions, chaining &amp; CloudTrail</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">role = permissions, no permanent creds</span><span class="term">STS AssumeRole → temporary creds (expire)</span><span class="term">trust policy (who) vs permission policy (what)</span><span class="term">instance profile / Lambda role / IRSA</span><span class="term">prefer roles over long-lived keys</span><span class="term">just-in-time scoped creds</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="iam">
+      <div class="s-top"><span class="s-no">16</span><span class="s-tag">IAM · advanced</span></div>
+      <h3>Cross-account and federated access</h3>
+      <p class="why"><b>Why it matters</b>Enterprise AWS is many accounts and external identities — federation is how it holds together.</p>
+      <p class="gist"><b>Analogy</b> Rather than issuing a house key to every visitor forever, you let their own employer vouch for them at the door each morning and hand them a day-pass &mdash; one authoritative identity source, no sprawl of permanent keys to lose.</p>
+      <div class="answer">
+        <p>Two patterns. <b>Cross-account</b>: a role in account B has a trust policy allowing a principal in account A to assume it, so users/workloads in A get scoped access to B's resources with no B credentials — the standard way to share across an AWS Organization (often with an <b>external ID</b> to prevent the confused-deputy problem). <b>Federation</b>: instead of IAM users, an external identity provider vouches for a user — <b>SAML</b> (corporate directory/SSO) or <b>OIDC</b> (web identity) — and they assume a role via STS (<code>AssumeRoleWithSAML</code> / <code>WithWebIdentity</code>). <b>IAM Identity Center</b> (SSO) is the managed front end for workforce federation across accounts. And EKS IRSA is exactly OIDC federation — the cluster's OIDC provider vouches for a pod's service account.</p>
+        <p>The detail that separates two genuinely different protections people conflate: the <b>external ID</b> guards the <em>third-party SaaS</em> confused-deputy case (a vendor assuming a role in many customers&rsquo; accounts &mdash; the external ID proves the call is for <em>your</em> account), whereas <b>aws:SourceArn</b>/<code>aws:SourceAccount</code> conditions guard the <em>AWS-service</em> confused deputy (e.g. ensuring only <em>your</em> CloudTrail/S3 can make a service call against your KMS key). Same threat shape, two different keys depending on who the deputy is.</p>
+        <p class="arch">The mental model is "don't create IAM users; federate." Humans come in through SSO/Identity Center mapped to roles per account; applications and cross-account access use role assumption with trust policies; external/web identities use OIDC. This keeps identity in one authoritative place (your IdP), gives everyone temporary credentials, and scales to hundreds of accounts without a sprawl of long-lived users. The external ID on cross-account roles is the detail I'd mention for confused-deputy protection. And recognizing IRSA as "just OIDC federation" ties the EKS and IAM stories together — it's the same mechanism, applied to pods.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> When do you protect a role with an <b>external ID</b> versus with <code>aws:SourceArn</code>/<code>aws:SourceAccount</code> conditions &mdash; aren&rsquo;t they the same confused-deputy fix? <span class="sc-a">Same threat, different deputy. Use an <b>external ID</b> when a <em>third-party SaaS vendor</em> assumes a role across many customers&rsquo; accounts &mdash; it proves the assumption is meant for your account. Use <code>aws:SourceArn</code>/<code>aws:SourceAccount</code> when an <em>AWS service</em> acts on your behalf (CloudTrail&rarr;SNS, S3&rarr;KMS) &mdash; they pin the call to the specific source resource/account you expect.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20cross%20account%20federation%20external%20id%20vs%20sourcearn%20confused%20deputy%20saml%20oidc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Federation, external IDs &amp; confused deputy</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">cross-account role (trust allows account A)</span><span class="term">external ID (confused-deputy)</span><span class="term">federation SAML vs OIDC</span><span class="term">AssumeRoleWithSAML / WithWebIdentity</span><span class="term">IAM Identity Center (SSO)</span><span class="term">"federate, don't create users"</span><span class="term">IRSA = OIDC federation</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="iam">
+      <div class="s-top"><span class="s-no">17</span><span class="s-tag">IAM · advanced</span></div>
+      <h3>Permissions are scoped down (boundaries, SCPs, intersection)</h3>
+      <p class="why"><b>Why it matters</b>The layered guardrails and how they combine is advanced-but-essential IAM — and where most "denied despite an allow" puzzles end.</p>
+      <p class="gist"><b>Analogy</b> Your bank account has a balance (what you&rsquo;re granted) but also a daily ATM cap, a per-store spend limit, and a parental control &mdash; your real spending power is wherever <em>all</em> the limits overlap, and any one &lsquo;blocked&rsquo; beats every &lsquo;allowed&rsquo;.</p>
+      <div class="answer">
+        <p>Several controls narrow what a principal can actually do, and effective permissions are the <b>intersection</b> of all of them (with any explicit deny winning). An <b>identity policy</b> grants. A <b>permission boundary</b> caps the maximum a principal can have (even if its identity policy grants more). <b>Service Control Policies (SCPs)</b>, set at the AWS Organizations level, cap the maximum for entire accounts/OUs — a guardrail no one in the account can exceed, not even root, and SCPs don't grant, they only limit. A <b>session policy</b> further narrows a specific assumed-role session. So a call is allowed only if the identity policy allows it AND the boundary allows it AND the SCP allows it AND no explicit deny exists.</p>
+        <p>Two additions. SCPs got a resource-side sibling in late 2024: <b>Resource Control Policies (RCPs)</b> set an org-wide ceiling on what <em>resource-based</em> policies can grant (e.g. &lsquo;no bucket in this org may be shared outside the org&rsquo;) &mdash; SCPs cap identities, RCPs cap resources. And a gotcha: <b>SCPs don&rsquo;t apply to the management account</b> (so don&rsquo;t run workloads there expecting guardrails), and they only filter &mdash; they never grant.</p>
+        <p class="arch">The model I articulate: "grants come from identity/resource policies; boundaries, SCPs, and session policies only ever subtract — effective permission is the intersection." SCPs are the org-wide guardrail for non-negotiables (deny leaving approved regions, deny disabling CloudTrail, deny certain services) — they can't grant, only fence. Permission boundaries I use to delegate safely (let a team create roles, but bounded so they can't escalate). This layered model is how you run least privilege at organizational scale: developers get freedom within guardrails they can't breach. And "why am I denied despite an allow" almost always ends at an SCP, a boundary, or an explicit deny — the intersection rule biting.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You want an org-wide guarantee that <em>no</em> S3 bucket anywhere in the organisation can be made accessible to an external account, no matter what a team sets as a bucket policy. SCPs cap identities &mdash; what do you use? <span class="sc-a">A <b>Resource Control Policy (RCP)</b> at the organisation/OU level: it caps what <em>resource-based</em> policies (like bucket policies) can grant, so even if a team writes a bucket policy sharing externally, the RCP&rsquo;s ceiling denies it. SCPs only bound what identities <em>in</em> your org can do; RCPs bound what your <em>resources</em> can grant to anyone.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20scp%20permission%20boundary%20rcp%20resource%20control%20policy%20session%20policy%20intersection"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Guardrails: SCPs, RCPs &amp; boundaries</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">effective = intersection − explicit deny</span><span class="term">permission boundary (caps a principal)</span><span class="term">SCP (org-level cap, can't grant, limits root)</span><span class="term">session policy</span><span class="term">guardrails subtract not grant</span><span class="term">delegate safely with boundaries</span><span class="term">org-scale least privilege</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="iam">
+      <div class="s-top"><span class="s-no">18</span><span class="s-tag">IAM · advanced</span></div>
+      <h3>Access is granted by tags (ABAC)</h3>
+      <p class="why"><b>Why they ask</b> ABAC is how access scales to thousands of resources without a policy per team &mdash; and tag-based authorization is increasingly the expected answer to &lsquo;how do you avoid policy sprawl?&rsquo;</p>
+      <p class="gist"><b>Analogy</b> RBAC hands out a labelled key for every room; ABAC instead says &lsquo;your badge opens any room whose colour matches your badge&rsquo; &mdash; one rule covers every current and future room, as long as both are tagged.</p>
+      <div class="answer">
+        <p><b>ABAC</b> (attribute-based access control) writes policies in terms of <b>tags</b> rather than named resources. A single policy can say &lsquo;allow these actions on resources whose <code>Project</code> tag equals the principal&rsquo;s <code>Project</code> tag&rsquo;, with a condition comparing <code>aws:ResourceTag/Project</code> to <code>aws:PrincipalTag/Project</code>. Now a new resource created with the right tag is automatically accessible to the right people &mdash; no policy edit &mdash; which is how you scale access across many teams and thousands of resources with a handful of policies.</p>
+        <p>The attributes come from the principal&rsquo;s tags, and for federated users from <b>session tags</b> passed at <code>AssumeRole</code> time (the IdP asserts <code>Project=atlas</code> and STS carries it into the session). The catch is governance: ABAC is only as trustworthy as your control over <em>who can set the tags</em> &mdash; if a principal can tag itself or a resource, it can grant itself access &mdash; so you must lock down <code>iam:TagRole</code> and resource <code>tag</code> permissions, and enforce a consistent, un-forgeable scheme with tag policies and SCPs.</p>
+        <p class="arch">I reach for ABAC when RBAC would explode into a policy-per-team-per-environment matrix: one tag-matching policy replaces hundreds, and access follows correctly-tagged resources automatically &mdash; a big operational win in multi-tenant or many-team accounts. The discipline I insist on: the tags that drive authorization must be protected (a workload must not be able to re-tag itself to escalate), ideally injected as <b>session tags</b> from a trusted IdP rather than self-set, with SCP/tag-policy guardrails on tagging. I combine ABAC for the scalable bulk with RBAC for the few coarse, high-privilege roles. &lsquo;Tag equals tag&rsquo; is the elegant part; &lsquo;who controls the tags&rsquo; is the real design question.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your ABAC policy grants access when <code>aws:PrincipalTag/Project</code> matches <code>aws:ResourceTag/Project</code>. Why can this become a privilege-escalation hole, and how do you close it? <span class="sc-a">If a principal can set its own tags, or a resource&rsquo;s <code>Project</code> tag, it can make the two match and grant itself access &mdash; the policy trusts tags it doesn&rsquo;t control. Close it by denying self-tagging and scoping <code>iam:Tag*</code> and resource <code>tag</code> permissions, injecting principal tags as <b>session tags</b> from a trusted IdP (not self-set), and enforcing tag hygiene with tag policies and SCPs.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20iam%20abac%20attribute%20based%20access%20control%20tags%20session%20tags%20privilege%20escalation"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: ABAC with tags &amp; session tags</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">ABAC = tag-based policies</span><span class="term">aws:PrincipalTag vs aws:ResourceTag</span><span class="term">session tags via AssumeRole</span><span class="term">new tagged resource = auto access</span><span class="term">scales without policy-per-team</span><span class="term">protect who can set tags</span><span class="term">combine with RBAC + SCP guardrails</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="iam">
+      <div class="s-top"><span class="s-no">19</span><span class="s-tag">IAM · advanced</span></div>
+      <h3>A role is passed to a service (iam:PassRole)</h3>
+      <p class="why"><b>Why they ask</b> <code>iam:PassRole</code> is the quiet permission behind most IAM privilege-escalation findings &mdash; interviewers probe whether you grasp that handing a role to a service is itself a sensitive act.</p>
+      <p class="gist"><b>Analogy</b> Hiring a contractor and handing them your master keyring to do the job: the dangerous permission isn&rsquo;t the contractor&rsquo;s &mdash; it&rsquo;s your right to hand over <em>that</em> keyring. Give someone the right to pass powerful keyrings and they can act as anyone.</p>
+      <div class="answer">
+        <p>When you launch an EC2 instance with an instance profile, create a Lambda with an execution role, or give ECS a task role, you are <b>passing a role</b> to that service &mdash; the service then assumes it and acts with its permissions. AWS gates that act with a separate permission on the <em>caller</em>: <code>iam:PassRole</code>. You may create the resource only if you&rsquo;re also allowed to pass <em>that specific role</em> to <em>that specific service</em>, scoped by the role ARN and an <code>iam:PassedToService</code> condition.</p>
+        <p>This is why PassRole is a classic escalation path: a user with broad <code>iam:PassRole</code> plus the ability to run a service can pass a <b>high-privilege role</b> (say an admin role) to a Lambda or EC2 instance they control, and inherit its power &mdash; without ever holding those permissions directly. So you scope PassRole tightly: which roles, to which services, never <code>Resource: *</code>. Its sibling concept is the <b>service-linked role</b> &mdash; a predefined, service-owned role a service creates for its <em>own</em> API calls, which you don&rsquo;t pass or edit.</p>
+        <p class="arch">I treat <code>iam:PassRole</code> as a privilege-granting permission, not a bookkeeping detail: audits should flag any identity with <code>PassRole</code> on <code>*</code>, and I scope it to an explicit allow-list of role ARNs plus <code>iam:PassedToService</code>, so a developer can pass only the app roles meant for EC2/Lambda, never an admin role. It pairs directly with the boundaries story &mdash; a <b>permission boundary</b> is how you let a team create and pass roles without being able to escalate past the cap. Knowing that &lsquo;launch this service with that role&rsquo; silently requires PassRole is the detail that separates someone who&rsquo;s debugged a &lsquo;why can&rsquo;t I start this Lambda&rsquo; from someone who hasn&rsquo;t.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A developer can create Lambda functions and has <code>iam:PassRole</code> on <code>*</code>, but holds no admin permissions themselves. Why is that effectively admin, and how do you fix it? <span class="sc-a">They can create a Lambda and <b>pass an existing high-privilege (admin) role</b> to it, then invoke it &mdash; the function runs with that role, so they&rsquo;ve escalated to admin without holding it directly. Fix by scoping <code>iam:PassRole</code> to a specific allow-list of low-privilege role ARNs (with an <code>iam:PassedToService</code> condition), never <code>Resource: *</code>.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20iam%20passrole%20privilege%20escalation%20passedtoservice%20service%20linked%20role%20explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: iam:PassRole &amp; the escalation trap</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">passing a role to a service</span><span class="term">iam:PassRole on the caller</span><span class="term">scope by role ARN + iam:PassedToService</span><span class="term">broad PassRole = escalation</span><span class="term">never Resource: *</span><span class="term">service-linked role (service-owned)</span><span class="term">pairs with permission boundaries</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== KMS ===== -->
+  <section class="track" data-track="kms">
+    <div class="track-head">
+      <div class="tno">Service 04 — Keys &amp; encryption</div>
+      <h2>AWS KMS</h2>
+      <p>Central, audited, unexportable keys. Envelope encryption is the pattern under every "encrypted at rest," key policies are the authorization twist, and multi-region keys plus caching are what make it work at scale and across regions.</p>
+    </div>
+
+    <article class="scenario" data-cat="kms">
+      <div class="s-top"><span class="s-no">20</span><span class="s-tag">KMS · core</span></div>
+      <h3>Data is encrypted with KMS (envelope encryption)</h3>
+      <p class="why"><b>Why it matters</b>Envelope encryption is the core KMS pattern and a frequent architecture question.</p>
+      <p class="gist"><b>Analogy</b> You don&rsquo;t mail the bank vault to encrypt a parcel &mdash; the vault stamps you a single-use padlock (a data key), you lock the parcel yourself, then lock that padlock&rsquo;s spare key inside a tiny box only the vault can reopen, and tape it to the parcel.</p>
+      <div class="answer">
+        <p>A KMS key (the CMK / KMS key) never leaves KMS — it lives in a FIPS-validated HSM and can't be exported. So you don't encrypt large data directly with it (that'd mean sending all your data to KMS). Instead: <b>envelope encryption</b>. You call <code>GenerateDataKey</code>; KMS returns a fresh <b>data key</b> twice — once plaintext, once encrypted under your CMK. You encrypt your actual data locally with the plaintext data key, discard the plaintext key, and store the <b>encrypted data key</b> alongside the ciphertext. To decrypt, you send the encrypted data key to KMS, which uses the CMK to decrypt it and returns the plaintext data key, and you decrypt locally. The CMK only ever wraps small data keys.</p>
+        <p>Worth distinguishing the <b>key types and ownership</b> the base answer glosses. KMS keys can be <b>symmetric</b> (the usual <code>GenerateDataKey</code> envelope flow) or <b>asymmetric</b> (RSA/ECC) &mdash; asymmetric lets you hand out a <em>public</em> key so external parties encrypt-to-you or verify signatures <em>without</em> any KMS access. And ownership matters for control and cost: <b>AWS-managed</b> keys (policy and ~annual rotation run by AWS, free), <b>customer-managed</b> keys (you own the policy, rotation, cross-account sharing &mdash; small monthly cost), and invisible <b>AWS-owned</b> keys.</p>
+        <p class="arch">The elegance to explain: envelope encryption gives the security of an unexportable, centrally-controlled, audited master key without routing bulk data through KMS — you do bulk crypto locally with data keys, and KMS only guards the small key that unlocks them. That's why every AWS service (S3, EBS, RDS) uses it under the hood. The security property: control of the CMK is control of the data — disable the CMK and the encrypted data keys can't be decrypted, so data is effectively inaccessible (a powerful kill-switch and access boundary), and every use is logged in CloudTrail. Data-key caching is the optimization when you'd otherwise call KMS too often.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> An external partner must be able to encrypt data that only you can decrypt, but you refuse to give them any AWS/KMS access at all. Which KMS key type fits, and why? <span class="sc-a">An <b>asymmetric</b> KMS key: you publish the <b>public</b> key, the partner encrypts with it offline (no AWS credentials needed), and only you &mdash; holding the private key that never leaves KMS &mdash; can <code>Decrypt</code>. A symmetric key can&rsquo;t do this, because encrypting with it requires calling KMS/holding the key.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20kms%20symmetric%20vs%20asymmetric%20key%20customer%20managed%20vs%20aws%20managed%20key"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: KMS key types &amp; ownership</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">CMK never leaves HSM (FIPS)</span><span class="term">GenerateDataKey (plaintext + encrypted)</span><span class="term">encrypt data locally with data key</span><span class="term">store encrypted data key with ciphertext</span><span class="term">CMK only wraps small keys</span><span class="term">CloudTrail audit</span><span class="term">control-CMK = control-data</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="kms">
+      <div class="s-top"><span class="s-no">21</span><span class="s-tag">KMS · advanced</span></div>
+      <h3>A KMS key is used by a service (SSE-KMS)</h3>
+      <p class="why"><b>Why it matters</b>How services integrate KMS — and its double-authorization model — is everyday practical KMS.</p>
+      <p class="gist"><b>Analogy</b> The locked filing room (SSE-KMS) opens automatically as you fetch a folder &mdash; but only if your badge works on <em>both</em> the room door (S3) and the cabinet lock (the KMS key); a badge for just the room gets you a frustrating &lsquo;access denied&rsquo; at the cabinet.</p>
+      <div class="answer">
+        <p>When you enable SSE-KMS on S3 (or EBS, RDS), the service does envelope encryption for you transparently: on write it gets a data key, encrypts, stores the encrypted data key; on read it asks KMS to decrypt the data key and decrypts — invisible to the caller, provided the caller is authorized to use the key. Authorization is the twist: KMS access is governed primarily by the <b>key policy</b> (attached to the key), which must allow the principal — unlike most services where IAM alone suffices, a KMS key requires its key policy to grant access (IAM then further scopes it). <b>Grants</b> delegate limited, temporary key use programmatically. <b>Encryption context</b> (extra key-value AAD) can be required and logged for binding.</p>
+        <p>At scale the operational fix the answer omits is <b>S3 Bucket Keys</b>: enable them and S3 derives a short-lived <em>bucket-level</em> data key instead of calling KMS per object, cutting <code>GenerateDataKey</code>/<code>Decrypt</code> calls (and KMS cost + throttling risk) by up to ~99% on busy buckets &mdash; the S3-layer cousin of data-key caching. For a higher assurance bar there&rsquo;s also <b>DSSE-KMS</b> (dual-layer server-side encryption) applying two independent layers.</p>
+        <p class="arch">The operational gotcha I flag is the double authorization: to read an SSE-KMS-encrypted object you need both S3 permission AND <code>kms:Decrypt</code> on the key, and the key policy must permit it — the classic "I have S3 access but get AccessDenied" is a missing KMS permission. So I design key policies deliberately (who administers the key vs who uses it), use grants for temporary/service delegation, and use encryption context to bind ciphertext to purpose (so a data key for tenant A can't decrypt tenant B's data). Cross-account encrypted sharing also needs the key policy to allow the other account. KMS authorization living on the key, not just IAM, is what seniors get right and juniors trip on.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A bucket with SSE-KMS and millions of small objects is racking up large KMS bills and occasional throttling on reads. What&rsquo;s the first lever to pull? <span class="sc-a">Enable <b>S3 Bucket Keys</b>: S3 then uses a time-limited bucket-level key to envelope-encrypt objects instead of calling KMS for every object, reducing KMS <code>GenerateDataKey</code>/<code>Decrypt</code> requests (and thus cost and throttling) by up to ~99% &mdash; with no change to who can decrypt.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20s3%20sse-kms%20double%20authorization%20bucket%20keys%20kms%3Adecrypt%20access%20denied"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: SSE-KMS: double auth &amp; Bucket Keys</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">SSE-KMS (transparent envelope)</span><span class="term">key policy is authoritative (not IAM alone)</span><span class="term">need service-perm AND kms:Decrypt</span><span class="term">grants (temporary delegation)</span><span class="term">encryption context (AAD binding)</span><span class="term">cross-account via key policy</span><span class="term">"S3 access but KMS AccessDenied"</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="kms">
+      <div class="s-top"><span class="s-no">22</span><span class="s-tag">KMS · advanced</span></div>
+      <h3>Key rotation &amp; key policy</h3>
+      <p class="why"><b>Why it matters</b>Rotation and access-control detail are the governance layer of KMS.</p>
+      <p class="gist"><b>Analogy</b> Changing the lock&rsquo;s internal pins while keeping the same keyhole label (the key ID): every door that referenced that label keeps working, old keys are retained to open old locks, and throwing a key away comes with a mandatory cooling-off period because it&rsquo;s forever.</p>
+      <div class="answer">
+        <p>KMS supports <b>automatic rotation</b>: enable it and KMS rotates the cryptographic backing material (about annually) while the <b>key ID and ARN stay the same</b> — so applications and stored encrypted data keys keep working, because KMS retains old backing keys to decrypt old data and uses the new one for new encryption. Seamless, no re-encryption. You can also do <b>manual rotation</b> (create a new key, update an <b>alias</b> to point at it — which is why aliases exist: a stable name that can point to different keys). Access is controlled by the key policy (authoritative), optionally with IAM and grants. Deleting a key is deliberately dangerous — KMS enforces a <b>waiting period</b> (7–30 days, disabled meanwhile) because deletion is irreversible and orphans all data encrypted under it.</p>
+        <p>Rotation has modernised: you&rsquo;re no longer stuck with fixed ~annual &mdash; you can set a <b>custom rotation period</b> (as short as 90 days) and trigger <b>on-demand rotation</b>. But <b>imported key material (BYOK)</b> and asymmetric keys <em>can&rsquo;t</em> be auto-rotated &mdash; you rotate those manually. And a sharp edge: a <b>key policy</b> that grants no usable admin can <em>orphan</em> the key &mdash; unlike most resources there&rsquo;s no implicit root backstop unless the policy itself grants the account root, so a bad policy can lock everyone out of the key.</p>
+        <p class="arch">Automatic rotation gives compliance-friendly key hygiene for free and transparently — old data stays decryptable, no re-encryption — because rotation changes the backing key, not the key's identity. I use <b>aliases everywhere</b> so applications reference a stable name, not a key ID, making manual rotation or key swaps painless. And I treat key deletion with the respect the waiting period implies: disabling (reversible) is my first move if I think a key is unused, and only after the window do I delete — a deleted CMK means its data is gone forever. Key policy is where I enforce separation of duties (admins can't necessarily decrypt; users can't change the policy).</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why can a careless edit to a KMS key policy lock you out of the key in a way that a careless IAM policy on, say, an S3 bucket usually doesn&rsquo;t? <span class="sc-a">KMS key access is governed primarily by the <b>key policy</b>, and there&rsquo;s no implicit root/admin backstop unless the key policy itself grants it &mdash; so a policy that leaves no principal able to administer the key <b>orphans</b> it (you can&rsquo;t use or fix it, short of AWS Support). Always keep the account root (or a break-glass admin) in the key policy; most other resources fall back to account-level IAM, which KMS does not.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20kms%20key%20rotation%20custom%20period%20on%20demand%20imported%20key%20policy%20lockout"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: KMS rotation, aliases &amp; the lockout trap</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">automatic rotation (~annual, ID/ARN stable)</span><span class="term">old keys retained, no re-encryption</span><span class="term">manual rotation via alias</span><span class="term">aliases = stable name</span><span class="term">key policy authoritative</span><span class="term">deletion waiting period (7–30d, irreversible)</span><span class="term">disable-before-delete · separation of duties</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="kms">
+      <div class="s-top"><span class="s-no">23</span><span class="s-tag">KMS · advanced</span></div>
+      <h3>KMS at scale — multi-region keys &amp; quotas</h3>
+      <p class="why"><b>Why it matters</b>The advanced KMS concerns — DR, cross-region, throttling, cost — matter at platform scale.</p>
+      <p class="gist"><b>Analogy</b> A spare safe in another city that opens with the <em>same</em> combination (shared key material) &mdash; so a locked parcel shipped there opens fine &mdash; but each city&rsquo;s safe keeps its <em>own</em> visitor list, so who may open it is decided locally.</p>
+      <div class="answer">
+        <p>Two advanced realities. <b>Multi-region keys</b>: a KMS key is regional by default (data encrypted in <code>us-east-1</code> can only be decrypted there), which breaks cross-region DR and replication; multi-region keys are a set of related keys in different regions sharing the same key material and key ID, so data encrypted in one region can be decrypted in another — essential for cross-region replicated data (an encrypted S3 object replicated elsewhere, an active-active dataset). And <b>request quotas</b>: KMS API calls (Encrypt/Decrypt/GenerateDataKey) are rate-limited per region and metered per call, so a high-throughput system calling KMS on every operation can get throttled and run up cost — the fix is <b>data-key caching</b> (reuse a data key for many operations within a bounded window), which envelope encryption already helps by minimizing CMK calls.</p>
+        <p>The nuance people get wrong: multi-region keys share key material and the same key ID, but each regional replica has its <b>own independent key policy, grants, aliases, and tags</b> &mdash; they are <em>not</em> a single synchronised object, so you can (and should) scope each region differently. There&rsquo;s also a <b>primary&harr;replica</b> relationship: one region is primary for managing material, and you can <b>promote</b> a replica to primary if you need to re-centre (useful in a region-loss scenario).</p>
+        <p class="arch">Multi-region keys are the KMS piece of a cross-region DR or active-active design — without them, your encrypted data can't be read in the failover region, so I plan them wherever encrypted data crosses regions (ties to the active-active, DynamoDB Global Tables, and S3-replication stories). And at scale I treat KMS as a rate-limited, per-call-priced dependency: for high-volume encryption I use data-key caching so I'm not calling KMS per object (a real throughput and cost lever), and I monitor for throttling. The two failure modes I design against are "can't decrypt in the DR region" (fixed by multi-region keys) and "KMS-throttled under load" (fixed by caching) — both the kind of thing that only shows up in production or a DR test.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> With a multi-region KMS key, if you tighten the key policy on the key in <code>eu-west-1</code>, does that automatically restrict the replica in <code>us-east-1</code>? <span class="sc-a">No. Multi-region keys share key <em>material</em> and key ID, but each regional replica has an <b>independent key policy, grants, and aliases</b> &mdash; they&rsquo;re not synchronised. You must update each region&rsquo;s policy separately, which is also the feature: you can scope access per region (and promote a replica to primary if the primary region is lost).</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20kms%20multi%20region%20keys%20independent%20key%20policy%20primary%20replica%20promote%20quotas"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Multi-region KMS keys: what&rsquo;s shared vs not</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">regional-by-default (can't decrypt cross-region)</span><span class="term">multi-region keys (shared material/ID)</span><span class="term">for DR / replication</span><span class="term">KMS request quotas (throttling)</span><span class="term">per-call cost</span><span class="term">data-key caching</span><span class="term">ties to active-active / Global Tables</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="kms">
+      <div class="s-top"><span class="s-no">24</span><span class="s-tag">KMS · advanced</span></div>
+      <h3>A service is granted temporary key use (grants &amp; caching)</h3>
+      <p class="why"><b>Why they ask</b> Grants and data-key caching are the two mechanisms that make KMS work for programmatic, high-volume, and cross-account use &mdash; beyond the static key-policy model.</p>
+      <p class="gist"><b>Analogy</b> A key policy is the building&rsquo;s permanent access list; a <b>grant</b> is a time-limited visitor pass you hand a contractor for one job, revocable the moment they&rsquo;re done &mdash; and data-key caching is photocopying the one key you were given so you don&rsquo;t queue at the key desk for every door.</p>
+      <div class="answer">
+        <p>A <b>grant</b> is a programmatic, fine-grained, revocable delegation of key use: &lsquo;this principal may <code>Decrypt</code> with this key, optionally only with this <b>encryption context</b>, until I revoke it.&rsquo; AWS services use grants under the hood &mdash; an EBS volume, a DynamoDB table, a Lambda gets a grant to use your key for its lifetime &mdash; because, unlike editing the key policy, grants are additive, scoped, time-bounded, and retired/revoked individually, ideal for temporary programmatic access without rewriting policy. Creating one returns a <b>grant token</b> to bridge the brief eventual-consistency window.</p>
+        <p><b>Data-key caching</b> solves throughput and cost: rather than calling <code>GenerateDataKey</code>/<code>Decrypt</code> per object, the AWS Encryption SDK caches a data key and reuses it across many operations, bounded by limits you set &mdash; max messages, max bytes, and a max age. That&rsquo;s a deliberate security-for-performance trade: a longer-lived cached key means fewer KMS calls (dodging throttling and per-call cost) but a wider blast radius if that key leaks &mdash; so you tune the caps to your risk tolerance.</p>
+        <p class="arch">I use grants for service and cross-account delegation that must be temporary and revocable &mdash; they keep the key policy stable while handing out scoped, expiring access, and binding a grant to an <b>encryption context</b> means a grant to decrypt tenant A&rsquo;s data can&rsquo;t touch tenant B&rsquo;s. Data-key caching is my lever when a workload would otherwise hammer KMS (the throttling-and-cost failure mode from the multi-region scenario): I set conservative max-age and max-messages caps so I capture most of the saving with a bounded exposure window. Grants (who, temporarily) and caching (how often you call) are the two answers to &lsquo;KMS doesn&rsquo;t scale for us&rsquo; that aren&rsquo;t just &lsquo;raise the quota&rsquo;.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why use a KMS grant instead of editing the key policy to give a service temporary decrypt access, and what does data-key caching trade away for its cost savings? <span class="sc-a">A grant is scoped, additive, and individually revocable/expiring, so you delegate temporary programmatic access without mutating (and risking) the key policy &mdash; and you can bind it to an encryption context. Data-key caching reuses one data key across many operations to cut KMS calls (throttling and cost), trading a <b>wider blast radius</b> if that cached key leaks &mdash; which you bound with max-age/max-messages/max-bytes caps.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20kms%20grants%20grant%20token%20data%20key%20caching%20encryption%20sdk%20encryption%20context"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: KMS grants &amp; data-key caching</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">grant = scoped, revocable, temporary</span><span class="term">grant token (consistency bridge)</span><span class="term">services use grants internally</span><span class="term">bind to encryption context</span><span class="term">data-key caching (Encryption SDK)</span><span class="term">max age / messages / bytes caps</span><span class="term">security-vs-throughput trade</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== API GATEWAY ===== -->
+  <section class="track" data-track="apigw">
+    <div class="track-head">
+      <div class="tno">Service 05 — The managed API front door</div>
+      <h2>AWS API Gateway</h2>
+      <p>Auth, throttling, quotas, caching, and safe releases as a managed service — the AWS cousin of the gateway pattern. The architecture calls are which flavor, where auth lives, and when an ALB is the cheaper front door instead.</p>
+    </div>
+
+    <article class="scenario" data-cat="apigw">
+      <div class="s-top"><span class="s-no">25</span><span class="s-tag">API GW · core</span></div>
+      <h3>A request hits API Gateway</h3>
+      <p class="why"><b>Why it matters</b>It's the managed front door for APIs — the lifecycle and the REST/HTTP/WebSocket split are basic-but-essential.</p>
+      <p class="gist"><b>Analogy</b> A managed hotel concierge desk for your APIs: it checks your reservation (auth), limits how often you can ring (throttle), translates your request into the kitchen&rsquo;s format, and relays it &mdash; but it&rsquo;ll hang up on you if the kitchen takes too long to answer.</p>
+      <div class="answer">
+        <p>API Gateway fronts your APIs. Flavors: <b>REST APIs</b> (full-featured — request validation, API keys, usage plans, caching, WAF), <b>HTTP APIs</b> (newer, cheaper, lower-latency, fewer features, JWT authorizers), and <b>WebSocket APIs</b> (stateful bidirectional). A request flows through a managed pipeline: it hits the endpoint, is <b>authorized</b> (IAM, Cognito, a Lambda authorizer, or API key), <b>throttled</b> against limits, optionally validated and transformed (mapping templates), then <b>integrated</b> with a backend — most often a Lambda function, but also an HTTP endpoint or an AWS service directly — and the response is transformed and returned. It handles TLS, scaling, and the API lifecycle for you.</p>
+        <p>A production fact that bites: integrations have a timeout &mdash; historically a hard <b>29 seconds</b> (now raisable above that on REST APIs via an account quota increase, though HTTP APIs stay at 30s) &mdash; so a slow backend surfaces as a <code>504</code> at the gateway, not a hang. Also pick the <b>endpoint type</b> deliberately: <b>edge-optimized</b> (CloudFront-fronted, for globally dispersed clients), <b>regional</b> (callers in-region, or you front your own CDN), or <b>private</b> (reachable only via an interface endpoint). And for Lambda, <b>proxy</b> integration passes the raw request through, versus non-proxy mapping templates.</p>
+        <p class="arch">I frame API Gateway as managed API management plus a serverless front door — auth, throttling, request validation, caching, and a stable endpoint with no servers, which is why it pairs perfectly with Lambda for serverless APIs. The choice within it: HTTP APIs for most modern JSON/JWT APIs (cheaper, faster — my default), REST APIs when I need the extra features (API keys + usage plans for a partner API, request/response transformation, edge caching, WAF). It's the AWS-managed cousin of the API-gateway pattern from the agentic volume — the same cross-cutting concerns (auth, throttle, route), delivered as a service. The tradeoff is per-request cost and some latency versus running your own.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A REST API in front of a Lambda that occasionally runs ~40 seconds returns <code>504</code> even though the Lambda eventually finishes successfully. Why, and what are the options? <span class="sc-a">API Gateway enforces an <b>integration timeout</b> (historically a hard 29s), so it gives up and returns <code>504</code> before the ~40s Lambda finishes &mdash; the work completes but the client already got an error. Options: request a quota increase to raise the REST integration timeout, or (better) make the call <b>asynchronous</b> &mdash; return <code>202</code> with a job ID and let the client poll/get notified &mdash; so no request is held open that long.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20api%20gateway%20integration%20timeout%2029%20seconds%20endpoint%20types%20proxy%20integration"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: API Gateway: pipeline, timeouts &amp; endpoints</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">managed API front door</span><span class="term">REST vs HTTP vs WebSocket APIs</span><span class="term">pipeline: authorize→throttle→validate/transform→integrate</span><span class="term">Lambda / HTTP / AWS-service integration</span><span class="term">mapping templates</span><span class="term">managed TLS/scaling</span><span class="term">HTTP-API-by-default</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="apigw">
+      <div class="s-top"><span class="s-no">26</span><span class="s-tag">API GW · advanced</span></div>
+      <h3>Authorization at the edge (authorizers)</h3>
+      <p class="why"><b>Why it matters</b>Where and how auth happens is the security core of API Gateway.</p>
+      <p class="gist"><b>Analogy</b> A doorman who writes down your face and verdict on a sticky note so he doesn&rsquo;t re-check you for a few minutes &mdash; fast, until he keys the note to &lsquo;anyone in a suit&rsquo; and lets in the next person wearing one.</p>
+      <div class="answer">
+        <p>API Gateway authorizes requests before they reach your backend, several ways. <b>IAM authorization</b> (the caller signs with SigV4 — for internal/service-to-service AWS callers). <b>Cognito</b> user pools (validate a Cognito token). <b>Lambda authorizers</b> (a function you write that inspects a token or the whole request and returns an allow/deny policy — for custom auth, e.g. validating a third-party JWT or opaque token; results are cached by token to avoid calling it every request). And <b>API keys with usage plans</b> (identify a client and enforce quotas — note API keys are for metering/identification, not strong auth). So auth is offloaded to the edge, and your backend only sees authorized requests.</p>
+        <p>The caching the answer praises has a sharp edge: a Lambda authorizer&rsquo;s result is cached <b>keyed by the identity source</b> (the token, or the header(s) you configure), and the <em>returned IAM policy</em> is cached too &mdash; so if your identity source is too coarse <em>or</em> the policy you return uses a wildcard method ARN, a cached allow can leak across users or routes. Pick the cache key to be the thing that actually identifies the caller, scope the returned policy to the specific method, and know <b>TOKEN</b> authorizers key on one token while <b>REQUEST</b> authorizers can key on multiple request parameters.</p>
+        <p class="arch">The principle is authorize at the edge so backends aren't exposed to unauthenticated traffic and don't each reimplement auth — the same "gateway owns auth" idea as the LLM/agentic gateway. I pick by caller: IAM/SigV4 for AWS-internal, a JWT authorizer (HTTP APIs validate JWTs natively) or Cognito for user-facing, a Lambda authorizer for custom/legacy token schemes (leaning on its caching so it's not a per-request latency tax). API keys I use only for identifying and rate-limiting clients via usage plans, never as the actual security — a common mistake is treating an API key as authentication. Auth at the gateway plus a backend that still validates (defense in depth) is the posture.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A Lambda authorizer with caching enabled occasionally authorizes one user as if they were another. What&rsquo;s the classic cause? <span class="sc-a">The authorizer <b>cache key (identity source)</b> is too coarse &mdash; e.g. a header that isn&rsquo;t unique per user &mdash; so a cached allow/policy from one caller is reused for a different caller within the TTL. Fix by keying the cache on the actual per-user credential (the real token) and returning a tightly-scoped policy (specific method ARN, not a wildcard), so a cache hit can&rsquo;t over-grant.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20api%20gateway%20lambda%20authorizer%20caching%20identity%20source%20token%20vs%20request"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Edge authorizers &amp; the caching pitfall</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">IAM / SigV4 auth</span><span class="term">Cognito user pools</span><span class="term">Lambda authorizer (returns policy, cached)</span><span class="term">API keys + usage plans (metering not auth)</span><span class="term">JWT authorizer (HTTP APIs)</span><span class="term">authorize-at-edge</span><span class="term">"API key ≠ authentication"</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="apigw">
+      <div class="s-top"><span class="s-no">27</span><span class="s-tag">API GW · advanced</span></div>
+      <h3>Throttling, caching &amp; stages</h3>
+      <p class="why"><b>Why it matters</b>The traffic-management and deployment features are the production side of API Gateway.</p>
+      <p class="gist"><b>Analogy</b> A theme-park queue system with several gates: a park-wide capacity, a per-ride limit, and your ticket&rsquo;s own daily quota &mdash; whichever is tightest is the one that stops you, and a &lsquo;come back later&rsquo; slip (HTTP 429) is how it says so.</p>
+      <div class="answer">
+        <p>API Gateway protects backends and manages releases. <b>Throttling</b> uses a token-bucket (a steady rate plus a burst) at the account, API, and method level, and per-client via <b>usage plans</b> tied to API keys (give partner A 100 rps, partner B 1000) — excess gets a 429. <b>Caching</b> (REST APIs) stores responses for a TTL keyed by request parameters, cutting backend load and latency for cacheable GETs. And deployment uses <b>stages</b>: you deploy an API to a named stage (dev, prod), each with its own config, throttle settings, and endpoint, and you can <b>canary</b> on a stage (route a percentage of traffic to a new deployment and watch before promoting).</p>
+        <p>Two precision points. Throttling is <b>layered and the most restrictive wins</b> &mdash; account-level (a soft, raisable default) &rarr; stage/method &rarr; per-key usage plan &mdash; and a throttle returns <code>429 Too Many Requests</code>. <b>Stage variables</b> let one API definition point different stages at different backends (e.g. a Lambda <em>alias</em> per stage), which is how you wire dev/prod cleanly. And the cache isn&rsquo;t free: it&rsquo;s a <b>provisioned, paid cache</b> you size in GB per stage, so caching is a cost/latency trade, not a free win.</p>
+        <p class="arch">Throttling is a first-class protection I set deliberately — it shields the backend from spikes and abusive clients and enforces fair use per client via usage plans (the multi-tenant quota mechanism), the same rate-limiting concern as the LLM gateway's per-tenant budgets. Caching I use for read-heavy, cacheable endpoints as a cheap latency/cost win, mindful of staleness. Stages plus canary give me safe releases at the API layer (percentage rollout with rollback — the canary pattern from the delivery volume, native here). So API Gateway isn't just routing — it's the traffic-management and safe-release control point, which is exactly why you put a managed gateway in front rather than exposing backends directly.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> One client reports constant <code>429</code>s while your account-wide traffic is low and other clients are fine. Where do you look? <span class="sc-a">At the <b>per-client usage plan</b> tied to that client&rsquo;s API key &mdash; throttling is layered and the <em>most restrictive</em> limit applies, so a low per-key rate/quota in their usage plan produces <code>429</code>s regardless of spare account/stage capacity. Raise (or correct) that usage plan&rsquo;s rate/burst/quota for the client.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20api%20gateway%20throttling%20usage%20plans%20429%20stage%20variables%20caching%20paid"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Throttling, stages &amp; the paid cache</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">token-bucket throttling (rate + burst)</span><span class="term">usage plans (per-client quota) · 429</span><span class="term">response caching (TTL, param-keyed)</span><span class="term">stages (per-env config/endpoint)</span><span class="term">canary deployment (percentage + promote)</span><span class="term">backend protection</span><span class="term">ties to LLM-gateway limits</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="apigw">
+      <div class="s-top"><span class="s-no">28</span><span class="s-tag">API GW · advanced</span></div>
+      <h3>API Gateway vs ALB vs direct</h3>
+      <p class="why"><b>Why it matters</b>Choosing the right front door is a real architecture decision with cost and feature tradeoffs.</p>
+      <p class="gist"><b>Analogy</b> Choosing between a full-service airport (API Gateway: passport control, quotas, screening &mdash; priced per passenger) and a plain bus terminal (ALB: cheap, high-volume, just gets you to a gate) &mdash; the gap narrows now that the bus terminal added an ID check of its own.</p>
+      <div class="answer">
+        <p>They overlap but fit different needs. <b>API Gateway</b> is managed API management — auth, throttling, per-client quotas, request validation, caching, transformation, serverless-friendly (great with Lambda) — priced <b>per request</b>, excellent at low-to-moderate volume and for feature-rich APIs, but expensive at very high request rates. An <b>ALB</b> is an L7 load balancer — host/path routing to targets (containers, EC2, IP, even Lambda) — priced per hour + capacity units, far cheaper at high sustained volume, the natural fit for containerized/EKS HTTP services, but it lacks API-management features (no per-client quotas, no built-in API keys, thinner auth). Going <b>direct</b> (NLB or straight to the service) is for raw performance without L7 features.</p>
+        <p>The &lsquo;ALB has no auth&rsquo; line is dated: an ALB can <b>authenticate at the listener</b> via native OIDC/Cognito actions and can target <b>Lambda</b> too &mdash; so for simple user login in front of containers it may suffice without API Gateway. The decision still turns on <b>cost shape</b>: API Gateway is roughly <em>per-request</em> (so it climbs with volume), while an ALB is per-hour plus capacity units (cheap at high sustained throughput) &mdash; so at very high RPS the ALB usually wins on cost, and at low-moderate volume with rich API-management needs, API Gateway does.</p>
+        <p class="arch">My rule of thumb: API Gateway when I need API-management features (partner APIs with quotas, request validation, usage plans), serverless/Lambda backends, or low-moderate traffic; ALB when I'm fronting containerized services on EKS/ECS, need cheap L7 routing at high sustained volume, and don't need API management (the EKS Ingress→ALB path); NLB/direct for ultra-low-latency L4. And they compose — I've fronted an ALB with API Gateway, or put CloudFront/WAF in front of either. The axes are cost-at-scale (per-request vs per-hour), feature set (API management vs plain routing), and backend (Lambda vs containers). Reaching for API Gateway reflexively at high volume is a costly mistake; so is using an ALB when you actually need per-client quotas.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A team defaults to API Gateway in front of an EKS service doing sustained tens of thousands of requests per second, with no need for per-client quotas or API keys. What&rsquo;s the likely problem and the better fit? <span class="sc-a">API Gateway&rsquo;s roughly <b>per-request</b> pricing makes it expensive at that sustained volume, for API-management features they don&rsquo;t use. An <b>ALB</b> (per-hour + capacity units) is far cheaper at high throughput, is the natural EKS Ingress target, and &mdash; if they just need user login &mdash; can even do OIDC/Cognito auth at the listener. Reserve API Gateway for where its quotas/keys/validation actually earn their per-request cost.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20api%20gateway%20vs%20alb%20cost%20per%20request%20vs%20lcu%20oidc%20authentication%20lambda%20target"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: API Gateway vs ALB: cost &amp; the auth gap</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">API GW (managed API mgmt, per-request, Lambda)</span><span class="term">ALB (L7 routing, per-hour, cheap at scale, containers)</span><span class="term">NLB / direct (L4, raw perf)</span><span class="term">cost-at-scale axis</span><span class="term">feature axis · backend axis</span><span class="term">they compose (CloudFront/WAF)</span><span class="term">EKS Ingress → ALB</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="apigw">
+      <div class="s-top"><span class="s-no">29</span><span class="s-tag">API GW · advanced</span></div>
+      <h3>A WebSocket API keeps a connection open</h3>
+      <p class="why"><b>Why they ask</b> WebSocket APIs invert the request/response model API Gateway is known for &mdash; a clean test of whether you understand stateful, server-push connections at the managed edge.</p>
+      <p class="gist"><b>Analogy</b> REST is posting letters, each one self-contained; a WebSocket is an open phone line the gateway holds for you, handing you a connection ID so you can ring that specific caller back later &mdash; without them asking first.</p>
+      <div class="answer">
+        <p>A WebSocket API maintains a persistent, bidirectional connection, and API Gateway routes <em>messages</em> (not URL paths) to backends via <b>route selection</b>: built-in <code>$connect</code> and <code>$disconnect</code> routes fire when a client joins or leaves, <code>$default</code> catches unmatched messages, and custom routes dispatch on a field in the message body (for example an <code>action</code> field). Each connection gets a <b>connectionId</b>, which you typically store (in DynamoDB) on <code>$connect</code> and remove on <code>$disconnect</code>.</p>
+        <p>The key inversion is <b>server push</b>: to send a message to a client, the backend calls the <b>@connections</b> management API &mdash; <code>PostToConnection</code> &mdash; with that connectionId, so the <em>server</em> initiates, not the client. API Gateway holds the many open sockets so your backend (often Lambda) stays stateless and event-driven; it bills per message plus connection-minutes, and idle/duration limits apply &mdash; connections aren&rsquo;t infinite.</p>
+        <p class="arch">I choose a WebSocket API when I genuinely need server-initiated push or low-latency bidirectional flow &mdash; live dashboards, chat, notifications &mdash; and I design around its statefulness: persist connectionIds in DynamoDB keyed for fan-out, and handle the fact that <code>$disconnect</code> is <em>not guaranteed</em> to fire (so TTL-expire stale connections). The honest alternative I&rsquo;d weigh is whether plain request/response with polling, Server-Sent Events, or AppSync subscriptions fits better, since WebSockets add real connection-state and limits. It&rsquo;s the same managed-edge concerns &mdash; auth on <code>$connect</code>, throttling &mdash; as REST/HTTP APIs, applied to a long-lived socket instead of a one-shot request.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> In an API Gateway WebSocket API, how does the <em>server</em> send an unsolicited message to one connected client, and what state must you manage for fan-out? <span class="sc-a">The backend calls the <b>@connections</b> management API &mdash; <code>PostToConnection</code> &mdash; with the target&rsquo;s <b>connectionId</b>, so the server initiates the push. You must persist connectionIds (typically in DynamoDB) as clients connect and remove/expire them on <code>$disconnect</code> &mdash; which may not always fire, so add a TTL &mdash; then iterate those IDs to fan a message out to many clients.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20api%20gateway%20websocket%20api%20connect%20disconnect%20route%20PostToConnection%20connectionId"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: How an API Gateway WebSocket works</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">persistent bidirectional connection</span><span class="term">routes: $connect / $disconnect / $default</span><span class="term">route selection on a message field</span><span class="term">connectionId (store in DynamoDB)</span><span class="term">server push via @connections PostToConnection</span><span class="term">$disconnect not guaranteed (use TTL)</span><span class="term">per-message + connection-minute billing</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== LOAD BALANCERS ===== -->
+  <section class="track" data-track="elb">
+    <div class="track-head">
+      <div class="tno">Service 06 — Distributing traffic</div>
+      <h2>AWS Load Balancers</h2>
+      <p>ALB, NLB, and Gateway LB for three layers of need. The routing model, the type choice, the health-check-and-drain mechanics behind zero-downtime deploys, and the fact that an ELB is a DNS-fronted fleet, not a box.</p>
+    </div>
+
+    <article class="scenario" data-cat="elb">
+      <div class="s-top"><span class="s-no">30</span><span class="s-tag">ELB · core</span></div>
+      <h3>A request hits an ALB (L7)</h3>
+      <p class="why"><b>Why it matters</b>The ALB is the workhorse L7 balancer — its routing model is bread-and-butter.</p>
+      <p class="gist"><b>Analogy</b> A multilingual front-desk clerk who opens every letter (terminates TLS), reads who it&rsquo;s for and routes it (host/path rules), and keeps a line open to the back office &mdash; but if the clerk holds the office line longer than the office keeps it, the next handoff drops.</p>
+      <div class="answer">
+        <p>An Application Load Balancer works at layer 7 (HTTP/HTTPS). A request arrives at a <b>listener</b> (a port, e.g. 443, terminating TLS with an ACM certificate). The listener has <b>rules</b> evaluated in order that route by host header, path, HTTP method, headers, or query string — so <code>/api/*</code> goes to one target group, <code>app.example.com</code> to another. A <b>target group</b> is a set of backends (EC2, IP targets like pods, or Lambda) with a <b>health check</b>; the ALB only sends traffic to healthy targets, load-balancing across them (round-robin or least-outstanding-requests). It supports sticky sessions, redirects, and fixed responses at the LB itself.</p>
+        <p>The classic ALB production bug: the ALB has an <b>idle timeout</b> (default 60s) and reuses keep-alive connections to targets &mdash; if the <em>backend&rsquo;s</em> keep-alive is <em>shorter</em> than the ALB&rsquo;s idle timeout, the backend closes a connection the ALB still thinks is good, and the next request on it returns an intermittent <b>502</b>. The fix is to set the backend keep-alive <em>longer</em> than the ALB idle timeout. Note too the ALB speaks HTTP/2 to clients but <b>HTTP/1.1 to targets</b>.</p>
+        <p class="arch">The ALB is my default for HTTP services because L7 awareness lets one load balancer front many services via host/path rules (consolidating cost and TLS), integrate ACM for managed certs, and route intelligently — and on EKS it's what the Ingress provisions, registering pod IPs directly as targets. The pieces I design: listener + rules for routing, target groups per service with <b>meaningful health checks</b> (hit a real readiness endpoint, not just a TCP port — echoing the k8s readiness lesson), and TLS termination with ACM. Content-based routing at L7 is the ALB's superpower; when I don't need it (raw TCP, extreme performance, static IP), that's when I drop to NLB.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> An app behind an ALB throws sporadic <code>502</code>s under normal load with nothing wrong in the app logs. What connection-level mismatch should you check first? <span class="sc-a">The backend&rsquo;s <b>keep-alive / idle timeout is shorter than the ALB&rsquo;s idle timeout</b> (default 60s): the backend closes a pooled connection the ALB still intends to reuse, so the next request on it fails as a <code>502</code>. Set the backend keep-alive <em>greater</em> than the ALB idle timeout so the ALB, not the backend, decides when to close.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20alb%20intermittent%20502%20idle%20timeout%20keepalive%20backend%20mismatch%20http2%20targets"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: ALB routing &amp; the keep-alive 502</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">L7 (HTTP) · listener + TLS (ACM)</span><span class="term">rules (host/path/header/method, ordered)</span><span class="term">target group (EC2/IP/Lambda) + health check</span><span class="term">healthy-target routing</span><span class="term">least-outstanding-requests</span><span class="term">one ALB fronts many services</span><span class="term">meaningful (readiness) health checks</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="elb">
+      <div class="s-top"><span class="s-no">31</span><span class="s-tag">ELB · core</span></div>
+      <h3>NLB vs ALB vs Gateway Load Balancer</h3>
+      <p class="why"><b>Why it matters</b>Choosing the right load balancer type is a fundamental design decision.</p>
+      <p class="gist"><b>Analogy</b> Three couriers: one reads the address on the envelope and sorts by content (ALB/L7), one just forwards sealed boxes at blistering speed with a fixed depot address (NLB/L4), and one secretly routes everything past an inspector first (Gateway LB).</p>
+      <div class="answer">
+        <p>Three types for three layers. The <b>ALB</b> (L7) does HTTP-aware routing (host/path), TLS, WebSockets — for web/API traffic. The <b>Network Load Balancer</b> (L4, TCP/UDP) operates at the connection level for ultra-low latency and extreme throughput (millions of requests/sec), can have a <b>static IP / Elastic IP</b> per AZ (useful when clients must allow-list a fixed IP), and <b>preserves the client source IP</b> — for high-performance, non-HTTP, or IP-sensitive workloads. The <b>Gateway Load Balancer</b> (L3/4) is specialized: it transparently inserts third-party network appliances (firewalls, IDS/IPS) into the traffic path using GENEVE. So: ALB for HTTP features, NLB for L4 speed/static-IP/source-IP, GWLB for security appliances.</p>
+        <p>Two modern facts shift old advice. <b>NLBs now support security groups</b> (added 2023) &mdash; previously a reason people put an ALB in front &mdash; so you can firewall an NLB directly. And watch the <b>client-IP-preservation hairpin</b>: with source-IP preservation on, a target behind the NLB can&rsquo;t reach the NLB&rsquo;s own endpoint from the <em>same</em> instance (the loopback breaks). The composite pattern worth naming is <b>ALB-behind-NLB</b>: an NLB for a static/Elastic IP in front of an ALB for L7 routing, getting both.</p>
+        <p class="arch">I pick by what the traffic needs. HTTP with routing/TLS/host-path → ALB (the common case). Raw TCP/UDP, a static IP for allow-listing, the real client IP, or millions of connections at lowest latency → NLB. Inserting inline security appliances → GWLB. On EKS this maps directly: Ingress → ALB (L7), Service type LoadBalancer → NLB (L4). A subtle interview-worthy point: NLB preserves the source IP and gives a stable IP, which ALB doesn't (ALB IPs change and it replaces the source IP with its own, so you rely on <code>X-Forwarded-For</code>) — so IP-sensitive or allow-list scenarios push you to NLB. Matching LB type to the actual requirement is the decision.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A client must allow-list a single static IP <em>and</em> you need host/path (L7) routing. Neither NLB nor ALB alone gives both &mdash; what do you do? <span class="sc-a">Put an <b>NLB in front of an ALB</b>: the NLB provides the static/Elastic IP the client allow-lists (ALB IPs change), and it forwards to the ALB as its target, which then does the L7 host/path routing. You get a fixed entry IP plus full layer-7 features &mdash; the standard ALB-behind-NLB composition.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20nlb%20vs%20alb%20vs%20gateway%20load%20balancer%20security%20groups%20hairpin%20alb%20behind%20nlb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: LB types, NLB SGs &amp; ALB-behind-NLB</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">ALB (L7 HTTP routing/TLS)</span><span class="term">NLB (L4, ultra-low latency, static/Elastic IP)</span><span class="term">NLB preserves source IP</span><span class="term">Gateway LB (appliance insertion, GENEVE)</span><span class="term">pick-by-need</span><span class="term">EKS Ingress→ALB / Service→NLB</span><span class="term">X-Forwarded-For on ALB</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="elb">
+      <div class="s-top"><span class="s-no">32</span><span class="s-tag">ELB · advanced</span></div>
+      <h3>Health checks &amp; connection draining</h3>
+      <p class="why"><b>Why it matters</b>These are the exact mechanics behind zero-downtime deploys and graceful scaling.</p>
+      <p class="gist"><b>Analogy</b> A maitre d&rsquo; who stops seating new diners at a table that&rsquo;s being cleared but lets the current guests finish their meal (draining) &mdash; and whether waiters serve tables in <em>other</em> rooms for free, or you pay a surcharge to send them across, depends on which restaurant you&rsquo;re in.</p>
+      <div class="answer">
+        <p>A load balancer continuously <b>health-checks</b> each target and only routes to healthy ones — a target that fails is pulled out automatically. When a target is deregistered (a deploy, a scale-in, an instance leaving), <b>connection draining / deregistration delay</b> kicks in: the LB stops sending new connections but lets in-flight requests finish for a configured window before fully removing it — so you don't sever active requests. <b>Cross-zone load balancing</b> spreads traffic evenly across targets in all AZs. <b>Sticky sessions</b> pin a client to one target when needed. Health-check tuning (interval, threshold, path) decides how fast a bad target is detected and a recovering one re-added.</p>
+        <p>A cost/behaviour asymmetry people miss: <b>cross-zone load balancing is ON and free on an ALB, but OFF by default on an NLB</b> &mdash; and enabling it on an NLB incurs <b>inter-AZ data-transfer charges</b>, so with it off a zone with few targets can get hot-spotted. The other knob worth naming is <b>slow start</b>: ramp traffic gradually to a newly-healthy target over a window so a cold instance (empty caches, JIT warm-up) isn&rsquo;t slammed the instant it passes its health check.</p>
+        <p class="arch">These are the same zero-downtime primitives as the Kubernetes rolling-update story, one layer down — health checks so traffic only goes to ready targets, and deregistration delay so removing a target drains gracefully instead of dropping requests. On EKS the ALB/NLB (via the Load Balancer Controller) does exactly this against pod-IP targets, which is why a rolling deploy is smooth: new pods pass health checks before receiving traffic, old pods drain before deregistering. I set the health check to a real readiness endpoint (not a shallow TCP check that says "up" while the app can't serve), tune the deregistration delay to my longest request, and use cross-zone balancing for even load. Health checks + draining are the mechanism that makes deploys and autoscaling invisible to users.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> On an NLB with uneven targets per AZ, one zone&rsquo;s few targets are overloaded while another zone&rsquo;s sit idle. What default explains it, and what&rsquo;s the trade to fix it? <span class="sc-a"><b>Cross-zone load balancing is off by default on NLBs</b>, so each LB node spreads traffic only across targets in <em>its own AZ</em> &mdash; a zone with fewer targets gets hot-spotted. Enabling cross-zone balances them, but introduces <b>inter-AZ data-transfer charges</b>, so it&rsquo;s a cost-vs-evenness trade (whereas on an ALB cross-zone is always on and free).</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20nlb%20cross%20zone%20load%20balancing%20off%20by%20default%20inter-az%20cost%20slow%20start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Health, draining, cross-zone &amp; slow start</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">continuous health checks (route only to healthy)</span><span class="term">deregistration delay / connection draining</span><span class="term">cross-zone load balancing</span><span class="term">sticky sessions</span><span class="term">health-check tuning (interval/threshold/path)</span><span class="term">readiness-endpoint not shallow TCP</span><span class="term">ties to k8s rolling update</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="elb">
+      <div class="s-top"><span class="s-no">33</span><span class="s-tag">ELB · advanced</span></div>
+      <h3>The load balancer scales and fails over</h3>
+      <p class="why"><b>Why it matters</b>Understanding the LB as a distributed, DNS-fronted fleet explains its behavior and its limits.</p>
+      <p class="gist"><b>Analogy</b> The load balancer isn&rsquo;t a building you can pin to a map &mdash; it&rsquo;s a phone number (DNS) that rings whichever of a shifting pool of operators is on duty, which is exactly why you can pull a whole broken call-centre offline without anyone redialing.</p>
+      <div class="answer">
+        <p>An ELB isn't a single box — it's a managed, <b>distributed fleet</b> of load-balancer nodes spread across the AZs you enable, and AWS scales that fleet up and down with your traffic automatically. Critically, you're given a <b>DNS name, not a fixed IP</b> (for the ALB), because the underlying nodes and their IPs change as the fleet scales — so clients always resolve the name fresh (via Route 53 / DNS with a low TTL), and that indirection is what lets AWS grow, shrink, and replace nodes transparently. It's multi-AZ for availability. The one caveat: scaling the fleet takes a little time, so a sudden, massive spike (a flash sale, a load test from zero) can briefly outpace it — historically you'd request pre-warming; NLBs handle sudden spikes far better than ALBs.</p>
+        <p>This is why the LB gives you a DNS name resolving to <b>one IP per enabled AZ node</b> &mdash; clients should honour <em>all</em> returned addresses, not pin one. Two practical levers: an <b>NLB</b> has a <em>static</em> IP per AZ, so it doesn&rsquo;t need pre-warming the way an ALB&rsquo;s shifting fleet does; and <b>Route 53 ARC zonal shift</b> lets you deliberately <em>evacuate</em> a single impaired AZ by pulling that AZ&rsquo;s LB IP out of DNS &mdash; a one-click &lsquo;drain this zone&rsquo; for grey failures, without a full regional failover.</p>
+        <p class="arch">The mental model to state is "an ELB is a horizontally-scaled fleet behind a DNS name, not an IP" — which explains why you never hardcode its IP (it changes), why you reach it via a Route 53 <b>alias</b> record (next track), and why it's inherently multi-AZ and self-scaling. The practical implications: for anticipated sudden spikes I either warm up the ALB, use an NLB (scales to sudden load better, gives a static IP), or pre-scale; and I enable all relevant AZs so the fleet is spread. This ties the load-balancer and DNS stories together — the LB's DNS name is exactly what a Route 53 alias points at, and the DNS indirection is fundamental to how the LB stays elastic.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> One AZ is having a grey failure (slow, not dead) and the LB nodes there are still serving degraded traffic. How can you pull just that AZ out quickly, short of a region failover? <span class="sc-a">Use a <b>Route 53 ARC zonal shift</b>: it temporarily removes the impaired AZ&rsquo;s load-balancer IP from DNS, so new connections steer to the healthy AZs&rsquo; nodes &mdash; a fast, targeted &lsquo;evacuate this zone&rsquo; for grey failures the health checks don&rsquo;t cleanly catch, without failing the whole region over.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20elb%20dns%20fleet%20multi%20az%20zonal%20shift%20route53%20arc%20nlb%20static%20ip%20warm%20up"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: The LB as a DNS fleet &amp; zonal shift</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">distributed LB fleet (not one box)</span><span class="term">multi-AZ nodes, auto-scales</span><span class="term">DNS name not fixed IP (ALB)</span><span class="term">IPs change → resolve fresh</span><span class="term">sudden-spike warm-up / pre-scale</span><span class="term">NLB handles spikes + static IP</span><span class="term">never hardcode LB IP</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="elb">
+      <div class="s-top"><span class="s-no">34</span><span class="s-tag">ELB · advanced</span></div>
+      <h3>TLS is terminated at the load balancer (SNI &amp; mTLS)</h3>
+      <p class="why"><b>Why they ask</b> Where TLS ends, how one listener serves many certs, and whether the client is authenticated are everyday ALB security decisions the basic &lsquo;the listener terminates TLS&rsquo; answer skips.</p>
+      <p class="gist"><b>Analogy</b> One receptionist (a single HTTPS listener) fronting many companies: the visitor states which company they&rsquo;re here for as they arrive (the SNI hostname) and the receptionist presents that company&rsquo;s badge &mdash; and on high-security floors, also checks the visitor&rsquo;s own ID (mTLS).</p>
+      <div class="answer">
+        <p>An ALB <b>listener</b> on 443 terminates TLS: it decrypts so it can read L7 (host/path) to route, then opens a connection to the target &mdash; <b>re-encrypting</b> to the backend if that target group uses HTTPS (end-to-end), or sending plain HTTP inside the VPC (terminate-at-edge). Because termination needs a certificate and one listener fronts many hostnames, the ALB uses <b>SNI</b>: the client puts the hostname in the TLS <code>ClientHello</code>, and the ALB selects the matching certificate from several attached to the listener &mdash; so one listener serves <code>a.example.com</code> and <code>b.example.com</code> with different certs.</p>
+        <p>A <b>security policy</b> on the listener pins the allowed TLS versions and cipher suites (how you drop TLS 1.0/1.1). And the ALB supports <b>mutual TLS (mTLS)</b>: it can require and verify a <em>client</em> certificate against a trust store (a CA bundle in S3) at the edge, then pass the validated client-cert details to the backend &mdash; so device/service client authentication happens at the load balancer, not re-implemented in every app.</p>
+        <p class="arch">My default is terminate TLS at the ALB with an <b>ACM</b> certificate (auto-renewed, never exported) and route at L7; I re-encrypt to targets only when compliance or in-VPC zero-trust requires true end-to-end, accepting the extra handshake cost. SNI is what lets me consolidate many HTTPS sites behind one ALB (cost, and one place for certs), and I set a modern security policy to enforce TLS 1.2+/1.3. mTLS at the ALB is the clean way to do service/device client-cert auth without burdening backends &mdash; the LB verifies against the trust store and forwards the identity. &lsquo;Where does TLS end, which cert, which TLS versions, and is the client authenticated&rsquo; is the four-part answer I&rsquo;d give, versus just &lsquo;it terminates TLS&rsquo;.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> One ALB listener on port 443 serves three different domains, each with its own certificate. What TLS mechanism makes that possible on a single listener, and how does the ALB pick the right cert? <span class="sc-a"><b>SNI</b> (Server Name Indication): the client includes the target hostname in the TLS <code>ClientHello</code> before the handshake completes, so the ALB reads it and selects the matching certificate from the multiple certs attached to that one listener &mdash; letting a single listener (and IP) serve many HTTPS domains with distinct certs.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20alb%20tls%20termination%20sni%20multiple%20certificates%20mutual%20tls%20mtls%20security%20policy"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: ALB TLS: termination, SNI &amp; mTLS</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">listener terminates TLS (decrypts for L7)</span><span class="term">terminate-at-edge vs re-encrypt (end-to-end)</span><span class="term">SNI selects cert from many on one listener</span><span class="term">ACM certs (auto-renew, unexportable)</span><span class="term">security policy (TLS versions / ciphers)</span><span class="term">mTLS: verify client cert vs trust store</span><span class="term">forwards client identity to backend</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== ROUTE 53 ===== -->
+  <section class="track" data-track="r53">
+    <div class="track-head">
+      <div class="tno">Service 07 — DNS &amp; global traffic</div>
+      <h2>Route 53</h2>
+      <p>The outermost layer of the whole stack. Authoritative DNS, plus routing policies and health checks that turn a phone book into a global traffic manager — and alias records, the AWS-specific must-know.</p>
+    </div>
+
+    <article class="scenario" data-cat="r53">
+      <div class="s-top"><span class="s-no">35</span><span class="s-tag">Route 53 · core</span></div>
+      <h3>A name is resolved via Route 53</h3>
+      <p class="why"><b>Why it matters</b>Route 53 as authoritative DNS is the entry point to every AWS-hosted app.</p>
+      <p class="gist"><b>Analogy</b> A phone directory that can give different numbers to insiders and the public for the same name (split-horizon), and &mdash; via special operators &mdash; can even look up numbers in your old on-prem phone book when asked from inside the building.</p>
+      <div class="answer">
+        <p>Route 53 is AWS's DNS service, acting as the <b>authoritative nameserver</b> for your domain. You create a <b>hosted zone</b> (public, internet-facing, or private, resolvable only inside your VPCs) and add records — A/AAAA, CNAME, MX, TXT, and AWS's special <b>alias</b> records. When someone resolves your domain, the recursive resolver walks to Route 53 as the authoritative source (the same DNS hierarchy from the platform volume — root → TLD → Route 53), which returns the answer with a <b>TTL</b>. Route 53 runs on a global anycast network so queries hit a nearby edge and it's highly available. It also does domain registration and health checks.</p>
+        <p>Two capabilities the base answer skips. <b>Split-horizon DNS</b>: a <em>private</em> hosted zone with the same name as a public one shadows it <em>inside</em> the VPC, so internal clients get internal addresses while the world gets the public ones. And <b>Route 53 Resolver endpoints</b> bridge hybrid DNS &mdash; an <b>inbound</b> endpoint lets on-prem resolve AWS private names, an <b>outbound</b> endpoint plus forwarding rules lets VPC workloads resolve on-prem names. (The in-VPC resolver itself lives at the VPC CIDR base <code>+2</code>.)</p>
+        <p class="arch">I place Route 53 as the authoritative half of the DNS story from the platform networking volume — it's where the domain's truth lives, and every request to your app starts by resolving a name here. The AWS-specific superpowers are the alias record and the routing policies that turn DNS into a traffic-management layer, not just a lookup. For a private hosted zone, it's also internal service discovery inside a VPC. The two knobs I always think about: <b>TTL</b> (how long resolvers cache, trading propagation speed against query volume — the same TTL lesson, and it governs how fast DNS-based failover takes effect) and whether a zone is public or private. Route 53 is where global traffic routing begins.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Inside the VPC, <code>api.example.com</code> must resolve to a private ALB, but public internet users of the same name must reach a public endpoint. How do you serve both from one name? <span class="sc-a"><b>Split-horizon DNS</b>: create a <b>private hosted zone</b> for <code>example.com</code> associated with the VPC, with <code>api.example.com</code> pointing at the private ALB, alongside the <b>public hosted zone</b> with the public record. Inside the VPC the private zone wins (resolvers see the private answer); outside, only the public zone is visible &mdash; one name, two answers by vantage point.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20route%2053%20private%20hosted%20zone%20split%20horizon%20resolver%20inbound%20outbound%20endpoints"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Route 53 resolution, split-horizon &amp; hybrid</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">authoritative DNS / nameserver</span><span class="term">hosted zone (public vs private)</span><span class="term">record types (A/AAAA/CNAME/MX/TXT/alias)</span><span class="term">resolves via DNS hierarchy → Route 53</span><span class="term">TTL (cache vs propagation)</span><span class="term">global anycast + HA</span><span class="term">private zone = internal discovery</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="r53">
+      <div class="s-top"><span class="s-no">36</span><span class="s-tag">Route 53 · advanced</span></div>
+      <h3>Routing policies (traffic management)</h3>
+      <p class="why"><b>Why it matters</b>Route 53's routing policies are how DNS becomes a global traffic-steering tool.</p>
+      <p class="gist"><b>Analogy</b> A smart switchboard that can route calls by coin-flip percentages (weighted), by who answers fastest (latency), by the caller&rsquo;s country (geolocation), or straight to the backup line when the main goes dead (failover) &mdash; and you can stack these rules.</p>
+      <div class="answer">
+        <p>Beyond simple name→IP, Route 53 offers <b>routing policies</b> deciding which answer to return per query. <b>Simple</b> (one record). <b>Weighted</b> (split traffic by percentage across records — for canary/blue-green or A/B, send 10% to the new stack). <b>Latency-based</b> (return the endpoint in the region with lowest latency to the user — global apps). <b>Geolocation</b> (answer by the user's continent/country — compliance/localization) and <b>geoproximity</b> (by distance, with bias). <b>Failover</b> (return the primary, or the secondary if the primary's health check fails — active-passive DR). <b>Multivalue</b> (return several healthy records for simple client-side load balancing). You can nest them (geolocation, then weighted within a region).</p>
+        <p>A few sharp edges: <b>latency-based</b> routing uses AWS&rsquo;s own <em>measured</em> latency tables between regions and resolver locations &mdash; not live geographic distance &mdash; so it can route in ways that look odd but reflect real network latency, and the tables update over time. Set a record&rsquo;s <b>weight to 0</b> to drain it (and if <em>all</em> weights are 0, Route 53 returns them all). The newer <b>IP-based routing</b> steers by client CIDR (useful for ISP/known-network steering), and remember <b>multivalue</b> is <em>not</em> a load balancer &mdash; it has no latency or proximity awareness, just returns several healthy answers.</p>
+        <p class="arch">Routing policies turn Route 53 from a phone book into a global load balancer and deployment tool. Weighted routing is how I do DNS-level blue-green/canary across whole stacks or regions (shift a percentage, watch, promote) — the coarse-grained cousin of the ALB/canary story. Latency-based sends each user to their nearest region. Geolocation handles data-residency/compliance ("EU users must hit the EU stack"). Failover plus health checks is the mechanism for active-passive DR. And they compose — latency to pick a region, then weighted within it for a canary. This is a core piece of multi-region architecture (ties to active-active): DNS is the outermost layer that decides which regional stack a user even reaches.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You want to gracefully take one stack out of a weighted routing set without deleting its record or abruptly changing the others. What&rsquo;s the clean move? <span class="sc-a">Set that record&rsquo;s <b>weight to 0</b>: Route 53 stops returning it (draining it from rotation) while the other weighted records keep their proportions, and you can restore it later by raising the weight again &mdash; no deletion, no re-tuning the rest. (Caveat: if you zero <em>every</em> weight in the set, Route 53 returns them all.)</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20route%2053%20routing%20policies%20weighted%20latency%20geolocation%20failover%20weight%20zero"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Routing policies &amp; their sharp edges</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">simple / weighted / latency / geolocation / geoproximity / failover / multivalue</span><span class="term">weighted = DNS canary/blue-green</span><span class="term">latency-based = nearest region</span><span class="term">geolocation = residency/compliance</span><span class="term">failover = active-passive DR</span><span class="term">nested policies</span><span class="term">DNS as global traffic manager</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="r53">
+      <div class="s-top"><span class="s-no">37</span><span class="s-tag">Route 53 · advanced</span></div>
+      <h3>Health checks &amp; DNS failover (the TTL caveat)</h3>
+      <p class="why"><b>Why it matters</b>DNS-based failover is powerful but has a caching caveat that catches people out.</p>
+      <p class="gist"><b>Analogy</b> A backup generator wired to a switch that most of the building obeys &mdash; but some offices keep a copy of the old wiring diagram pinned to the wall (cached DNS) and keep flipping the dead switch long after you cut over.</p>
+      <div class="answer">
+        <p>Route 53 <b>health checks</b> monitor endpoints (an HTTP check, a TCP check, or the status of other health checks / CloudWatch alarms) from multiple global locations. Combined with failover or multivalue routing, an unhealthy endpoint is removed from DNS answers — so if your primary region's health check fails, Route 53 starts returning the secondary, achieving DNS-level failover across regions. The crucial caveat: DNS answers are <b>cached by resolvers and clients for the record's TTL</b>, so failover is <b>not instant</b> — clients that cached the old (now-dead) address keep using it until the TTL expires. So you set a low TTL on records you want to fail over quickly (say 60 seconds), trading more DNS queries for faster failover.</p>
+        <p>Three refinements. On <b>alias</b> records you can skip a separate health check by turning on <b>Evaluate Target Health</b> &mdash; the alias inherits the AWS target&rsquo;s own health. For private/internal endpoints the health checkers (which are public) can&rsquo;t reach them, so you use a <b>CloudWatch-alarm</b> health check, and <b>calculated</b> health checks combine children with AND/OR. And the caching caveat is worse than the record TTL implies: browsers and OS resolvers often <b>pin DNS longer</b> than the TTL, so real-world failover is minutes, reinforcing &lsquo;not seconds-scale&rsquo;.</p>
+        <p class="arch">DNS failover is the outermost, cross-region safety net — but I always state its limit: it's only as fast as your TTL plus how well clients honor it (some cache longer than they should), so DNS failover is minutes-scale, not seconds-scale, and it's not a substitute for in-region HA (Multi-AZ, healthy targets). So I use low TTLs (~60s) on failover-critical records and combine layers: in-region HA handles instance/AZ failure fast, and Route 53 health-checked failover handles whole-region loss more slowly. This is exactly the TTL-vs-failover tradeoff from the platform DNS scenario, now concrete — the same knob that controls propagation controls how fast you can fail over, and it's why the classic "we failed over but traffic kept hitting the dead region" incident happens: stale DNS caches.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your endpoint is a private internal service that Route 53&rsquo;s public health checkers can&rsquo;t reach. How do you still drive DNS failover on its health? <span class="sc-a">Use a <b>CloudWatch-alarm-based health check</b>: monitor the private endpoint with a CloudWatch metric/alarm (from inside your network), and point the Route 53 health check at that alarm&rsquo;s state. Route 53 then fails over based on the alarm, even though its public health checkers can&rsquo;t probe the private endpoint directly.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20route%2053%20health%20check%20failover%20ttl%20caching%20cloudwatch%20alarm%20evaluate%20target%20health"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: DNS failover: health checks &amp; the TTL trap</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">health checks (HTTP/TCP/alarm, multi-location)</span><span class="term">failover/multivalue removes unhealthy</span><span class="term">DNS-level cross-region failover</span><span class="term">TTL caching caveat (not instant)</span><span class="term">low TTL (~60s) for fast failover</span><span class="term">minutes-scale not seconds</span><span class="term">combine with in-region HA</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="r53">
+      <div class="s-top"><span class="s-no">38</span><span class="s-tag">Route 53 · advanced</span></div>
+      <h3>Alias records &amp; the top of a multi-region stack</h3>
+      <p class="why"><b>Why it matters</b>Alias records are an AWS-specific must-know, and Route 53 is where multi-region design begins.</p>
+      <p class="gist"><b>Analogy</b> A universal adapter at the top of the house that plugs your bare domain straight into AWS gear and auto-follows it as the gear&rsquo;s plugs change &mdash; but if you need the lights to switch buildings in <em>seconds</em>, you add a direct hotline that never caches.</p>
+      <div class="answer">
+        <p>A CNAME maps a name to another name, but it can't be used at a <b>zone apex</b> (the bare domain, <code>example.com</code>) and costs an extra lookup. Route 53's <b>alias record</b> solves both: it's an AWS-specific record pointing a name directly at an AWS resource — an ALB, CloudFront distribution, S3 website, API Gateway, or another Route 53 record — including at the zone apex, and Route 53 resolves it to the resource's current IPs automatically. Alias queries to AWS resources are free, and alias records can evaluate the target's health. This is why you point your domain at an ALB with an alias (not a CNAME): it works at the apex, tracks the LB's changing IPs (recall the LB is a DNS-fronted fleet), and costs nothing.</p>
+        <p>The honest limit of this whole DNS-topped stack is <b>speed of failover</b> &mdash; it&rsquo;s TTL-bound and client-cache-bound (minutes). When you need seconds, <b>AWS Global Accelerator</b> sits alongside/above Route 53: it gives two <b>static anycast IPs</b> at the AWS edge and shifts traffic between regional endpoints on health in <em>seconds</em>, independent of DNS TTLs. One alias gotcha to land: an alias to an AWS resource requires the <em>target&rsquo;s</em> hosted-zone ID (console fills it, IaC must get it right).</p>
+        <p class="arch">The practical rule: use alias records to point at AWS resources, especially at the zone apex where CNAME can't go — it's the correct, free, apex-capable way to connect your domain to an ALB, CloudFront, or S3, and it auto-tracks the resource's IPs (essential, since an ALB's IPs change under it). Stepping back, Route 53 sits at the very top of a multi-region architecture: alias + routing policies + health checks are how a user is steered to the right regional stack and failed over when one dies — the outermost layer above the load balancers, which sit above the clusters, which sit above the data stores. It ties the whole series together, and for an active-active or DR design, Route 53 is where the global traffic decision is made.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> DNS-based failover is too slow (TTL/caching) for a workload that must shift regions in seconds. What AWS service gives near-instant regional failover, and how? <span class="sc-a"><b>AWS Global Accelerator</b>: clients connect to two <b>static anycast IPs</b> at the AWS edge (so there&rsquo;s nothing for resolvers to cache against failover), and Global Accelerator health-checks your regional endpoints and reroutes traffic between them in <b>seconds</b> &mdash; bypassing the Route 53 TTL/cache limit that makes DNS failover minutes-scale.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20route%2053%20alias%20record%20global%20accelerator%20anycast%20static%20ip%20seconds%20failover"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Alias records &amp; second-scale failover</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">CNAME (no apex, extra lookup) vs alias</span><span class="term">alias → AWS resource, apex-capable, free</span><span class="term">auto-tracks IPs · health-aware</span><span class="term">alias to ALB/CloudFront/S3/API-GW</span><span class="term">why alias not CNAME for LB</span><span class="term">Route 53 at top of multi-region stack</span><span class="term">DNS→LB→cluster→data layering</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="r53">
+      <div class="s-top"><span class="s-no">39</span><span class="s-tag">Route 53 · advanced</span></div>
+      <h3>A zone is signed with DNSSEC</h3>
+      <p class="why"><b>Why they ask</b> DNSSEC proves DNS answers weren&rsquo;t forged &mdash; it&rsquo;s a compliance ask and a chain-of-trust question that tests whether you grasp that DNS can otherwise be spoofed.</p>
+      <p class="gist"><b>Analogy</b> Plain DNS is an unsigned note left at a desk &mdash; anyone could have written it; DNSSEC is a tamper-evident wax seal, where each authority vouches for the next&rsquo;s seal, so a forged answer (cache poisoning) is detected and thrown out.</p>
+      <div class="answer">
+        <p>DNS by itself has no authenticity &mdash; a resolver can be tricked into caching a forged answer (cache poisoning). <b>DNSSEC</b> adds cryptographic signatures: Route 53 signs the records in a hosted zone (producing <b>RRSIG</b> records) and publishes the public key (<b>DNSKEY</b>), and a <em>validating</em> resolver checks the signature before trusting the answer. Route 53 uses a <b>KMS asymmetric key</b> for the key-signing key, so the private signing key stays in KMS and never leaves.</p>
+        <p>Trust is a <b>chain</b> from the root down: each parent zone vouches for its child by publishing a <b>DS</b> (Delegation Signer) record &mdash; a hash of the child&rsquo;s key &mdash; so for <code>example.com</code> you must add a DS record at the <em>registrar</em> (the <code>.com</code> parent) to complete the chain. That&rsquo;s the operational sharp edge: DNSSEC is powerful but unforgiving &mdash; a botched key rollover or a mismatched/expired DS record makes validating resolvers reject your <em>entire</em> domain, a self-inflicted outage plain DNS can&rsquo;t suffer.</p>
+        <p class="arch">I enable DNSSEC when there&rsquo;s a real spoofing or compliance driver, and I respect that it converts a class of silent attacks into a class of loud operational risks: signing is easy, but the <b>DS record at the registrar</b> and <b>key rollovers</b> are where domains go dark, so I automate and monitor them and rehearse rollover. It protects only the <em>resolver-to-authoritative</em> path (integrity and authenticity of answers), not confidentiality &mdash; that&rsquo;s DoH/DoT&rsquo;s job &mdash; and it only helps clients behind validating resolvers. Route 53&rsquo;s KMS-backed signing key keeps the private key unexportable (tying back to the envelope/asymmetric-key story), which is the part I&rsquo;d highlight as done right.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You enable DNSSEC signing in Route 53, but validating resolvers still don&rsquo;t treat the zone as secure. What step is almost certainly missing, and why does getting it wrong risk an outage? <span class="sc-a">The <b>DS record</b> at the parent &mdash; your registrar for <code>.com</code> &mdash; is missing: without it the chain of trust from the root to your zone is broken, so resolvers can&rsquo;t validate. It&rsquo;s risky because a wrong, mismatched, or expired DS (or a bad key rollover) makes validating resolvers reject <em>all</em> answers for the domain, taking it down for those users.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=aws%20route%2053%20dnssec%20signing%20ksk%20zsk%20ds%20record%20chain%20of%20trust%20kms"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: DNSSEC on Route 53, end to end</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">DNS has no authenticity (spoofable)</span><span class="term">RRSIG signatures + DNSKEY</span><span class="term">KMS asymmetric key-signing key</span><span class="term">DS record at the parent / registrar</span><span class="term">chain of trust from the root</span><span class="term">unforgiving: bad DS / rollover = outage</span><span class="term">integrity not confidentiality (not DoH/DoT)</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <p class="noresult" id="noresult">No scenarios match that. Clear the search or pick another service.</p>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>How to rehearse:</b> read each answer aloud once at pace — the mechanism, then the architect lens. Within each service the scenarios run basic → advanced, so start at the fundamentals and push into the production edges.<br>
+    This is the AWS-infrastructure companion to the "What Happens When…" series, and the services stack top to bottom: Route 53 → load balancer → API Gateway / EKS → IAM &amp; KMS → VPC. Filter by service to drill one at a time; search a term (IRSA, VPC CNI, alias, SCP) to jump straight to it.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  var q=document.getElementById('q');
+  var chips=Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var scenarios=Array.prototype.slice.call(document.querySelectorAll('.scenario'));
+  var sections=Array.prototype.slice.call(document.querySelectorAll('section.track'));
+  var countEl=document.getElementById('count');
+  var activeCat='all';
+
+  scenarios.forEach(function(s){ s._text=(s.textContent||'').toLowerCase(); });
+
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase();
+    var shown=0;
+    scenarios.forEach(function(s){
+      var okCat=activeCat==='all' || s.getAttribute('data-cat')===activeCat;
+      var okText=!term || s._text.indexOf(term)!==-1;
+      var vis=okCat && okText;
+      s.hidden=!vis;
+      if(vis) shown++;
+    });
+    sections.forEach(function(sec){
+      var any=Array.prototype.some.call(sec.querySelectorAll('.scenario'),function(s){return !s.hidden;});
+      sec.hidden=!any;
+    });
+    countEl.innerHTML='<b>'+shown+'</b> shown';
+    document.body.classList.toggle('empty', shown===0);
+  }
+
+  chips.forEach(function(c){
+    c.addEventListener('click',function(){
+      activeCat=c.getAttribute('data-cat');
+      chips.forEach(function(x){x.setAttribute('aria-pressed', x===c ? 'true':'false');});
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+})();
+</script>
+
+</body>
+</html>

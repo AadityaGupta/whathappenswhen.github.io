@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>What Happens When · Java</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E7ECEE;
+    --surface:#FCFDFD;
+    --surface-2:#F1F4F5;
+    --ink:#151B1F;
+    --ink-soft:#3A454B;
+    --muted:#63717A;
+    --faint:#8A97A0;
+    --line:#D3DBDF;
+    --line-soft:#E2E8EB;
+    --accent:#0E7C86;
+    --accent-ink:#FFFFFF;
+    --accent-wash:#DCEDEE;
+
+    --jvm:#B23A48;   /* JVM & runtime — crimson */
+    --conc:#3A6EA5;  /* Concurrency — blue */
+    --boot:#4F8A3E;  /* Spring Boot — green */
+    --data:#A9721A;  /* Data & JPA — amber */
+    --sec:#7A4F9E;   /* Security — violet */
+    --react:#B0517E; /* Reactive — rose */
+    --prod:#4C63B6;  /* Production — indigo */
+
+    --shadow:0 1px 2px rgba(20,30,36,.05), 0 8px 24px -14px rgba(20,30,36,.18);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1316;
+      --surface:#161D21;
+      --surface-2:#1B2429;
+      --ink:#E7EDEF;
+      --ink-soft:#C2CDD2;
+      --muted:#95A3AB;
+      --faint:#6C7A82;
+      --line:#273035;
+      --line-soft:#20282D;
+      --accent:#3BB9C0;
+      --accent-ink:#07211F;
+      --accent-wash:#123137;
+
+      --jvm:#E28088;
+      --conc:#7AA7DA;
+      --boot:#7DBE6A;
+      --data:#D6A24A;
+      --sec:#B98BD6;
+      --react:#D983AE;
+      --prod:#8493E0;
+
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1316;
+    --surface:#161D21;
+    --surface-2:#1B2429;
+    --ink:#E7EDEF;
+    --ink-soft:#C2CDD2;
+    --muted:#95A3AB;
+    --faint:#6C7A82;
+    --line:#273035;
+    --line-soft:#20282D;
+    --accent:#3BB9C0;
+    --accent-ink:#07211F;
+    --accent-wash:#123137;
+
+    --jvm:#E28088;
+    --conc:#7AA7DA;
+    --boot:#7DBE6A;
+    --data:#D6A24A;
+    --sec:#B98BD6;
+    --react:#D983AE;
+    --prod:#8493E0;
+
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:820px;margin:0 auto;padding-inline:20px;padding-block:0}
+
+  header.top{padding-block:56px 20px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  .vol{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 9px}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(2.1rem,6vw,3.15rem);line-height:1.02;letter-spacing:-.02em;margin:.32em 0 .1em;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.16rem;color:var(--ink-soft);max-width:64ch;margin:.6em 0 0}
+  .metaline{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .metaline b{color:var(--ink);font-weight:600}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  .controls{position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(9px);border-bottom:1px solid var(--line-soft);margin-top:12px}
+  .controls .wrap{padding-block:12px;display:flex;flex-direction:column;gap:11px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .search input{width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--ink)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);padding:5px 12px 5px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:border-color .12s,color .12s,background .12s}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,var(--faint))}
+  .chip[data-cat="all"]{--dot:var(--accent)}
+  .chip[data-cat="jvm"]{--dot:var(--jvm)}
+  .chip[data-cat="conc"]{--dot:var(--conc)}
+  .chip[data-cat="boot"]{--dot:var(--boot)}
+  .chip[data-cat="data"]{--dot:var(--data)}
+  .chip[data-cat="sec"]{--dot:var(--sec)}
+  .chip[data-cat="react"]{--dot:var(--react)}
+  .chip[data-cat="prod"]{--dot:var(--prod)}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--ink)}
+
+  section.track{padding-top:40px}
+  .track-head{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:6px}
+  .track-head .tno{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--track,var(--accent));font-weight:600}
+  .track-head h2{font-family:var(--sans);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:.15em 0 .1em}
+  .track-head p{font-family:var(--serif);color:var(--muted);margin:.2em 0 0;font-size:1rem;max-width:62ch}
+  section[data-track="jvm"]{--track:var(--jvm)}
+  section[data-track="conc"]{--track:var(--conc)}
+  section[data-track="boot"]{--track:var(--boot)}
+  section[data-track="data"]{--track:var(--data)}
+  section[data-track="sec"]{--track:var(--sec)}
+  section[data-track="react"]{--track:var(--react)}
+  section[data-track="prod"]{--track:var(--prod)}
+
+  .scenario{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--cat,var(--accent));border-radius:12px;padding:22px 24px 20px;margin-top:16px;box-shadow:var(--shadow)}
+  .scenario[data-cat="jvm"]{--cat:var(--jvm)}
+  .scenario[data-cat="conc"]{--cat:var(--conc)}
+  .scenario[data-cat="boot"]{--cat:var(--boot)}
+  .scenario[data-cat="data"]{--cat:var(--data)}
+  .scenario[data-cat="sec"]{--cat:var(--sec)}
+  .scenario[data-cat="react"]{--cat:var(--react)}
+  .scenario[data-cat="prod"]{--cat:var(--prod)}
+
+  .s-top{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .s-no{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--cat,var(--accent));flex:none}
+  .s-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:500;margin-left:auto;flex:none}
+  .scenario h3{font-family:var(--sans);font-weight:600;font-size:1.24rem;line-height:1.22;letter-spacing:-.01em;margin:.1em 0 .5em;text-wrap:balance}
+  .why{font-family:var(--sans);font-size:12.5px;color:var(--muted);margin:0 0 14px;padding-left:11px;border-left:2px solid var(--line)}
+  .why b{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;display:block;margin-bottom:2px}
+  .answer{font-family:var(--serif);font-size:1.075rem;line-height:1.62;color:var(--ink-soft)}
+  .answer p{margin:0 0 .85em}
+  .answer p:last-child{margin-bottom:0}
+  .answer .arch{color:var(--ink)}
+  .answer .arch::before{content:"Architect / senior lens";font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;display:inline-block;margin-right:9px;padding:2px 7px;border-radius:5px;background:var(--surface-2);vertical-align:1px}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);color:var(--ink);padding:1px 5px;border-radius:5px;border:1px solid var(--line-soft)}
+  .terms{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .terms .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:8px;display:block}
+  .termlist{display:flex;flex-wrap:wrap;gap:6px}
+  .term{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;line-height:1.3}
+
+  .gist{
+    font-family:var(--serif);font-size:1.02rem;font-style:italic;line-height:1.5;
+    color:var(--ink-soft);margin:0 0 14px;padding:9px 13px;
+    background:var(--surface-2);border-radius:8px;border-left:2px solid var(--cat,var(--accent));
+  }
+  .gist>b:first-child{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;margin-right:8px}
+  .selfcheck{
+    font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--ink-soft);
+    margin:15px 0 0;padding:11px 13px;border-radius:8px;background:var(--accent-wash);
+  }
+  .selfcheck>b:first-child{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;display:block;margin-bottom:4px}
+  .selfcheck .sc-a{display:block;margin-top:5px;color:var(--muted);font-style:italic}
+  .foot-row{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .ytlink{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);
+    font-size:11.5px;font-weight:500;color:var(--cat,var(--accent));text-decoration:none;margin-bottom:11px}
+  .ytlink svg{width:15px;height:15px;flex:none;opacity:.92}
+  .ytlink:hover{color:var(--accent);text-decoration:underline}
+  .foot-row .terms{margin-top:0;padding-top:0;border-top:none}
+
+  .noresult{display:none;text-align:center;font-family:var(--serif);color:var(--muted);padding:48px 0 12px;font-size:1.05rem}
+  body.empty .noresult{display:block}
+
+  footer.foot{margin-top:52px;padding:26px 0 60px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.7}
+  footer.foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:520px){
+    .scenario{padding:18px 16px 16px}
+    header.top{padding-block:40px 16px}
+    .s-tag{display:none}
+  }
+  @media print{
+    .toggle,.controls{display:none}
+    body{background:#fff;color:#000}
+    .scenario{box-shadow:none;border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid}
+    .answer .arch::before{border:1px solid #999;background:#fff;color:#000}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html" title="Back to all volumes" aria-label="Back to all volumes">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker"><span class="vol">Java 21+ · Spring Boot</span> Engineering Rehearsal</div>
+    <h1>What Happens <em>When…</em></h1>
+    <p class="lede">The mechanisms a mid-to-senior engineer and an architect are expected to explain cold — from the JVM warming up to a virtual thread unmounting, from an <code>@Transactional</code> proxy to a graceful shutdown. Same format as the platform volumes: the mechanism first, then the senior/architect read, then the terms to land, each spoken in two to three minutes.</p>
+    <div class="metaline">
+      <span><b>36</b> scenarios</span>
+      <span><b>7</b> tracks</span>
+      <span><b>2–3 min</b> each, spoken</span>
+      <span>Companion to <b>What Happens When…</b> (platform)</span>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Search — e.g. virtual thread, @Transactional, N+1, GC, filter chain, HikariCP" aria-label="Search scenarios">
+      </label>
+      <span class="count" id="count"><b>36</b> shown</span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by track">
+      <button class="chip" data-cat="all" aria-pressed="true"><span class="dot"></span>All</button>
+      <button class="chip" data-cat="jvm" aria-pressed="false"><span class="dot"></span>JVM &amp; runtime</button>
+      <button class="chip" data-cat="conc" aria-pressed="false"><span class="dot"></span>Concurrency</button>
+      <button class="chip" data-cat="boot" aria-pressed="false"><span class="dot"></span>Spring Boot</button>
+      <button class="chip" data-cat="data" aria-pressed="false"><span class="dot"></span>Data &amp; JPA</button>
+      <button class="chip" data-cat="sec" aria-pressed="false"><span class="dot"></span>Security</button>
+      <button class="chip" data-cat="react" aria-pressed="false"><span class="dot"></span>Reactive</button>
+      <button class="chip" data-cat="prod" aria-pressed="false"><span class="dot"></span>Production</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="list">
+
+  <!-- ===== TRACK 1 · JVM & RUNTIME ===== -->
+  <section class="track" data-track="jvm">
+    <div class="track-head">
+      <div class="tno">Track 01 — Under the hood</div>
+      <h2>JVM &amp; runtime</h2>
+      <p>Every performance and memory conversation starts here: how bytecode becomes fast native code, how the heap is collected, why the JVM behaves inside a container, and what a cold start really costs.</p>
+    </div>
+
+    <article class="scenario" data-cat="jvm">
+      <div class="s-top"><span class="s-no">01</span><span class="s-tag">JVM</span></div>
+      <h3>The JVM starts and runs your code</h3>
+      <p class="why"><b>Why it matters</b>Interpretation → JIT is the foundation under every performance discussion.</p>
+      <p class="gist"><b>Analogy</b> A new cook reads each recipe step aloud at first (interpret), but the dishes ordered constantly get committed to muscle memory (JIT) &mdash; and if a memorized shortcut turns out wrong for tonight&rsquo;s order, they fall back to reading the card again (deoptimize).</p>
+      <div class="answer">
+        <p><code>javac</code> compiles source to platform-neutral <b>bytecode</b>. At runtime the classloaders load classes lazily on first use — bootstrap, platform, and application loaders in a delegation hierarchy — then verify, link, and initialize each (running static initializers). Execution begins in the <b>interpreter</b>, reading bytecode op by op.</p>
+        <p>The JVM profiles as it runs. Hot methods — called often, or loops iterating many times — are handed to the <b>JIT</b>. HotSpot uses <b>tiered compilation</b>: quick C1 first for fast warmup, then the heavily-optimizing C2 for the hottest code, using the live profile to inline, drop dead code, and speculate. If a speculation proves wrong, it <b>deoptimizes</b> back to the interpreter and recompiles.</p>
+        <p>One detail the warmup story hides: C2&rsquo;s native output lives in a fixed-size <b>code cache</b>, and if it fills &mdash; common with huge apps, swarms of lambdas, or agents instrumenting everything &mdash; the JIT silently <em>stops compiling</em> and the whole process quietly drifts back toward interpreted speed, so watch <code>CodeCache</code> usage and <code>ReservedCodeCacheSize</code>. And a method already deep in a long loop doesn&rsquo;t wait to be re-called to speed up: <b>on-stack replacement</b> (OSR) swaps the optimized version in mid-loop.</p>
+        <p class="arch">The practical consequences: Java is slow for the first requests and fast once warm — the warmup curve — which bites cold starts and short-lived processes; and "measure in a warm, production-like state, not the first run," which is why microbenchmarks use JMH. The bytecode layer is also why one language runs everywhere and why agents and profilers can instrument code without source.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A long-running service that was fast for weeks gradually slows down, with no code change and no heap growth &mdash; what JVM-internal limit might be throttling it? <span class="sc-a">A full <b>code cache</b>: once it fills, HotSpot stops JIT-compiling new or recompiled methods and they run interpreted, so throughput degrades with no heap or GC symptom; raise <code>ReservedCodeCacheSize</code> and monitor code-cache usage.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20JIT%20code%20cache%20OSR%20on%20stack%20replacement%20tiered%20compilation"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: JIT internals: code cache &amp; OSR</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">bytecode</span><span class="term">classloader delegation</span><span class="term">verify / link / init</span><span class="term">interpreter</span><span class="term">tiered JIT (C1/C2)</span><span class="term">inlining · profiling</span><span class="term">deoptimization</span><span class="term">warmup · JMH</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="jvm">
+      <div class="s-top"><span class="s-no">02</span><span class="s-tag">JVM</span></div>
+      <h3>A garbage collection runs</h3>
+      <p class="why"><b>Why it matters</b>GC pauses and heap tuning are the core of JVM performance work.</p>
+      <p class="gist"><b>Analogy</b> A city that sweeps its crowded young districts constantly (minor GC) but the quiet old quarter only rarely: most residents move out almost as soon as they arrive, so cleaning the nursery often and the retirement home seldom is simply where the garbage actually is.</p>
+      <div class="answer">
+        <p>Objects are allocated cheaply by bumping a pointer in a thread-local allocation buffer. The heap is <b>generational</b>, on the weak-generational hypothesis that most objects die young. New objects go in the young gen (Eden); a <b>minor GC</b> copies the few survivors, and objects that survive enough collections are <b>promoted</b> to the old gen, collected less often. GC finds live objects by tracing references from <b>GC roots</b> (stacks, statics) — anything unreachable is garbage.</p>
+        <p>The cost is pause time. Classic collectors <b>stop the world</b> while they work. <b>G1</b>, the default, splits the heap into regions and targets a pause goal, doing much of the work concurrently. <b>ZGC</b> (generational in 21) and Shenandoah keep pauses sub-millisecond by doing nearly all work concurrently, trading some throughput and CPU.</p>
+        <p>Two things the textbook version skips. GC isn&rsquo;t on a timer &mdash; it fires on <b>allocation failure</b>, when Eden can&rsquo;t satisfy a request, so your allocation <em>rate</em> sets GC frequency. And in G1 an object larger than half a region is a <b>humongous object</b>, allocated straight into old-gen across contiguous regions; a flood of them (big byte arrays, large strings) fragments the heap and forces expensive full GCs even when it looks half-empty. Even &lsquo;concurrent&rsquo; collectors like ZGC keep brief stop-the-world pauses for root scanning &mdash; concurrent means <em>mostly</em>, not zero.</p>
+        <p class="arch">I pick the collector by the goal — G1 for balanced throughput and latency, ZGC when tail latency matters on large heaps. Tuning is mostly sizing the heap and generations while watching allocation rate: high allocation churn is the usual cause of frequent GC, so the real fix is often to allocate less, not to enlarge the heap. Read GC logs and allocation profiles, don't guess.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your service allocates many large byte arrays and suffers surprise full-GC pauses on G1 though the heap looks half-empty &mdash; what G1-specific cause fits? <span class="sc-a"><b>Humongous allocations</b> &mdash; arrays bigger than half a G1 region go into special humongous regions, and enough of them fragment the heap and trigger full GCs despite apparent free space; shrink the objects or raise <code>G1HeapRegionSize</code> so they&rsquo;re no longer humongous.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=G1%20GC%20humongous%20objects%20regions%20allocation%20failure%20explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: G1 internals: regions &amp; humongous objects</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">TLAB allocation</span><span class="term">generational (Eden/survivor/old)</span><span class="term">minor vs major/mixed</span><span class="term">GC roots · reachability</span><span class="term">stop-the-world</span><span class="term">G1 regions · pause goal</span><span class="term">ZGC / Shenandoah</span><span class="term">allocation rate</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="jvm">
+      <div class="s-top"><span class="s-no">03</span><span class="s-tag">JVM</span></div>
+      <h3>You hit an <code>OutOfMemoryError</code></h3>
+      <p class="why"><b>Why it matters</b>Knowing which region blew up, and how to diagnose it, separates seniors from guessers.</p>
+      <p class="gist"><b>Analogy</b> An alarm that names the floor on fire: &lsquo;heap&rsquo;, &lsquo;metaspace&rsquo;, &lsquo;unable to create native thread&rsquo; &mdash; the first job is always to read <em>which</em> memory ran out, not to blindly enlarge everything and hope.</p>
+      <div class="answer">
+        <p>OOME isn't one thing — the message names the region. "Java heap space" means live objects exceeded the max heap: either a genuine <b>leak</b> (a growing static map, an unbounded cache, unclosed resources) or an undersized heap for the load. "Metaspace" means class metadata filled — too many generated classes, or classloader leaks from redeploys that never release loaders. "unable to create native thread" is an OS thread/memory limit. "Direct buffer memory" is off-heap NIO.</p>
+        <p>To diagnose the heap: capture a <b>heap dump</b> (automatically with <code>-XX:+HeapDumpOnOutOfMemoryError</code>), open it in a tool like Eclipse MAT, and follow the <b>dominator tree</b> and the GC-root reference chain that's retaining the leak.</p>
+        <p>A subtlety: you often hit <code>GC overhead limit exceeded</code> <em>before</em> true exhaustion &mdash; the JVM gives up when it spends over 98% of time in GC reclaiming under 2% of the heap, a tell that the heap is full, not merely slow. And an <code>OutOfMemoryError</code> can strike any thread at any point &mdash; one may die mid-update holding a lock &mdash; leaving the JVM in an unpredictable state, which is why the production-safe move is usually <em>not</em> to catch it but to fail fast with <code>-XX:+ExitOnOutOfMemoryError</code>, paired with <code>+HeapDumpOnOutOfMemoryError</code> for the postmortem.</p>
+        <p class="arch">OOME is a symptom, so I distinguish leak from under-provisioning by the heap-usage <b>trend</b>: a leak shows a sawtooth that ratchets upward and never falls back after GC. Bounded caches with eviction, try-with-resources, and container-aware heap limits prevent most of it. And the container angle from the platform side: the heap must be set below the container memory limit, or the kernel OOM-kills the process before the JVM can even throw the error.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Should application code ever <code>catch (OutOfMemoryError e)</code> and try to carry on &mdash; why or why not? <span class="sc-a">Almost never: it can fire on any thread mid-operation (possibly holding a lock or leaving state half-written), so the JVM&rsquo;s integrity is suspect; the safe pattern is to dump the heap and exit (<code>-XX:+ExitOnOutOfMemoryError</code>), letting the orchestrator replace the pod cleanly rather than limp on in a corrupted state.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20OutOfMemoryError%20exit%20on%20oom%20gc%20overhead%20limit%20heap%20dump"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Why you don&rsquo;t catch OutOfMemoryError</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">heap / metaspace / native / direct</span><span class="term">leak vs undersized</span><span class="term">retained set · dominator tree</span><span class="term">GC-root chain</span><span class="term">heap dump + MAT</span><span class="term">HeapDumpOnOutOfMemoryError</span><span class="term">sawtooth trend</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="jvm">
+      <div class="s-top"><span class="s-no">04</span><span class="s-tag">JVM</span></div>
+      <h3>The JVM runs inside a container</h3>
+      <p class="why"><b>Why it matters</b>Cgroup awareness is a production must-know — it's where the JVM meets Kubernetes limits.</p>
+      <p class="gist"><b>Analogy</b> A guest sizing their appetite to the whole restaurant&rsquo;s kitchen rather than the small plate they ordered &mdash; help yourself as if the full buffet were yours inside a 1-CPU, 512-MB box and the manager (the kernel) throws you out.</p>
+      <div class="answer">
+        <p>Modern JVMs, with <code>-XX:+UseContainerSupport</code> (on by default), read the <b>cgroup</b> limits rather than the host's resources. Memory sizing keys off the cgroup memory limit — and by default the JVM only takes a fraction of it (about 25% via <code>MaxRAMPercentage</code>) unless you raise it. CPU is subtler: <code>Runtime.availableProcessors()</code> reflects the cgroup <b>CPU quota</b>, and that number drives GC thread counts, the <code>ForkJoinPool</code> common pool size, and default thread pools — so a container capped at one CPU sees far fewer processors than the node has.</p>
+        <p>Two sharp edges. <b>MaxRAMPercentage caps only the heap</b> &mdash; metaspace, thread stacks (~1&nbsp;MB each &times; thread count), direct buffers and the code cache live <em>outside</em> it, so a heap set to 75% of the limit still gets OOM-killed once non-heap grows; account for it with <b>Native Memory Tracking</b> (<code>-XX:NativeMemoryTracking</code>). And CPU detection is fragile: <code>availableProcessors()</code> reads the cgroup quota, but with CPU <em>shares</em> (not quota) or an old JDK misreading cgroup <b>v2</b> it can be wrong &mdash; override deliberately with <code>-XX:ActiveProcessorCount</code>.</p>
+        <p class="arch">The classic incident is a pod OOM-killed by Kubernetes because the JVM sized its heap off the host, not the limit — fixed with <code>UseContainerSupport</code> plus a deliberate <code>MaxRAMPercentage</code>, leaving headroom for non-heap: metaspace, thread stacks, direct buffers, code cache. And a tight CPU quota silently shrinks GC and pool parallelism and can cause CFS throttling stalls, so I size CPU requests and limits knowing the JVM reacts to them. This is exactly where the Java runtime and the k8s resource model meet.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You set <code>-XX:MaxRAMPercentage=75</code> on a 1&nbsp;GB container and still get OOM-killed by Kubernetes with the heap well under 750&nbsp;MB &mdash; what&rsquo;s eating the rest? <span class="sc-a"><b>Non-heap memory</b> &mdash; metaspace, per-thread stacks (&times; thread count), direct/NIO buffers and the JIT code cache &mdash; all sit outside the heap cap, so 75% heap plus growing off-heap exceeds the cgroup limit and the kernel kills the process; leave headroom (lower the percentage) and measure with Native Memory Tracking.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=jvm%20container%20cgroup%20v2%20MaxRAMPercentage%20native%20memory%20tracking%20off%20heap"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: JVM memory in containers: beyond the heap</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">UseContainerSupport</span><span class="term">cgroup limits</span><span class="term">MaxRAMPercentage</span><span class="term">non-heap headroom</span><span class="term">availableProcessors ← CPU quota</span><span class="term">GC / pool sizing</span><span class="term">CFS throttling</span><span class="term">OOM-kill vs OOME</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="jvm">
+      <div class="s-top"><span class="s-no">05</span><span class="s-tag">JVM</span></div>
+      <h3>A cold JVM warms up (or you go native)</h3>
+      <p class="why"><b>Why it matters</b>Cold-start latency drives serverless, autoscaling, and scale-to-zero decisions.</p>
+      <p class="gist"><b>Analogy</b> An athlete who needs a warm-up lap before top speed: fine for a long race, murder for a 100-metre sprint that&rsquo;s over before they&rsquo;re loose &mdash; so for sprints (serverless, scale-to-zero) you either keep them jogging or swap in a robot that&rsquo;s fast from the gun (native image).</p>
+      <div class="answer">
+        <p>Fresh code runs interpreted, then C1-compiled, and only the hottest paths reach C2 after enough profiling — so the first requests are markedly slower and latency settles as it warms. That's fine for long-running services but painful for scale-to-zero, serverless, or frequently-restarted pods that may die before they're warm.</p>
+        <p>The options: keep instances warm or pre-warm with synthetic traffic; <b>AppCDS</b> to share and speed class loading; <b>CRaC</b> to checkpoint an already-warm JVM and restore in milliseconds; or <b>GraalVM native image</b>, which ahead-of-time compiles to a native binary with near-instant startup and low memory — at the cost of no JIT peak throughput, closed-world assumptions (reflection and proxies must be declared, which Spring Boot AOT largely handles), and longer builds.</p>
+        <p>The &lsquo;native gives up peak throughput&rsquo; claim is softening: <b>profile-guided optimization</b> (PGO) feeds a representative run&rsquo;s profile back into the native build, narrowing the gap to C2 on hot paths. The closed-world reflection pain is easing too, via the <b>GraalVM reachability-metadata</b> repository that ships config for common libraries. And watch <b>Project Leyden</b>, which is bringing AOT <em>caches</em> to the standard JVM &mdash; a middle path that front-loads warmup without going fully native.</p>
+        <p class="arch">It's a throughput-versus-startup trade. For steady high-throughput services I keep the JIT for peak performance; for spiky autoscaling, functions, or CLIs I reach for native image or CRaC to kill cold-start latency. Spring Boot 3's AOT processing makes the native path realistic, but I validate the reflection/closed-world constraints early, because they bite late.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A latency-sensitive, bursty function cold-starts too slowly on the JVM, but you also can&rsquo;t absorb native image&rsquo;s throughput and build-time costs &mdash; what intermediate options exist? <span class="sc-a"><b>CRaC</b> (checkpoint a warmed JVM, restore in milliseconds), <b>AppCDS</b>/AOT caches and emerging <b>Project Leyden</b> front-load class loading and warmup while keeping the JIT, and PGO can recover much of native image&rsquo;s lost peak throughput &mdash; so you&rsquo;re not forced to choose startup <em>or</em> throughput outright.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=graalvm%20native%20image%20PGO%20project%20leyden%20CRaC%20jvm%20startup"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Cold start: native, CRaC &amp; Leyden</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">warmup curve</span><span class="term">interpreter → C1 → C2</span><span class="term">AppCDS</span><span class="term">CRaC checkpoint/restore</span><span class="term">GraalVM native / AOT</span><span class="term">closed-world (reflection config)</span><span class="term">Spring Boot AOT</span><span class="term">throughput vs startup</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="jvm">
+      <div class="s-top"><span class="s-no">06</span><span class="s-tag">JVM</span></div>
+      <h3>Classes load, and metaspace fills</h3>
+      <p class="why"><b>Why they ask</b> Classloader isolation and metaspace leaks are where redeploys, plugins, and &lsquo;why are there two of the same class&rsquo; bugs come from.</p>
+      <p class="gist"><b>Analogy</b> Librarians in a strict chain of command: a request for a book goes up to the head librarian first (parent-first delegation), and only if no senior has it does a junior fetch it &mdash; which is exactly why nobody can smuggle in a counterfeit core-Java class.</p>
+      <div class="answer">
+        <p>Classes load <b>lazily on first use</b> through a chain of classloaders &mdash; bootstrap, platform, application &mdash; using <b>parent-first delegation</b>: a loader asks its parent before trying itself, so core <code>java.*</code> classes always come from the trusted bootstrap loader and can&rsquo;t be spoofed. A class&rsquo;s identity is the pair <em>(fully-qualified name, defining classloader)</em>, so the <em>same</em> bytecode loaded by two different loaders yields two incompatible types &mdash; the root of a baffling <code>ClassCastException: Foo cannot be cast to Foo</code> and of every plugin-isolation design.</p>
+        <p>The metadata for every loaded class &mdash; its methods, fields, constant pool &mdash; lives in <b>metaspace</b>, which is <em>native</em> (off-heap) memory, unbounded by default unless you set <code>-XX:MaxMetaspaceSize</code>. Metaspace is reclaimed only when a whole <b>classloader</b> becomes unreachable, which is why the classic leak is a repeated hot-redeploy (or a framework spinning up new loaders) that never releases the old ones: class count and native memory climb until <code>OutOfMemoryError: Metaspace</code>.</p>
+        <p class="arch">The model I bring: classloaders are both an <b>isolation</b> mechanism (app servers, OSGi, plugins each get their own so versions don&rsquo;t collide) and a <b>leak</b> mechanism (a lingering reference &mdash; a thread-local, a JDBC driver registered in a parent, a stray static &mdash; pins an entire loader and all its classes). I diagnose metaspace leaks by watching loaded-class <em>and</em> classloader counts across redeploys, and I always set <code>MaxMetaspaceSize</code> so a leak fails fast instead of starving the host. It&rsquo;s also why native image&rsquo;s closed world &mdash; no dynamic class loading &mdash; both constrains and simplifies.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> After several hot redeploys without restarting, a dev server dies with <code>OutOfMemoryError: Metaspace</code> though the heap is fine &mdash; what&rsquo;s the mechanism? <span class="sc-a">Each redeploy creates a <b>new classloader</b> for the app&rsquo;s classes, and something (a thread-local, a registered driver or shutdown hook, a static referencing an old instance) keeps the <em>previous</em> loader reachable, so its classes&rsquo; metadata is never unloaded; metaspace (native memory) grows per redeploy until it&rsquo;s exhausted &mdash; a classloader leak, not a heap leak.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20classloader%20delegation%20metaspace%20leak%20hot%20redeploy%20class%20identity"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Classloaders, class identity &amp; metaspace leaks</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">parent-first delegation</span><span class="term">bootstrap / platform / app loaders</span><span class="term">identity = name + classloader</span><span class="term">lazy loading</span><span class="term">metaspace (native, off-heap)</span><span class="term">classloader leak on redeploy</span><span class="term">MaxMetaspaceSize</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 2 · CONCURRENCY ===== -->
+  <section class="track" data-track="conc">
+    <div class="track-head">
+      <div class="tno">Track 02 — Threads &amp; memory model</div>
+      <h2>Concurrency in Java 21+</h2>
+      <p>The area Java 21 changed most. Virtual threads and structured concurrency, plus the evergreen correctness questions — the memory model, locks, and pool saturation — that a senior is still expected to reason about precisely.</p>
+    </div>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">07</span><span class="s-tag">Concurrency</span></div>
+      <h3>You run a task on a virtual thread</h3>
+      <p class="why"><b>Why it matters</b>The headline Java 21 feature — it reshapes how you scale I/O-bound work.</p>
+      <p class="gist"><b>Analogy</b> A few permanent desks (carrier threads) but millions of freelancers (virtual threads) who only occupy a desk while actually typing &mdash; the moment one waits on a phone call (I/O) they vacate the desk for someone else, so a waiting freelancer costs almost nothing.</p>
+      <div class="answer">
+        <p>A virtual thread is scheduled by the JVM, not the OS. You have a small pool of OS threads — <b>carrier threads</b>, a ForkJoinPool — and can have millions of virtual threads. When a virtual thread runs it's <b>mounted</b> on a carrier; when it hits a blocking operation the JDK has instrumented — blocking I/O, a lock, sleep — it <b>unmounts</b>, its stack is parked on the heap, and the carrier is freed to run another. When the I/O completes it remounts and resumes. So blocking a virtual thread is cheap: it doesn't hold an OS thread.</p>
+        <p>The gotcha is <b>pinning</b>: if a virtual thread blocks inside a <code>synchronized</code> block or a native/foreign call, it can't unmount and it pins its carrier, cutting throughput. The classic fix is <code>ReentrantLock</code> instead of <code>synchronized</code> around blocking sections. (Recent JDKs have largely removed <code>synchronized</code> pinning, but it's still the thing to check.)</p>
+        <p>Two things to carry beyond &lsquo;blocking is cheap now.&rsquo; With millions of them, <b>ThreadLocals become a memory hazard</b> &mdash; a few KB each &times; millions &mdash; so prefer <b>scoped values</b> for per-task context. And because you no longer pool (one virtual thread per task), the way you <em>bound</em> load on a fragile downstream is a <code>Semaphore</code> around the call, not a small thread pool. To hunt pinning in production, enable the JFR event <code>jdk.VirtualThreadPinned</code> rather than guessing.</p>
+        <p class="arch">Virtual threads make the simple, readable thread-per-request blocking style scale to huge concurrency for I/O-bound work — async-like scalability without async's callback complexity. In Spring Boot 3.2+ it's a flag, <code>spring.threads.virtual.enabled=true</code>. I stress: they help I/O-bound, not CPU-bound work; don't pool them (create one per task); and watch for pinning and for unbounded concurrency overwhelming a downstream — you still need limits.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> If you don&rsquo;t pool virtual threads, how do you stop a million of them from hammering a downstream that can only handle 50 concurrent calls? <span class="sc-a">Bound the <em>concurrency</em>, not the threads &mdash; a <code>Semaphore</code> (or a rate limiter) with ~50 permits around the downstream call lets you still create one virtual thread per task while capping how many hit the dependency at once; the blocked virtual threads cost almost nothing while they wait for a permit.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20virtual%20threads%20semaphore%20scoped%20values%20pinning%20JFR"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Virtual threads: bounding &amp; scoped values</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">virtual vs platform thread</span><span class="term">carrier thread (ForkJoinPool)</span><span class="term">mount / unmount</span><span class="term">park stack on heap</span><span class="term">pinning (synchronized/native)</span><span class="term">ReentrantLock fix</span><span class="term">thread-per-request scaling</span><span class="term">I/O-bound not CPU-bound</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">08</span><span class="s-tag">Concurrency</span></div>
+      <h3>A thread blocks on I/O</h3>
+      <p class="why"><b>Why it matters</b>It's the "why does thread-per-request hit a ceiling" question that motivates both Loom and reactive.</p>
+      <p class="gist"><b>Analogy</b> A call centre where every agent handles one customer start to finish, including the long holds while the customer digs for their account number &mdash; agents sit idle on hold, so you run out of agents long before anyone is actually busy.</p>
+      <div class="answer">
+        <p>A platform thread is a thin wrapper over an OS thread, and each one costs real memory — a stack, around 1&nbsp;MB by default — plus scheduling overhead. In the classic thread-per-request model, a request that calls a database or another service <b>blocks</b> its thread while it waits: the thread sits idle, holding memory, doing nothing. Under high concurrency with slow downstreams you run out of threads (or memory) long before you run out of CPU — you're <b>blocked, not busy</b> — and adding threads eventually costs more in context-switching and memory than it buys.</p>
+        <p>The two escapes: go non-blocking/reactive, where a small event-loop pool never blocks and work is driven by callbacks; or use virtual threads, where blocking is cheap because the OS thread is released during the wait.</p>
+        <p>Put numbers on it: each platform thread&rsquo;s ~1&nbsp;MB stack means a few <em>thousand</em> is the practical ceiling before memory and scheduler overhead dominate &mdash; versus <em>millions</em> of virtual threads. <b>Little&rsquo;s Law</b> makes the demand concrete: threads needed &asymp; request rate &times; average latency, so a downstream that slows from 50&nbsp;ms to 500&nbsp;ms needs 10&times; the threads for the same throughput &mdash; exactly when a fixed pool tips over. Shrinking <code>-Xss</code> buys a few more threads but courts <code>StackOverflowError</code>, so it&rsquo;s a weak lever.</p>
+        <p class="arch">The model I bring: for I/O-bound work, thread count — not CPU — is the scaling ceiling in the blocking model. That single fact explains why we historically tuned huge thread pools, why WebFlux emerged, and why virtual threads are such a big deal: they keep the simple blocking code and remove the ceiling. I choose by the workload's blocking profile, not by fashion.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A thread-per-request service handles 1,000 req/s fine until a downstream slows from 50&nbsp;ms to 500&nbsp;ms, then it falls over &mdash; why, in one law? <span class="sc-a"><b>Little&rsquo;s Law</b>: concurrent in-flight requests &asymp; rate &times; latency, so 1,000/s &times; 0.5&nbsp;s = 500 threads busy instead of 50 &mdash; a 10&times; jump that exhausts a fixed pool even though CPU is idle; the requests are <em>blocked, not busy</em>, which is the ceiling virtual threads remove.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=thread%20per%20request%20littles%20law%20thread%20pool%20sizing%20blocking%20io"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Why blocking I/O caps thread-per-request</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">platform thread = OS thread</span><span class="term">stack memory cost</span><span class="term">thread-per-request ceiling</span><span class="term">blocked-not-busy</span><span class="term">context-switch overhead</span><span class="term">event-loop alternative</span><span class="term">virtual threads</span><span class="term">I/O-bound scaling</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">09</span><span class="s-tag">Concurrency</span></div>
+      <h3>You use structured concurrency</h3>
+      <p class="why"><b>Why it matters</b>Java 21's answer to leaked, orphaned subtasks — and a signal of modern-Java fluency.</p>
+      <p class="gist"><b>Analogy</b> A parent at a fair under one rule: no child leaves until all are back, and if one gets lost everyone regroups at once &mdash; no kid wanders off to find their own way home (an orphaned task), and one scraped knee ends the outing for all.</p>
+      <div class="answer">
+        <p>Structured concurrency (a preview API in 21, via <code>StructuredTaskScope</code>) treats a group of concurrent subtasks as one unit of work with a clear scope. You open a scope, <b>fork</b> several subtasks (each on its own virtual thread), then <b>join</b> — and the scope guarantees all subtasks complete or are cancelled before you leave it. A policy like <code>ShutdownOnFailure</code> cancels the siblings the moment one fails and propagates the error; <code>ShutdownOnSuccess</code> returns the first success and cancels the rest. <b>Scoped values</b> pass immutable context down into subtasks efficiently, replacing thread-locals for that job.</p>
+        <p>Heads-up on the API, which is still settling: later JDKs (24/25) replaced the subclass style (<code>new StructuredTaskScope.ShutdownOnFailure()</code>) with a factory &mdash; <code>StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())</code> &mdash; so pin your examples to the JDK you&rsquo;re on. The quietly huge payoff is <b>observability</b>: because the scope makes the parent&rsquo;s relationship to its forked subtasks explicit, a <b>thread dump</b> shows the task tree, so you can finally see which subtask is stuck &mdash; impossible with a flat pile of executor threads.</p>
+        <p class="arch">It fixes the classic mess of manual executors — orphaned tasks that outlive their request, error handling that loses one failure while awaiting another, cancellation that doesn't propagate. Concurrent code reads like structured sequential code: the subtasks' lifetime is bounded by the enclosing block, so no leaks and clean cancellation. It pairs naturally with virtual threads (cheap to fork many). I'd note it's still stabilizing across JDK versions, so confirm the API level, but the direction — bounded, observable, cancellable task trees — is clear.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Beyond cancellation, what operational advantage does structured concurrency give over submitting the same subtasks to a shared <code>ExecutorService</code>? <span class="sc-a"><b>Observability and bounded lifetime</b>: the scope records the parent&rarr;child relationship, so a thread dump shows the real task hierarchy (which subtask of which request is blocked), and every subtask is guaranteed to finish or be cancelled before the enclosing block exits &mdash; no orphans outliving the request, unlike an opaque shared executor.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20structured%20concurrency%20StructuredTaskScope%20joiner%20thread%20dump"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Structured concurrency: scopes &amp; visibility</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">StructuredTaskScope</span><span class="term">fork / join subtasks</span><span class="term">scope-bounded lifetime</span><span class="term">ShutdownOnFailure / OnSuccess</span><span class="term">cancellation propagation</span><span class="term">scoped values (vs thread-local)</span><span class="term">pairs with virtual threads</span><span class="term">preview API</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">10</span><span class="s-tag">Concurrency</span></div>
+      <h3>Two threads race on shared state</h3>
+      <p class="why"><b>Why it matters</b>The Java Memory Model question — this is correctness, not just speed.</p>
+      <p class="gist"><b>Analogy</b> Two people editing a shared doc from separate caches: one scribbles a change on their private copy and the other simply never sees it (visibility), or both grab the running total, add to it, and save &mdash; clobbering each other&rsquo;s increment (atomicity). Different bugs, different fixes.</p>
+      <div class="answer">
+        <p>Two hazards, and people conflate them. A race on a compound action — check-then-act, or a read-modify-write like <code>i++</code> — can interleave and corrupt state: an <b>atomicity</b> problem. Separately there's <b>visibility</b>: without synchronization, one thread's write to a field may never be seen by another, because the JMM lets values sit in CPU caches/registers and lets the compiler reorder. So a thread can loop forever on a flag another "set."</p>
+        <p>The <b>Java Memory Model</b> defines <b>happens-before</b>: certain actions establish an ordering that guarantees visibility. <code>volatile</code> makes a field's writes visible to later reads and blocks reordering around it (but doesn't make compound ops atomic). <code>synchronized</code> and locks give both mutual exclusion and happens-before. For lock-free atomicity there are atomics — <code>AtomicInteger</code>, <code>VarHandle</code> — built on CAS.</p>
+        <p>Two canonical consequences the answer leaves implicit. <b>Double-checked locking</b> &mdash; the classic lazy singleton &mdash; is <em>broken</em> without a <code>volatile</code> field, because another thread can see a non-null reference to a half-constructed object (writes reordered). Conversely, the JMM&rsquo;s <b>final-field guarantee</b> lets you publish an immutable object safely with <em>no</em> synchronization: once a constructor finishes, its <code>final</code> fields are guaranteed visible &mdash; the real reason immutability is easy mode. For the false-sharing cousin, <code>@Contended</code> pads a hot field onto its own cache line.</p>
+        <p class="arch">I reason in JMM terms, not intuition: "is this field published safely, and is this action atomic?" The safe defaults sidestep most of it — immutability (final fields, records), confinement, and using <code>java.util.concurrent</code> (concurrent collections, atomics) rather than hand-rolling. And I'd name <b>false sharing</b> as the subtle performance cousin: independent variables on the same cache line ping-pong between cores.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why does the textbook double-checked-locking singleton need its instance field marked <code>volatile</code> to be correct? <span class="sc-a">Without <code>volatile</code>, the write that stores the new instance can be <em>reordered</em> before the object&rsquo;s fields are fully initialized, so a second thread sees a non-null reference to a half-constructed object; <code>volatile</code> establishes happens-before and forbids that reordering, so a reader sees a fully-built instance or null.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20double%20checked%20locking%20volatile%20final%20field%20safe%20publication%20memory%20model"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Safe publication &amp; double-checked locking</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">atomicity vs visibility</span><span class="term">compound action race</span><span class="term">Java Memory Model</span><span class="term">happens-before</span><span class="term">volatile</span><span class="term">synchronized</span><span class="term">CAS / atomics / VarHandle</span><span class="term">immutability · false sharing</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">11</span><span class="s-tag">Concurrency</span></div>
+      <h3>Threads contend on a lock</h3>
+      <p class="why"><b>Why it matters</b>Lock mechanics and deadlock are staple senior-concurrency questions.</p>
+      <p class="gist"><b>Analogy</b> A single-key bathroom: when no one&rsquo;s waiting, grabbing the key is instant; the moment a queue forms people sit down to wait (park), an attendant has to wake the next one each time, and the whole hallway moves at the speed of one toilet.</p>
+      <div class="answer">
+        <p><code>synchronized</code> uses an object's <b>monitor</b>. Uncontended it's cheap — a lightweight CAS on the object header. Under <b>contention</b>, threads that can't acquire it block and are parked by the OS, and the lock inflates to a heavyweight monitor — now you pay context-switch and scheduling costs and throughput drops as threads serialize. <code>ReentrantLock</code> is similar but explicit, with <code>tryLock</code> and timeouts, interruptible acquisition, and fairness options; for read-heavy data, <code>ReadWriteLock</code> or <code>StampedLock</code> let readers proceed in parallel. <b>Deadlock</b> is threads acquiring multiple locks in different orders, each waiting on one the other holds — a cycle; livelock and starvation are cousins.</p>
+        <p>Modern corrections worth stating. The old &lsquo;biased &rarr; thin &rarr; fat&rsquo; lock story is dated: <b>biased locking was disabled by default and deprecated for removal (JDK 15+)</b>, so today it&rsquo;s essentially thin (CAS) inflating to fat (OS monitor) under contention. For read-mostly data, <code>StampedLock</code>&rsquo;s <b>optimistic read</b> is the real weapon &mdash; it takes <em>no</em> lock, just a version stamp you validate afterward &mdash; but it is <em>not reentrant</em>, a trap if you&rsquo;re used to <code>synchronized</code>. And you don&rsquo;t debug deadlocks by staring: <code>ThreadMXBean.findDeadlockedThreads()</code> or a thread dump names the exact cycle.</p>
+        <p class="arch">The goal is to reduce contention, not just lock correctly — a hot lock is a scalability wall (Amdahl's law: the serial section caps your speedup). So I prefer lock-free atomics or concurrent collections, shrink critical sections, and partition state (lock striping) so threads don't fight over one lock. Deadlock I prevent with a global lock-ordering discipline or timeouts. And it connects to Loom: a hot <code>synchronized</code> block both serializes and can pin a carrier thread, so it's doubly worth removing.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You switch a hot read path from <code>synchronized</code> to <code>StampedLock</code> for its optimistic read and start getting mysterious lock-ups when methods call each other &mdash; what&rsquo;s the likely cause? <span class="sc-a"><code>StampedLock</code> is <b>not reentrant</b> &mdash; a thread that already holds its write lock and then re-acquires it via a nested call deadlocks against itself, unlike <code>synchronized</code>/<code>ReentrantLock</code>; keep critical sections flat, or use a reentrant lock if you genuinely need re-entry.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20stampedlock%20optimistic%20read%20reentrant%20biased%20locking%20removed%20deadlock%20detection"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Locks today: StampedLock &amp; biased-lock removal</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">monitor (light → heavyweight)</span><span class="term">contention · parking</span><span class="term">ReentrantLock (tryLock/fairness)</span><span class="term">ReadWriteLock / StampedLock</span><span class="term">deadlock · lock ordering</span><span class="term">lock striping</span><span class="term">Amdahl's law</span><span class="term">lock-free</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">12</span><span class="s-tag">Concurrency</span></div>
+      <h3>A thread pool saturates</h3>
+      <p class="why"><b>Why it matters</b>Pool sizing and rejection policy are where production incidents are quietly made.</p>
+      <p class="gist"><b>Analogy</b> A kitchen with a fixed line of cooks and a ticket rail: orders wait on the rail (queue) until a cook frees up, and only when the rail jams do you call in extra cooks &mdash; so an <em>infinite</em> rail means you never call anyone and simply drown in tickets.</p>
+      <div class="answer">
+        <p>A <code>ThreadPoolExecutor</code> has core and max threads and a work queue. Tasks run on core threads; when those are busy tasks go to the <b>queue</b>; only when the queue is full does it add threads up to max; and when max threads and the queue are both full, the <b>rejection policy</b> fires — abort (throw), caller-runs (backpressure onto the submitter), or discard. Two traps: an <b>unbounded queue</b> means it never creates threads beyond core and never rejects — it just grows memory until OOM; and too few threads for a blocking workload means tasks pile up and latency explodes.</p>
+        <p>The dangerous part is what the convenience factories hide. <code>Executors.newFixedThreadPool</code> pairs a fixed thread count with an <em>unbounded</em> <code>LinkedBlockingQueue</code> (the OOM trap), and <code>newCachedThreadPool</code> uses a <code>SynchronousQueue</code> with <em>unbounded</em> max threads (a thread-explosion trap) &mdash; which is why seasoned teams construct <code>ThreadPoolExecutor</code> explicitly with a <em>bounded</em> queue and a chosen rejection policy. A <code>SynchronousQueue</code> has zero capacity, handing each task straight to a thread or rejecting; <code>allowCoreThreadTimeOut</code> lets an idle pool shrink back toward zero.</p>
+        <p class="arch">Sizing is modeling, not guessing. CPU-bound work: threads ≈ cores. I/O-bound: more, per Little's Law (concurrency = arrival rate × service time) — exactly the pressure virtual threads relieve. I always bound the queue and pick a rejection policy deliberately, because unbounded queues turn a slowdown into an OOM, and caller-runs gives natural backpressure. I'd also flag the shared <code>ForkJoinPool.commonPool()</code> used by parallel streams and default <code>CompletableFuture</code>: blocking work there starves the whole JVM, so give blocking work its own pool.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why do experienced teams avoid <code>Executors.newFixedThreadPool()</code> and <code>newCachedThreadPool()</code> and build a <code>ThreadPoolExecutor</code> by hand instead? <span class="sc-a">Both hide unbounded behaviour: <code>newFixedThreadPool</code> has an <em>unbounded queue</em> (a slowdown silently grows memory to OOM instead of rejecting), and <code>newCachedThreadPool</code> allows <em>unbounded threads</em> (a burst spawns threads until the machine dies); an explicit <code>ThreadPoolExecutor</code> lets you bound the queue <em>and</em> pick a deliberate rejection policy.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20newFixedThreadPool%20unbounded%20queue%20threadpoolexecutor%20bounded%20rejection"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Why not to use the Executors factories</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">core / max / queue</span><span class="term">rejection policy (abort/caller-runs)</span><span class="term">unbounded-queue OOM trap</span><span class="term">CPU vs I/O sizing</span><span class="term">Little's Law</span><span class="term">backpressure</span><span class="term">commonPool starvation</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">13</span><span class="s-tag">Concurrency</span></div>
+      <h3>You compose work with CompletableFuture</h3>
+      <p class="why"><b>Why they ask</b> Async composition &mdash; fan-out, chaining, error handling &mdash; is the everyday pre-Loom concurrency API, and interviewers probe the sharp edges.</p>
+      <p class="gist"><b>Analogy</b> A kitchen passing tickets down a line: <code>thenApply</code> is &lsquo;plate what the last cook handed you&rsquo;; <code>thenCompose</code> is &lsquo;send this to another station and wait for <em>their</em> ticket&rsquo; &mdash; confuse the two and you get a dish wrapped inside another dish (a future of a future).</p>
+      <div class="answer">
+        <p>A <code>CompletableFuture</code> represents a value that will arrive, with a pipeline of callbacks. The composition vocabulary: <code>thenApply</code> transforms the result with a plain function; <code>thenCompose</code> <b>flat-maps</b> &mdash; it chains a step that itself returns a future, avoiding a nested <code>CompletableFuture&lt;CompletableFuture&lt;T&gt;&gt;</code>; <code>thenCombine</code> joins two independent futures; and <code>allOf</code>/<code>anyOf</code> fan out and wait for all (or the first). Error handling is explicit: <code>exceptionally</code> recovers from a failure, while <code>handle</code> and <code>whenComplete</code> see both outcomes &mdash; an exception anywhere short-circuits the chain to the nearest handler, much as it propagates down a stack.</p>
+        <p>The two traps interviewers wait for. First, <b>which thread runs the callback</b>: the non-<code>Async</code> variants may run on the thread that completed the future (or the caller), while <code>&hellip;Async</code> variants run on the <b>common ForkJoinPool</b> by default &mdash; so blocking work there starves parallel streams and other futures unless you pass your <em>own</em> <code>Executor</code>. Second, calling <code>get()</code>/<code>join()</code> <b>blocks</b> the calling thread, collapsing all that async work back into a synchronous wait.</p>
+        <p class="arch">I frame <code>CompletableFuture</code> as declarative async: build the dependency graph with <code>thenCompose</code>/<code>thenCombine</code>/<code>allOf</code> and let it run, rather than blocking on intermediate <code>get()</code>s. The non-negotiables I state: pass an explicit, right-sized <code>Executor</code> to the <code>Async</code> methods (never silently lean on the common pool), always attach error handling (a swallowed exception in a future is a silent failure), and set a timeout (<code>orTimeout</code>). And the honest Java-21 context: for simple fan-out/aggregate, <b>structured concurrency on virtual threads</b> is now often clearer than a tangle of chained futures &mdash; <code>CompletableFuture</code> earns its place as a reusable, non-blocking pipeline.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your pipeline uses <code>thenApply</code> on a method that itself returns a <code>CompletableFuture</code>, and you end up with a <code>CompletableFuture&lt;CompletableFuture&lt;Order&gt;&gt;</code> &mdash; what should you have used? <span class="sc-a"><code>thenCompose</code> &mdash; it <b>flat-maps</b>, chaining a step that returns a future so the result stays a flat <code>CompletableFuture&lt;Order&gt;</code>; <code>thenApply</code> wraps whatever the function returns, so returning a future from it nests one future inside another (the async analogue of <code>map</code> vs <code>flatMap</code>).</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=completablefuture%20thenapply%20thencompose%20thencombine%20allof%20executor%20common%20pool"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: CompletableFuture: compose, don&rsquo;t nest</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">thenApply (map) vs thenCompose (flatMap)</span><span class="term">thenCombine / allOf / anyOf</span><span class="term">exceptionally / handle / whenComplete</span><span class="term">async callback thread</span><span class="term">common ForkJoinPool default</span><span class="term">pass your own Executor</span><span class="term">get()/join() blocks</span><span class="term">vs structured concurrency</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 3 · SPRING BOOT ===== -->
+  <section class="track" data-track="boot">
+    <div class="track-head">
+      <div class="tno">Track 03 — The framework</div>
+      <h2>Spring Boot internals</h2>
+      <p>Demystifying the "magic": what auto-configuration and the context actually do at boot, how beans are wired and proxied, how a request flows through MVC, and why <code>@Transactional</code> behaves the way it does.</p>
+    </div>
+
+    <article class="scenario" data-cat="boot">
+      <div class="s-top"><span class="s-no">14</span><span class="s-tag">Spring Boot</span></div>
+      <h3>A Spring Boot app boots</h3>
+      <p class="why"><b>Why it matters</b>Knowing what auto-configuration and context refresh actually do dissolves the "magic."</p>
+      <p class="gist"><b>Analogy</b> A new office that furnishes itself by looking at what&rsquo;s already in the boxes: &lsquo;there&rsquo;s a coffee machine in the crate, so I&rsquo;ll plumb in water&rsquo; &mdash; sensible defaults inferred from what you packed (the classpath), each one stepping aside the instant you bring your own.</p>
+      <div class="answer">
+        <p><code>main()</code> calls <code>SpringApplication.run</code>. Spring creates the <b>ApplicationContext</b> and <b>refreshes</b> it: it scans for your components, reads configuration classes, and runs <b>auto-configuration</b> — conditional <code>@Configuration</code> classes (discovered via the <code>AutoConfiguration.imports</code> file) that back off with <code>@ConditionalOnClass</code> / <code>@ConditionalOnMissingBean</code>, so "there's a DataSource on the classpath and you didn't define one, so I'll create one." It instantiates bean definitions, resolves dependencies, applies <b>BeanPostProcessors</b> (where AOP proxies get wrapped), and starts the <b>embedded server</b> (Tomcat by default) — no external app server.</p>
+        <p>Two mechanics the &lsquo;magic&rsquo; word hides. Auto-configurations are <b>ordered</b> &mdash; <code>@AutoConfigureBefore/After</code> and <code>@AutoConfigureOrder</code> sequence them so, say, the <code>DataSource</code> is configured before anything that needs one &mdash; and in Boot&nbsp;2.7+/3 they&rsquo;re registered via <code>META-INF/spring/&hellip;AutoConfiguration.imports</code>, replacing the old <code>spring.factories</code> key. If boot time matters, don&rsquo;t guess: <code>BufferingApplicationStartup</code> (exposed at the Actuator <code>startup</code> endpoint) times each step, and the component-index or AOT trims scan cost.</p>
+        <p class="arch">The model to state is convention over configuration via conditional beans — Boot configures sensible defaults you can always override by defining your own bean. That's powerful, but it's why "why is this bean here?" matters, so I use the Actuator conditions report and startup tracking to see what auto-config did. Startup time and memory are dominated by classpath size and bean count, which is why trimming starters and using lazy init or AOT matters for cold start.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your custom bean sometimes isn&rsquo;t picked up because an auto-configuration created its own first &mdash; which two mechanisms govern that ordering and back-off? <span class="sc-a"><b>Ordering</b> via <code>@AutoConfigureBefore/After</code> decides which config runs first, and <b>conditions</b> like <code>@ConditionalOnMissingBean</code> make an auto-config <em>back off</em> when your bean already exists; auto-config is ordered to run after user config, so defining your bean wins &mdash; and the Actuator conditions report shows exactly what matched and why.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20boot%20auto%20configuration%20order%20AutoConfiguration.imports%20conditional%20startup"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Auto-config ordering &amp; back-off</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">SpringApplication.run</span><span class="term">context refresh</span><span class="term">component scan</span><span class="term">auto-configuration (imports)</span><span class="term">@ConditionalOnClass / OnMissingBean</span><span class="term">BeanPostProcessor (AOP)</span><span class="term">embedded server</span><span class="term">convention over configuration</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="boot">
+      <div class="s-top"><span class="s-no">15</span><span class="s-tag">Spring Boot</span></div>
+      <h3>The container wires a dependency</h3>
+      <p class="why"><b>Why it matters</b>Bean scope, proxies, and circular deps are constant sources of subtle bugs.</p>
+      <p class="gist"><b>Analogy</b> Furnishing a house once and sharing it among everyone who lives there (singletons): fine for the sofa, a disaster for the toothbrush &mdash; put personal, per-visitor state on a shared bean and every concurrent request scribbles over the same field.</p>
+      <div class="answer">
+        <p>Spring builds a graph of bean definitions and instantiates them, injecting collaborators (constructor injection preferred). Beans are <b>singletons</b> by default — one shared instance per context — so they must be stateless and thread-safe, because that one instance serves all concurrent requests. Some beans are wrapped in <b>proxies</b> (for <code>@Transactional</code>, <code>@Async</code>, <code>@Cacheable</code>, security) — a CGLIB or JDK dynamic proxy that intercepts calls to add behavior. A <b>circular dependency</b> (A needs B, B needs A) can't be satisfied by constructor injection and fails fast; Spring can resolve it for setter/field injection via early references, but it's a design smell.</p>
+        <p>A trap the singleton default sets up: inject a <b>shorter-lived bean</b> (request- or prototype-scoped) straight into a singleton and you capture <em>one</em> instance forever &mdash; the fix is a <b>scoped proxy</b> (<code>proxyMode = TARGET_CLASS</code>) or an <code>ObjectProvider</code>/<code>Provider</code> that fetches the right one per call. And since Boot&nbsp;2.6 <b>circular references are rejected by default</b>, so a cycle now fails at startup unless you opt in (<code>spring.main.allow-circular-references=true</code>) or, better, break it with <code>@Lazy</code> or a redesign.</p>
+        <p class="arch">Constructor injection is my default — it makes dependencies explicit, supports immutability (final fields), and surfaces cycles at startup instead of hiding them. The singleton default is the thing juniors trip on: putting mutable request state in a singleton field is a data race across requests. And knowing beans are proxied explains a whole class of "why didn't my annotation fire" bugs — which leads straight to the self-invocation gotcha with <code>@Transactional</code>.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You inject a request-scoped bean into a singleton service and it always returns stale data from the very first request &mdash; why, and what&rsquo;s the fix? <span class="sc-a">The singleton is wired <em>once</em> at startup, so it captured that single request-scoped instance permanently; inject a <b>scoped proxy</b> (<code>ScopedProxyMode.TARGET_CLASS</code>) or an <code>ObjectProvider</code>, which resolves the correct request-scoped instance on each call rather than freezing the first one.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20scoped%20proxy%20request%20bean%20into%20singleton%20objectprovider%20circular%20reference"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Scope mismatch &amp; scoped proxies</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">bean definition graph</span><span class="term">constructor injection</span><span class="term">singleton scope (thread-safety)</span><span class="term">prototype / request scope</span><span class="term">CGLIB / JDK dynamic proxy</span><span class="term">circular dependency</span><span class="term">fail-fast</span><span class="term">statelessness</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="boot">
+      <div class="s-top"><span class="s-no">16</span><span class="s-tag">Spring MVC</span></div>
+      <h3>A request hits Spring MVC</h3>
+      <p class="why"><b>Why it matters</b>The DispatcherServlet flow is the backbone of every servlet-stack Spring app.</p>
+      <p class="gist"><b>Analogy</b> A hotel concierge desk (DispatcherServlet) with a fixed number of staff: a guest&rsquo;s request occupies one staffer for its entire errand, including the long wait while they phone another department &mdash; run low on staff and the lobby backs up, however empty the hotel is.</p>
+      <div class="answer">
+        <p>The request first passes the servlet <b>filter chain</b> (including Spring Security's filters). It reaches the <b>DispatcherServlet</b> — the front controller — which consults <b>handler mappings</b> to find the <code>@Controller</code> method matching the URL and verb. It runs interceptors, binds and validates the request, and uses <b>message converters</b> (Jackson) to deserialize the JSON body into your DTO, invokes your handler, then serializes the return value back to JSON, sets the status, and writes the response. Exceptions route to exception resolvers. Crucially, in the classic MVC stack this runs on a server-pool thread, <b>thread-per-request</b> — occupied for the whole request, including any blocking downstream call.</p>
+        <p>Before virtual threads, MVC already had an escape: return a <code>Callable</code>, <code>DeferredResult</code> or <code>CompletableFuture</code> and the servlet container <b>releases the request thread</b> while the work proceeds, re-dispatching when the result is ready &mdash; <em>async MVC</em>, the servlet-3 way to stop a slow downstream pinning Tomcat threads. And overload has two knobs, not one: once all <code>max-threads</code> are busy, new connections queue in <code>accept-count</code> (the OS backlog); only when <em>that</em> fills are connections refused &mdash; so a too-small accept-count turns a brief spike into connection resets.</p>
+        <p class="arch">That thread-per-request model is why the container's thread pool size (Tomcat <code>max-threads</code>) is a key scaling knob and why slow downstreams exhaust it — the connection-pool-exhaustion cascade in Java form. It's also the exact reason virtual threads (Boot 3.2+) and WebFlux exist: the same DispatcherServlet flow, but the request thread either becomes cheap (virtual) or is never blocked (reactive). Filters versus interceptors matters too — cross-cutting concerns like auth belong in the filter chain.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> In classic MVC, how can a controller let a slow downstream call run without holding a Tomcat request thread for the whole wait &mdash; short of going fully reactive? <span class="sc-a">Return an async type &mdash; <code>Callable</code>, <code>DeferredResult</code>, or <code>CompletableFuture</code> &mdash; and Spring hands the work off, <b>freeing the servlet thread</b> immediately and re-dispatching when it completes (<em>async MVC</em>); or, in Boot&nbsp;3.2+, enable virtual threads so the blocking wait itself becomes cheap.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20mvc%20async%20DeferredResult%20Callable%20servlet%20async%20tomcat%20accept-count"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Async MVC &amp; Tomcat overload knobs</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">filter chain</span><span class="term">DispatcherServlet (front controller)</span><span class="term">handler mapping</span><span class="term">interceptors</span><span class="term">HttpMessageConverter (Jackson)</span><span class="term">thread-per-request</span><span class="term">Tomcat max-threads</span><span class="term">exception resolver</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="boot">
+      <div class="s-top"><span class="s-no">17</span><span class="s-tag">Spring Boot</span></div>
+      <h3><code>@Transactional</code> is invoked</h3>
+      <p class="why"><b>Why it matters</b>Self-invocation and the checked-exception rollback default are the most common Spring bugs.</p>
+      <p class="gist"><b>Analogy</b> A manager (the proxy) who opens the ledger before you start and closes it after &mdash; but only if your request came through <em>their</em> door; shout the task to a colleague across your own desk (<code>this.method()</code>) and the manager never hears it, so nothing is recorded.</p>
+      <div class="answer">
+        <p><code>@Transactional</code> is implemented by an <b>AOP proxy</b> around your bean. When an outside caller invokes the method through the proxy, the proxy asks the <b>transaction manager</b> to begin a transaction (bind a connection, autocommit off), calls your method, and commits on normal return or <b>rolls back</b> on exception. Default <b>propagation</b> is <code>REQUIRED</code> — join an existing transaction or start one. The rollback default is the trap: Spring rolls back on <b>unchecked</b> exceptions (<code>RuntimeException</code>, <code>Error</code>) but <b>not</b> checked exceptions unless you set <code>rollbackFor</code>.</p>
+        <p>The famous gotcha is <b>self-invocation</b>: if a method in the same bean calls another <code>@Transactional</code> method directly (<code>this.other()</code>), the call doesn't go through the proxy, so the annotation is ignored entirely — no transaction. Same for <code>@Async</code> and <code>@Cacheable</code>. And <code>@Transactional</code> on private or non-public methods doesn't work — the proxy can't intercept.</p>
+        <p>Three levers the basic story omits. <code>readOnly = true</code> isn&rsquo;t just documentation: Hibernate sets flush mode to MANUAL and <em>skips dirty checking</em> (less memory, no accidental writes), and it can route to a read replica. The <code>isolation</code> attribute lets you ask the DB for <code>REPEATABLE_READ</code> or <code>SERIALIZABLE</code> when a use case needs it. And the sharp one: <code>REQUIRES_NEW</code> <b>suspends the outer transaction and borrows a second connection</b> while the first is still held &mdash; nest a few and you can deadlock yourself by draining the pool.</p>
+        <p class="arch">I make people say <em>why it's a proxy</em>, because that one fact explains self-invocation, the checked-exception default, and the public-method-only rule. The fixes: call through an injected bean (or self-inject), set <code>rollbackFor</code> for checked exceptions, and understand propagation — <code>REQUIRES_NEW</code> opens a nested independent transaction with its own connection, a pool-exhaustion risk if overused. Keep transactions short and never do remote calls inside them.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why can sprinkling <code>@Transactional(propagation = REQUIRES_NEW)</code> through a call chain quietly cause a deadlock under load? <span class="sc-a">Each <code>REQUIRES_NEW</code> <b>suspends the caller&rsquo;s transaction but keeps its connection</b> and borrows a <em>second</em> one for the inner transaction; a chain holds several connections per request, so under concurrency the pool empties and threads block waiting for connections that other threads&rsquo; suspended transactions are holding &mdash; a self-inflicted pool deadlock.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20transactional%20requires_new%20connection%20pool%20deadlock%20readonly%20isolation"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: @Transactional: readOnly, isolation &amp; REQUIRES_NEW</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">AOP proxy</span><span class="term">transaction manager</span><span class="term">begin / commit / rollback</span><span class="term">propagation (REQUIRED / REQUIRES_NEW)</span><span class="term">rollback on unchecked only (rollbackFor)</span><span class="term">self-invocation bypass</span><span class="term">public-method-only</span><span class="term">short transactions</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="boot">
+      <div class="s-top"><span class="s-no">18</span><span class="s-tag">Spring Boot</span></div>
+      <h3>Config is externalized and a profile is chosen</h3>
+      <p class="why"><b>Why they ask</b> &lsquo;Where does this value come from, and which wins?&rsquo; is a daily debugging question, and profiles are how one artifact runs in every environment.</p>
+      <p class="gist"><b>Analogy</b> One cook, many kitchens: the same recipe binder (the jar) with sticky notes layered on top &mdash; the house default underneath, the regional note over it, tonight&rsquo;s hand-scrawled override on top (an env var) &mdash; and you always read from the <em>top</em> note down.</p>
+      <div class="answer">
+        <p>Spring Boot binds configuration from an <b>ordered set of property sources</b>, highest-precedence first: command-line args, then OS environment variables / <code>SPRING_APPLICATION_JSON</code>, then <code>application-{profile}.yml</code>, then <code>application.yml</code>, then defaults &mdash; a lower source only supplies what higher ones didn&rsquo;t set. <b>Relaxed binding</b> maps the same key across styles, so <code>app.pageSize</code> in YAML is set by the env var <code>APP_PAGESIZE</code> &mdash; which is how you inject config in Kubernetes without touching the jar.</p>
+        <p><b>Profiles</b> (<code>spring.profiles.active=prod</code>) select environment-specific slices: profile-specific files and <code>@Profile</code>-guarded beans activate together, so one immutable artifact behaves correctly in dev, staging, and prod. For binding whole groups of keys, <code>@ConfigurationProperties</code> maps a prefix onto a typed, validated object &mdash; preferable to scattering <code>@Value</code>, because it&rsquo;s type-safe, testable, supports validation and relaxed binding, and documents the contract in one place.</p>
+        <p class="arch">The principle I hold is <b>one build artifact, environment supplied from outside</b> &mdash; never a jar rebuilt per environment. So config comes from the environment (env vars / mounted config) with secrets kept out of plain properties (Vault, sealed secrets, a cloud secret manager), and I prefer typed <code>@ConfigurationProperties</code> with validation over loose <code>@Value</code>. When &lsquo;which value won?&rsquo; is the question, I reach for the Actuator <code>env</code>/<code>configprops</code> endpoints, which print the resolved sources in precedence order. The one caution: profiles are great for structure but a tangle of them hides what&rsquo;s active &mdash; keep the set small and explicit.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A setting works locally from <code>application.yml</code> but takes a different value in production where it&rsquo;s set as an environment variable &mdash; which wins, and why isn&rsquo;t that a bug? <span class="sc-a">The <b>environment variable wins</b>: OS env vars sit <em>above</em> <code>application.yml</code> in Boot&rsquo;s property-source precedence, so they override file defaults by design &mdash; that&rsquo;s exactly how one artifact is reconfigured per environment; confirm the resolved value and its source via the Actuator <code>env</code> endpoint.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20boot%20property%20source%20precedence%20profiles%20configurationproperties%20relaxed%20binding%20env%20var"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Config precedence &amp; profiles</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">ordered property sources</span><span class="term">precedence: CLI &gt; env &gt; profile file &gt; app.yml</span><span class="term">relaxed binding (env &rarr; property)</span><span class="term">@ConfigurationProperties (typed)</span><span class="term">@Value vs @ConfigurationProperties</span><span class="term">profiles / @Profile</span><span class="term">one artifact, external config</span><span class="term">Actuator env / configprops</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 4 · DATA & JPA ===== -->
+  <section class="track" data-track="data">
+    <div class="track-head">
+      <div class="tno">Track 04 — Persistence</div>
+      <h2>Data &amp; JPA</h2>
+      <p>Where ORM convenience meets real query and connection cost: the lazy-loading traps, how the persistence context tracks and flushes changes, and the connection pool that gates every database call.</p>
+    </div>
+
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">19</span><span class="s-tag">JPA / Hibernate</span></div>
+      <h3>You touch a lazy association</h3>
+      <p class="why"><b>Why it matters</b><code>LazyInitializationException</code> and N+1 are the top JPA production issues.</p>
+      <p class="gist"><b>Analogy</b> A book full of &lsquo;see appendix&rsquo; notes (lazy proxies): cheap to carry, but try to read a note after the library has closed (the session ended) and you&rsquo;re stuck &mdash; and reading one note per page across 500 pages is 500 separate trips to the stacks (N+1).</p>
+      <div class="answer">
+        <p>JPA associations are lazy by default. When you load an entity, Hibernate populates a <b>proxy</b> or a lazy collection wrapper for the association — the data isn't fetched until you access it. Two failure modes follow. <b>LazyInitializationException</b>: you access the association after the persistence context (session) has closed — typically in the controller or view, after the <code>@Transactional</code> service method returned — so there's no session to load it. The <b>N+1 problem</b>: you load N entities, then loop and touch a lazy association on each, firing one query per element — 1 + N queries instead of one.</p>
+        <p>The fixes: fetch what you need in the query — a <code>JOIN FETCH</code> or an <code>@EntityGraph</code> — or return a DTO projection so you never touch lazy state outside the transaction. Batch fetching turns N+1 into a few <code>IN</code> queries.</p>
+        <p>Three senior-level corrections. Only <em>collections</em> are lazy by default &mdash; <code>@ManyToOne</code> and <code>@OneToOne</code> are <b>EAGER</b> by default, a hidden source of surprise joins, so many teams mark them <code>LAZY</code> explicitly. A <code>JOIN FETCH</code> on a <em>collection</em> combined with pagination (<code>setMaxResults</code>) can&rsquo;t page in SQL, so Hibernate silently fetches <em>everything</em> and paginates in memory (the <code>HHH000104</code> warning). And fetching <em>two</em> collections at once throws <code>MultipleBagFetchException</code> &mdash; use <code>Set</code>s, or split into separate queries / <code>@BatchSize</code>.</p>
+        <p class="arch">The rule I set is fetch explicitly for the use case — lazy by default plus fetch-what-you-need per query — and never rely on <b>open-session-in-view</b>, which papers over LazyInit by holding the session open into rendering, at the cost of longer-held connections and hidden N+1. N+1 is silent in dev and lethal at production data volume, so I catch it with SQL logging and query-count assertions in tests. This is exactly where ORM convenience meets real query cost.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You add <code>JOIN FETCH</code> on a one-to-many and keep your <code>Pageable</code>, and suddenly a huge query loads the whole table into memory &mdash; why? <span class="sc-a">You can&rsquo;t paginate a collection join in SQL (the join multiplies rows, so <code>LIMIT</code> would cut mid-entity), so Hibernate fetches <em>all</em> matching rows and applies the offset/limit <b>in memory</b> &mdash; the <code>HHH000104</code> warning; page the root ids first, or use <code>@BatchSize</code>/a second query, instead of fetch-joining the collection with pagination.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=hibernate%20join%20fetch%20pagination%20in%20memory%20HHH000104%20MultipleBagFetchException%20manytoone%20eager"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: JOIN FETCH traps: pagination &amp; bags</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">lazy by default</span><span class="term">Hibernate proxy / collection wrapper</span><span class="term">persistence context / session</span><span class="term">LazyInitializationException</span><span class="term">N+1 problem</span><span class="term">JOIN FETCH / @EntityGraph</span><span class="term">DTO projection · batch fetch</span><span class="term">open-session-in-view anti-pattern</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">20</span><span class="s-tag">JPA / Hibernate</span></div>
+      <h3>A persistence context flushes</h3>
+      <p class="why"><b>Why it matters</b>Dirty checking and flush timing surprise people — "I never called save()."</p>
+      <p class="gist"><b>Analogy</b> A notepad that watches what you scribble and, at the end, automatically mails only the lines you changed (dirty checking) &mdash; you never say &lsquo;send&rsquo; (<code>save()</code>); it diffs your page against the carbon copy it kept when you opened it.</p>
+      <div class="answer">
+        <p>Inside a transaction the <b>persistence context</b> is a first-level cache and unit of work: managed entities you load or persist are tracked. Hibernate does <b>dirty checking</b> — at flush time it compares each managed entity to its loaded snapshot and generates <code>UPDATE</code>s for what changed, which is why simply setting a field on a managed entity persists without any explicit <code>save()</code>. <b>Flush</b> — sending pending SQL to the DB — happens automatically before a query that might need the changes, and at commit; it is <b>not</b> the same as commit (flush pushes SQL, commit ends the transaction). The first-level cache also means loading the same entity twice in one context returns the same instance and may skip a query.</p>
+        <p>The costs the convenience hides. Dirty checking keeps a <b>snapshot</b> of every managed entity, so reading 100k rows in one transaction roughly <em>doubles</em> their memory &mdash; for bulk work use a <code>StatelessSession</code>, read-only mode, or periodic <code>flush()</code>+<code>clear()</code> to drain the context. And flush order is <em>fixed</em> &mdash; all inserts, then updates, then deletes, regardless of the order you wrote the code &mdash; which produces baffling constraint-violation errors when a delete you expected to run first is actually deferred behind an insert.</p>
+        <p class="arch">People are surprised twice — that mutating a managed entity writes without <code>save()</code>, and that flush order and timing are Hibernate's call. I stress controlling it: keep entities detached when you don't want auto-updates, be deliberate with flush modes, and remember the L1 cache is per-transaction — not a shared cache (that's the L2 cache, separate). It also explains ordering surprises, since Hibernate may reorder and batch SQL at flush, and why long transactions accumulate a large dirty context — more memory and longer-held locks.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A batch job that loads and updates 200k entities in one transaction slows to a crawl and balloons memory though each update is tiny &mdash; the JPA cause and fix? <span class="sc-a">The persistence context keeps every managed entity <em>plus a dirty-checking snapshot</em>, so memory and flush-scan cost grow with the number loaded; fix it by <code>flush()</code>+<code>clear()</code>ing in batches (e.g. every 50), using a <code>StatelessSession</code>, or doing it as a bulk <code>UPDATE</code> query that bypasses the context entirely.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=hibernate%20persistence%20context%20memory%20dirty%20checking%20stateless%20session%20flush%20clear%20batch"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Dirty-checking cost &amp; batch flushing</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">persistence context = unit of work + L1</span><span class="term">managed vs detached</span><span class="term">dirty checking (snapshot)</span><span class="term">automatic flush</span><span class="term">flush ≠ commit</span><span class="term">flush modes</span><span class="term">SQL batching / ordering</span><span class="term">L1 vs L2 cache</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">21</span><span class="s-tag">Data</span></div>
+      <h3>The HikariCP pool is exhausted</h3>
+      <p class="why"><b>Why it matters</b>Connection-pool sizing is the Java side of a classic production incident.</p>
+      <p class="gist"><b>Analogy</b> A small rack of shared power tools (connections): borrow, use, return promptly and ten is plenty for a big crew; but hold a drill while you wander off to take a phone call (a remote call inside the transaction) and the whole crew is soon standing idle, waiting.</p>
+      <div class="answer">
+        <p>Every DB operation borrows a connection from the pool — HikariCP by default, small, around 10 max. A thread that needs a connection when none is free waits up to <code>connectionTimeout</code> (about 30&nbsp;s by default), then fails with "unable to obtain connection." Exhaustion happens when connections are held too long — a slow query, a transaction kept open across a remote call, or a <b>connection leak</b> (borrowed and never returned because of a missing close or failed transaction cleanup). As the pool drains, request threads block waiting, latency climbs, and it cascades exactly like the generic pool-exhaustion story.</p>
+        <p>The leak and sizing story misses connection <em>freshness</em>. A connection sitting idle in the pool can be silently killed by the database&rsquo;s <code>wait_timeout</code> or a firewall/LB idle timeout, and you only find out when a borrow hands you a dead socket (&lsquo;connection reset&rsquo;); the fix is <code>maxLifetime</code> (and <code>keepaliveTime</code>) set comfortably <em>below</em> that external timeout so Hikari retires connections first. And the famous counterintuitive heuristic &mdash; roughly <code>(core_count &times; 2) + effective_spindles</code>, often just a handful &mdash; is why &lsquo;smaller is faster&rsquo; holds.</p>
+        <p class="arch">The counterintuitive lesson is that a bigger pool is usually the <em>wrong</em> fix — the pool should be sized to what the database can actually handle concurrently (often small; there's a well-known "smaller pool, faster" result), because past that you just move contention into the DB. I right-size against the DB's max connections, sharing that budget across all instances — N pods × pool size must not exceed the DB limit — keep transactions short and never hold a connection across a network call, and turn on <code>leakDetectionThreshold</code> to catch leaks. It's the same discipline as the platform pool-cascade, one layer down.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your app throws intermittent &lsquo;connection reset&rsquo;/&lsquo;broken pipe&rsquo; errors, almost always on the first request after a quiet period &mdash; which pool setting is the usual culprit? <span class="sc-a"><code>maxLifetime</code> is too high relative to the DB/firewall idle timeout, so a connection the database or a network device already killed sits in the pool and is handed out dead; set <code>maxLifetime</code> (and <code>keepaliveTime</code>) below the shortest upstream idle timeout so Hikari recycles connections before they go stale.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=hikaricp%20maxlifetime%20connection%20reset%20idle%20timeout%20pool%20sizing%20formula"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: HikariCP: stale connections &amp; maxLifetime</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">HikariCP pool</span><span class="term">connectionTimeout</span><span class="term">held-too-long / leak</span><span class="term">leakDetectionThreshold</span><span class="term">pool size vs DB max</span><span class="term">N instances × pool budget</span><span class="term">short transactions</span><span class="term">cascade</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">22</span><span class="s-tag">JPA / Hibernate</span></div>
+      <h3>Two transactions update the same row</h3>
+      <p class="why"><b>Why they ask</b> The lost-update problem is a correctness bug under concurrency, and choosing optimistic vs pessimistic locking is a core data-design decision.</p>
+      <p class="gist"><b>Analogy</b> A shared wiki page: optimistic locking is &lsquo;edit freely, but on save we check nobody changed it since you opened it &mdash; if they did, redo&rsquo;; pessimistic is &lsquo;check the page out so nobody else can edit until you&rsquo;re done.&rsquo; One bets conflicts are rare, the other prevents them up front.</p>
+      <div class="answer">
+        <p>Without a guard, two transactions that both read a row, modify it, and write back cause a <b>lost update</b>: the second silently overwrites the first&rsquo;s change. <b>Optimistic locking</b> adds a <code>@Version</code> column; every update becomes <code>UPDATE &hellip; WHERE id = ? AND version = ?</code> and bumps the version, so if someone else already incremented it the affected-row count is zero and JPA throws <code>OptimisticLockException</code> &mdash; no database locks held, you just retry. It assumes conflicts are <em>rare</em> and makes the no-conflict path free.</p>
+        <p><b>Pessimistic locking</b> instead takes a real database lock up front &mdash; <code>LockModeType.PESSIMISTIC_WRITE</code> issues <code>SELECT &hellip; FOR UPDATE</code>, so other writers block until you commit. It prevents the conflict outright but holds a lock for the transaction&rsquo;s duration, serializing access and risking lock waits and deadlocks &mdash; the price of certainty. It suits short, hot, high-contention updates (an inventory decrement, a balance) where a retry storm would be worse than a brief wait.</p>
+        <p class="arch">My rule: <b>optimistic by default</b> &mdash; a <code>@Version</code> field costs nothing when there&rsquo;s no conflict and scales far better because it holds no locks &mdash; and <b>pessimistic only for genuinely hot rows</b> where conflicts are frequent and retries would thrash. Optimistic locking demands a <b>retry strategy</b> on the caller (catch the exception, re-read, re-apply, bounded attempts), which also makes it a natural fit behind idempotent, retryable operations. I connect it to isolation levels: both are really answers to the same lost-update problem that the DB&rsquo;s default <code>READ_COMMITTED</code> doesn&rsquo;t prevent on its own.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A balance-update endpoint occasionally loses an increment under concurrent requests. You add a <code>@Version</code> column &mdash; what new thing must the calling code now handle? <span class="sc-a"><b>Retry on <code>OptimisticLockException</code></b>: with versioning, a concurrent update makes one transaction&rsquo;s <code>UPDATE &hellip; WHERE version = ?</code> match zero rows and fail, so the caller must catch that, re-read the fresh row, re-apply the change, and retry (bounded) &mdash; the version turns a silent lost update into an explicit, recoverable conflict.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=jpa%20optimistic%20locking%20version%20optimisticlockexception%20pessimistic%20select%20for%20update%20lost%20update"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Optimistic vs pessimistic locking</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">lost-update problem</span><span class="term">optimistic: @Version column</span><span class="term">UPDATE &hellip; WHERE version = ?</span><span class="term">OptimisticLockException + retry</span><span class="term">pessimistic: SELECT &hellip; FOR UPDATE</span><span class="term">PESSIMISTIC_WRITE lock</span><span class="term">optimistic by default</span><span class="term">hot rows &rarr; pessimistic</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="data">
+      <div class="s-top"><span class="s-no">23</span><span class="s-tag">Data</span></div>
+      <h3>You insert ten thousand rows</h3>
+      <p class="why"><b>Why they ask</b> Bulk writes are where ORM defaults quietly send one round trip per row &mdash; a 100&times; difference a senior is expected to spot.</p>
+      <p class="gist"><b>Analogy</b> Posting a thousand letters one taxi ride to the post office at a time, versus filling one van and driving once: the letters are identical &mdash; it&rsquo;s the <em>round trips</em> to the database that cost, and batching is loading the van.</p>
+      <div class="answer">
+        <p>By default, persisting N entities can issue N separate <code>INSERT</code> statements &mdash; each its own network round trip, dominated by latency, not by the work. <b>JDBC batching</b> groups many statements into one round trip: set <code>hibernate.jdbc.batch_size</code> (say 50), and enable <code>order_inserts</code>/<code>order_updates</code> so Hibernate groups same-table statements together (a batch breaks when statement shapes alternate). On the driver side, PostgreSQL needs <code>reWriteBatchedInserts=true</code> and MySQL <code>rewriteBatchedStatements=true</code> to actually collapse them into multi-row statements.</p>
+        <p>Two gotchas sink naive batching. An <code>IDENTITY</code>/auto-increment primary key <b>disables insert batching entirely</b>, because Hibernate must round-trip to fetch each generated id &mdash; use a <code>SEQUENCE</code> with a pooled allocation instead. And in a long loop you must <code>flush()</code> and <code>clear()</code> the persistence context periodically (e.g. every <code>batch_size</code> rows), or the growing dirty-checked context defeats the point by eating memory and slowing each flush.</p>
+        <p class="arch">The lens is <b>round trips, not row count, drive bulk-write cost</b> &mdash; the same latency-amortization idea as any batched remote call. For true bulk I decide between ORM batching (keeps lifecycle callbacks and validation) and dropping to a set-based path &mdash; a bulk <code>INSERT</code>/<code>UPDATE</code> JPQL, <code>JdbcTemplate.batchUpdate</code>, or <code>COPY</code> &mdash; which is far faster but bypasses the persistence context and its callbacks. Whichever I pick, I verify with SQL logging and statement counts that batching actually engaged, because one wrong setting (an <code>IDENTITY</code> key, an unset driver flag) silently reverts to one row at a time.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You set <code>hibernate.jdbc.batch_size=50</code> but SQL logs still show one <code>INSERT</code> per row &mdash; name two common reasons batching silently didn&rsquo;t engage. <span class="sc-a">Most likely an <b><code>IDENTITY</code>/auto-increment primary key</b> (Hibernate must fetch each generated id, so it can&rsquo;t batch inserts &mdash; switch to a <code>SEQUENCE</code>), or the <b>driver rewrite flag is off</b> (<code>reWriteBatchedInserts</code>/<code>rewriteBatchedStatements</code>); also, interleaving statements against different tables without <code>order_inserts</code> breaks a batch into singletons.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=hibernate%20jdbc%20batch_size%20order_inserts%20identity%20sequence%20rewriteBatchedStatements"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: JDBC batching: round trips, not rows</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">round trips dominate, not rows</span><span class="term">hibernate.jdbc.batch_size</span><span class="term">order_inserts / order_updates</span><span class="term">IDENTITY key disables batching</span><span class="term">use SEQUENCE + pooled</span><span class="term">driver rewrite flag</span><span class="term">periodic flush()+clear()</span><span class="term">bulk query vs ORM batch</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 5 · SECURITY ===== -->
+  <section class="track" data-track="sec">
+    <div class="track-head">
+      <div class="tno">Track 05 — Spring Security</div>
+      <h2>Security</h2>
+      <p>How Spring Security actually processes a request: the filter chain and where identity lives, stateless JWT validation on a resource server, and the CSRF-and-sessions model people so often get backwards.</p>
+    </div>
+
+    <article class="scenario" data-cat="sec">
+      <div class="s-top"><span class="s-no">24</span><span class="s-tag">Security</span></div>
+      <h3>A request crosses the Spring Security filter chain</h3>
+      <p class="why"><b>Why it matters</b>The filter chain is the basis of every Spring Security question.</p>
+      <p class="gist"><b>Analogy</b> A row of single-task gates in a fixed order: one checks for an existing pass, the next inspects your ID and clips on a day-badge (stored on a ThreadLocal), a later one checks that badge against the room you&rsquo;re entering &mdash; scramble the order and the whole screening breaks.</p>
+      <div class="answer">
+        <p>Spring Security plugs into the servlet filter chain via one delegating filter, behind which sits the <b>SecurityFilterChain</b> — an ordered list of single-purpose filters. Early filters load any existing <b>SecurityContext</b> from the session. An <b>authentication</b> filter (form login, Basic, or a bearer JWT) extracts credentials and calls the <code>AuthenticationManager</code> and its providers, producing an <code>Authentication</code> stored in the <b>SecurityContextHolder</b> — a ThreadLocal. Later the <code>AuthorizationFilter</code> checks the request against your rules (roles/authorities, method security) and either lets it reach the controller or rejects it, and an exception-translation filter turns auth failures into 401/403 or a login redirect.</p>
+        <p>Three things the single-chain picture omits. You can have <b>several <code>SecurityFilterChain</code> beans</b>, each guarded by a <code>securityMatcher</code> and tried in <code>@Order</code> &mdash; the standard way to run stateless JWT for <code>/api/**</code> and form login for the web UI side by side. Spring Security&nbsp;6 made the context <b>explicit-save</b> (<code>requireExplicitSave</code>): the filter no longer auto-persists the <code>SecurityContext</code>, which quietly broke some custom-login code on upgrade. And because the holder is a <code>ThreadLocal</code>, <code>@Async</code> loses it unless you use <code>MODE_INHERITABLETHREADLOCAL</code> or a context-propagating decorator.</p>
+        <p class="arch">Two things to say precisely. First, it's a chain of single-responsibility filters, so I configure it declaratively with the Spring Security 6 lambda DSL and <code>SecurityFilterChain</code> beans, not the old adapter. Second, the SecurityContext lives in a <b>ThreadLocal</b>, which is why it "just works" per request in thread-per-request MVC — and why it needs explicit propagation in reactive (<code>ReactiveSecurityContext</code>) and care with <code>@Async</code> and virtual threads. I'd map stateless (JWT, no session) versus stateful (session cookie) here, because it changes which filters and which CSRF stance apply.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> You need JWT auth on <code>/api/**</code> but form login with sessions on the web pages of the same app &mdash; how does Spring Security model that? <span class="sc-a">Define <b>two <code>SecurityFilterChain</code> beans</b>, each with a <code>securityMatcher</code> (<code>/api/**</code> vs the rest) and an explicit <code>@Order</code>; the first matching chain handles the request, so the API chain is stateless + bearer-JWT (CSRF off) while the web chain uses sessions + form login (CSRF on) &mdash; independent configs in one app.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20security%20multiple%20securityfilterchain%20securitymatcher%20order%206%20explicit%20save"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Multiple filter chains &amp; the SecSec 6 change</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">DelegatingFilterProxy</span><span class="term">SecurityFilterChain (ordered)</span><span class="term">AuthenticationManager / provider</span><span class="term">Authentication</span><span class="term">SecurityContextHolder (ThreadLocal)</span><span class="term">AuthorizationFilter</span><span class="term">401/403 translation</span><span class="term">stateless vs stateful</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="sec">
+      <div class="s-top"><span class="s-no">25</span><span class="s-tag">Security</span></div>
+      <h3>A resource server validates a JWT</h3>
+      <p class="why"><b>Why it matters</b>Spring-specific token validation — the everyday stateless-auth mechanism.</p>
+      <p class="gist"><b>Analogy</b> A bouncer who checks a tamper-proof wristband himself instead of radioing head office each time: he keeps a copy of the venue&rsquo;s official stamp (the public key) and verifies the band&rsquo;s seal on the spot &mdash; fast, but he can&rsquo;t un-admit someone whose band was revoked after they got in.</p>
+      <div class="answer">
+        <p>Configured as an OAuth2 <b>resource server</b>, Spring extracts the Bearer token and hands it to a <b>JwtDecoder</b>. For asymmetric tokens the decoder fetches the identity provider's public keys from its <b>JWKS</b> endpoint (discovered from the issuer), caches them, and picks the key by the token's <code>kid</code> to verify the signature — no call to the auth server per request. It then validates the standard claims — <code>exp</code>, <code>iss</code>, and <code>aud</code> — and maps claims (scopes/roles) into Spring <b>authorities</b> via a converter, producing a <code>JwtAuthenticationToken</code> in the SecurityContext that your authorization rules and method security use.</p>
+        <p>The stateless win has a cost the answer only hints at: you can&rsquo;t <em>revoke</em> a valid JWT before it expires. When you need instant revocation, the alternative is <b>opaque tokens + introspection</b> (a <code>/introspect</code> call back to the auth server per request &mdash; stateful but revocable), or a short-lived access token backed by a revocable refresh token. Two operational details: allow a small <b>clock-skew leeway</b> on <code>exp</code>/<code>nbf</code> so minor drift doesn&rsquo;t reject valid tokens, and when the decoder meets an unknown <code>kid</code> it refetches JWKS &mdash; <em>rate-limit</em> that, or a bad-token storm becomes a self-DDoS on your IdP.</p>
+        <p class="arch">This is stateless auth done right — signature-verified, self-contained tokens, keys rotated via JWKS/<code>kid</code> without redeploying, validated at the edge and re-checked in services for defense in depth. What I insist on: always validate <code>aud</code> and <code>iss</code> (skipping them is a real vulnerability), pin the algorithm, keep lifetimes short because revocation is hard (the stateless trade-off), and map authorities explicitly so authorization is predictable. It's the framework realization of the generic JWT mechanism from the platform volume — same guarantees, Spring plumbing.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A user is deactivated but their JWT keeps working for several more minutes &mdash; why, and what are your options if that&rsquo;s unacceptable? <span class="sc-a">A JWT is self-contained and valid until <code>exp</code>, so nothing checks a revocation list per request &mdash; the stateless trade-off; options are very short lifetimes (shrink the window), <b>opaque tokens with introspection</b>, or a server-side revocation/deny-list checked on sensitive operations, each trading some statelessness for immediacy.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=jwt%20revocation%20opaque%20token%20introspection%20jwks%20cache%20clock%20skew%20spring"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: JWT revocation &amp; the stateless trade-off</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">OAuth2 resource server</span><span class="term">Bearer token</span><span class="term">JwtDecoder</span><span class="term">JWKS + kid</span><span class="term">signature verify (no per-request call)</span><span class="term">exp / iss / aud</span><span class="term">authorities converter</span><span class="term">short expiry · alg pinning</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="sec">
+      <div class="s-top"><span class="s-no">26</span><span class="s-tag">Security</span></div>
+      <h3>CSRF, and session vs stateless</h3>
+      <p class="why"><b>Why it matters</b>"Why did you disable CSRF?" trips anyone who doesn't hold the threat model.</p>
+      <p class="gist"><b>Analogy</b> A bank that auto-recognises you by a signet ring you always wear (the session cookie): convenient, but a con artist can slip you a pre-addressed envelope to sign &mdash; the bank sees your ring and obeys. A token you type in by hand each time can&rsquo;t be abused that way.</p>
+      <div class="answer">
+        <p><b>CSRF</b> — cross-site request forgery — exploits <b>ambient credentials</b>: if auth lives in a cookie the browser sends automatically, a malicious site can trigger a state-changing request to your app and the browser attaches the cookie, so the request looks authentic. The defense is a CSRF token the server issues and the legitimate client echoes in a header or field — a value a cross-site request can't know. It only matters for browser, cookie/session-based auth on state-changing methods.</p>
+        <p>For a stateless API authenticated by a Bearer token in the <code>Authorization</code> header, there's no ambient credential — the browser doesn't auto-attach a bearer token — so CSRF doesn't apply, which is why you disable Spring's CSRF protection for pure token APIs. Related session concerns: <b>session fixation</b> (rotate the session ID on login, which Spring does by default) and <code>Secure</code>/<code>HttpOnly</code>/<code>SameSite</code> cookie flags.</p>
+        <p>For SPAs that <em>do</em> use cookies, the pattern is the <b>double-submit cookie</b>: <code>CookieCsrfTokenRepository.withHttpOnlyFalse()</code> so JavaScript can read the token and echo it in a header. Beware a real upgrade gotcha: Spring Security&nbsp;6 changed CSRF handling (deferred token loading plus <code>CsrfTokenRequestAttributeHandler</code> with BREACH protection), which silently broke some SPA setups on migration. And don&rsquo;t lean on <code>SameSite</code> alone &mdash; <code>Lax</code> still permits top-level GET navigations and has subdomain gaps, so it&rsquo;s defense in depth, not a replacement for a token.</p>
+        <p class="arch">The principle I state is: CSRF risk exists exactly when the browser supplies credentials automatically. So session-cookie apps need CSRF protection (with <code>SameSite</code> cookies as defense in depth); token-in-header APIs don't. Disabling CSRF isn't "turning off security," it's recognizing the threat model doesn't apply — but only if you're truly not using cookies for auth. Getting that mapping wrong is how you either break your SPA or leave a cookie app exposed.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A cookie-authenticated SPA needs CSRF protection, but its JavaScript can&rsquo;t read an <code>HttpOnly</code> CSRF cookie to echo it &mdash; what&rsquo;s the standard Spring approach? <span class="sc-a">Use the <b>double-submit cookie</b> via <code>CookieCsrfTokenRepository.withHttpOnlyFalse()</code>: Spring writes a non-<code>HttpOnly</code> CSRF cookie the SPA&rsquo;s JS reads and sends back in a header, and the server compares the two; a cross-site attacker can&rsquo;t read the cookie value to forge the matching header, so the request is rejected.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20security%206%20csrf%20spa%20cookie%20double%20submit%20withHttpOnlyFalse%20samesite"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: CSRF for SPAs &amp; the SecSec 6 change</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">CSRF (ambient cookie creds)</span><span class="term">state-changing methods</span><span class="term">synchronizer token</span><span class="term">stateless bearer = no CSRF</span><span class="term">session fixation (rotate on login)</span><span class="term">SameSite / HttpOnly / Secure</span><span class="term">threat-model-driven</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="sec">
+      <div class="s-top"><span class="s-no">27</span><span class="s-tag">Security</span></div>
+      <h3>@PreAuthorize guards a method</h3>
+      <p class="why"><b>Why they ask</b> Method security is defense-in-depth below the URL layer &mdash; and because it&rsquo;s proxy-based, it inherits the same self-invocation trap as @Transactional.</p>
+      <p class="gist"><b>Analogy</b> Not just a guard at the building&rsquo;s front door (URL rules) but a second check at each office door that reads your badge <em>and</em> what you&rsquo;re carrying (the method&rsquo;s arguments) before letting you in &mdash; so even someone already inside can&rsquo;t open a room they lack rights to.</p>
+      <div class="answer">
+        <p>With <code>@EnableMethodSecurity</code>, Spring wraps secured beans in an <b>AOP proxy</b> &mdash; the same mechanism as <code>@Transactional</code>. <code>@PreAuthorize</code> evaluates a <b>SpEL expression</b> <em>before</em> the method runs &mdash; <code>@PreAuthorize(&quot;hasRole('ADMIN')&quot;)</code> or, richer, <code>@PreAuthorize(&quot;#order.ownerId == authentication.name&quot;)</code>, which can reference method arguments and the authenticated principal to express ownership rules a URL pattern can&rsquo;t. <code>@PostAuthorize</code> checks <em>after</em> (useful when the decision depends on the return value), and <code>@PreFilter</code>/<code>@PostFilter</code> strip disallowed elements from collections.</p>
+        <p>Because it&rsquo;s the same proxy model, it inherits the same limits: an internal <b>self-invocation</b> (<code>this.securedMethod()</code>) bypasses the proxy, so the check never fires, and non-public methods aren&rsquo;t intercepted. It&rsquo;s also worth distinguishing <b>authorities</b> from <b>roles</b> &mdash; <code>hasRole('ADMIN')</code> is just sugar for the authority <code>ROLE_ADMIN</code>, a prefix mismatch that trips people constantly.</p>
+        <p class="arch">I treat request-level security (URL rules in the filter chain) and method security as <b>complementary layers</b>: the filter chain is the coarse front gate, while <code>@PreAuthorize</code> on the service layer is fine-grained, argument-aware authorization that still protects a method reached from a different entry point. The cautions I name: keep SpEL rules simple and <em>tested</em> (complex expressions in annotations are easy to get subtly wrong and hard to review), centralize reusable checks behind a custom permission evaluator rather than copy-pasting SpEL, and remember the self-invocation and public-method constraints so a &lsquo;guarded&rsquo; method isn&rsquo;t silently unguarded.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A service method annotated <code>@PreAuthorize</code> runs with no check when called from another method <em>in the same class</em> &mdash; why, and what does this remind you of? <span class="sc-a">Method security is <b>proxy-based</b>, so an internal <code>this.method()</code> call doesn&rsquo;t pass through the proxy and the authorization advice never runs &mdash; the exact same <b>self-invocation</b> bypass as <code>@Transactional</code>; call through an injected bean (or restructure) so the invocation crosses the proxy boundary, and keep the method public.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20security%20method%20level%20preauthorize%20postauthorize%20spel%20self%20invocation%20roles%20authorities"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: @PreAuthorize: SpEL, layers &amp; the proxy trap</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">@EnableMethodSecurity</span><span class="term">AOP proxy (like @Transactional)</span><span class="term">@PreAuthorize SpEL (args + principal)</span><span class="term">@PostAuthorize / @PostFilter</span><span class="term">hasRole = ROLE_ prefix</span><span class="term">self-invocation bypass</span><span class="term">method vs URL security</span><span class="term">defense in depth</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 6 · REACTIVE ===== -->
+  <section class="track" data-track="react">
+    <div class="track-head">
+      <div class="tno">Track 06 — Non-blocking</div>
+      <h2>Reactive &amp; scaling</h2>
+      <p>The other scaling model: how WebFlux serves huge concurrency on a handful of event-loop threads with built-in backpressure — and the single mistake that brings the whole thing down.</p>
+    </div>
+
+    <article class="scenario" data-cat="react">
+      <div class="s-top"><span class="s-no">28</span><span class="s-tag">Reactive</span></div>
+      <h3>A request flows through WebFlux</h3>
+      <p class="why"><b>Why it matters</b>The event-loop model and backpressure are a distinct approach to scaling.</p>
+      <p class="gist"><b>Analogy</b> A sushi conveyor belt, not a waiter per diner: a few chefs (event-loop threads) keep plates moving for a whole room, and if a diner eats slowly the belt is told to slow down (backpressure) rather than piling plates until they topple.</p>
+      <div class="answer">
+        <p>WebFlux runs on a small pool of <b>event-loop threads</b> (Reactor Netty by default) — roughly one per core — that must never block. A handler returns a <code>Mono</code> or <code>Flux</code> — a lazy pipeline that does nothing until <b>subscribed</b>. The framework subscribes, and as data becomes available (the DB responds, the downstream returns) <b>callbacks</b> run on event-loop threads, assembling the response without any thread sitting idle waiting. Because producer and consumer are decoupled, <b>Reactive Streams</b> provides <b>backpressure</b>: a slow consumer signals demand upstream so a fast producer can't overwhelm it.</p>
+        <p>Two mechanics you&rsquo;ll be asked to show you know. Threading is set by two operators people constantly confuse: <code>subscribeOn</code> chooses the thread the <em>source/subscription</em> runs on (position-independent), while <code>publishOn</code> switches the thread for everything <em>downstream</em> of it. And backpressure only works when the source can be slowed; a <b>hot or unbounded source</b> (a WebSocket, <code>Flux.interval</code>, sensor data) can&rsquo;t, so you pick a strategy explicitly &mdash; <code>onBackpressureBuffer</code>, <code>Drop</code>, or <code>Latest</code> &mdash; deciding whether to buffer, shed, or keep only the newest when the consumer falls behind.</p>
+        <p class="arch">The win is scaling to very high concurrency with few threads, plus built-in backpressure — great for I/O-bound, streaming, or fan-out-heavy services with slow downstreams. The costs are real: a steep learning curve, harder debugging (no linear stack traces), and everything in the path must be non-blocking end to end. I'm honest that virtual threads now cover much of the "scale blocking I/O" use case with far simpler code, so I reach for WebFlux specifically when I need streaming or explicit backpressure — not reflexively.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> What&rsquo;s the practical difference between <code>subscribeOn</code> and <code>publishOn</code> in a Reactor pipeline? <span class="sc-a"><code>subscribeOn</code> chooses the <b>Scheduler the subscription and source emission run on</b> and affects the whole chain regardless of placement; <code>publishOn</code> <b>switches the thread only for operators downstream of its position</b> &mdash; so use <code>publishOn</code> to move work onto another scheduler partway through, and <code>subscribeOn</code> to control where the source itself executes.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=reactor%20publishon%20subscribeon%20difference%20onbackpressurebuffer%20hot%20flux"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: publishOn vs subscribeOn &amp; backpressure</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">event-loop threads (Netty)</span><span class="term">non-blocking</span><span class="term">Mono / Flux (lazy, subscribe)</span><span class="term">callbacks not blocking</span><span class="term">Reactive Streams backpressure</span><span class="term">demand signalling</span><span class="term">streaming fit</span><span class="term">vs virtual threads</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="react">
+      <div class="s-top"><span class="s-no">29</span><span class="s-tag">Reactive</span></div>
+      <h3>You block the event loop</h3>
+      <p class="why"><b>Why it matters</b>It's the number-one reactive production disaster — subtle and catastrophic.</p>
+      <p class="gist"><b>Analogy</b> A sushi belt kept moving by just three chefs: if one stops to hand-carve a whole fish (a blocking call), that&rsquo;s a third of the kitchen frozen &mdash; a couple more such stalls and the belt halts for the entire room, though it looked fine at lunch&rsquo;s slow trickle.</p>
+      <div class="answer">
+        <p>Because WebFlux has only a handful of event-loop threads, a single blocking call in a reactive pipeline — a JDBC call, a synchronous HTTP client, a <code>Thread.sleep</code>, even a heavy CPU crunch — parks one of those precious threads. Do it under load and you <b>starve the event loop</b>: with every loop thread stuck, the whole application stops processing any request, not just the blocking one. It's catastrophic and non-obvious, because it works fine at low traffic and collapses under load.</p>
+        <p>Two sharper points. Offloading to <code>Schedulers.boundedElastic()</code> isn&rsquo;t a free pass &mdash; it&rsquo;s <em>bounded</em> (default ~10&times; cores), so shovelling lots of blocking work there just moves the saturation wall, it doesn&rsquo;t remove it. And because work hops threads, <b><code>ThreadLocal</code> doesn&rsquo;t follow</b> a reactive chain &mdash; MDC logging, the <code>SecurityContext</code>, and trace IDs vanish &mdash; so you carry them in the <b>Reactor <code>Context</code></b> and bridge them with the Micrometer <b>context-propagation</b> library instead of assuming a ThreadLocal is present.</p>
+        <p class="arch">This is the fragility tax of reactive — the model only holds if the <em>entire</em> path is non-blocking, and one careless dependency poisons it. The fixes: use non-blocking clients end to end; if you must call blocking code, offload it with <code>subscribeOn(Schedulers.boundedElastic())</code> so it runs off the loop; and mandate <b>BlockHound</b> in tests to detect accidental blocking on reactive threads at development time. I treat "is every library in this path non-blocking?" as a gating question before choosing WebFlux — and it's a strong argument for virtual threads when the workload is simply blocking I/O at scale, because there blocking is safe and cheap.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> After moving to WebFlux, your log lines lose their correlation/MDC IDs and <code>SecurityContextHolder</code> comes back empty in places &mdash; why, and what&rsquo;s the fix? <span class="sc-a">Reactive pipelines hop between threads, so anything in a <code>ThreadLocal</code> (MDC, Spring&rsquo;s <code>SecurityContext</code>) is lost; propagate it through the <b>Reactor <code>Context</code></b> and wire the <b>Micrometer context-propagation</b> bridge, which restores the registered ThreadLocals around each operator so logging, security and tracing work across thread switches.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=webflux%20boundedelastic%20bounded%20threadlocal%20reactor%20context%20micrometer%20context%20propagation%20mdc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Reactive threading: boundedElastic &amp; context</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">event-loop starvation</span><span class="term">blocking call poisons the loop</span><span class="term">works-at-low-load, collapses under load</span><span class="term">non-blocking clients end-to-end</span><span class="term">Schedulers.boundedElastic offload</span><span class="term">BlockHound</span><span class="term">fragility tax · vs virtual threads</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="react">
+      <div class="s-top"><span class="s-no">30</span><span class="s-tag">Reactive</span></div>
+      <h3>A reactive app queries the database (R2DBC)</h3>
+      <p class="why"><b>Why they ask</b> It&rsquo;s the piece that makes WebFlux end-to-end non-blocking &mdash; and the honest comparison against virtual threads + JDBC is a sharp architect question.</p>
+      <p class="gist"><b>Analogy</b> JDBC is a phone call you must stay on the line for until the answer comes (blocking a thread); R2DBC is texting the question and getting pinged when the reply lands &mdash; you&rsquo;re free to do other things between, which is the only way a three-thread event loop survives.</p>
+      <div class="answer">
+        <p>A reactive stack is non-blocking only if <em>every</em> hop is &mdash; and classic <b>JDBC is fundamentally blocking</b>, so a JDBC call inside WebFlux parks a precious event-loop thread and poisons the model. <b>R2DBC</b> (Reactive Relational Database Connectivity) is the non-blocking alternative: queries return <code>Mono</code>/<code>Flux</code>, results stream with backpressure, and the driver uses async I/O so no thread waits on the database. A reactive pool (<code>r2dbc-pool</code>) manages connections the way Hikari does for JDBC.</p>
+        <p>The trade-off is real: R2DBC is <b>not JPA/Hibernate</b>. There&rsquo;s no persistence context, no lazy loading, no dirty checking, no automatic relationship graph &mdash; Spring Data R2DBC is a lighter mapper where you write more explicit queries and assemble relationships yourself. You gain non-blocking, streaming reads (great for pumping large result sets with backpressure); you give up the ORM conveniences and a huge body of mature tooling.</p>
+        <p class="arch">I&rsquo;m blunt about when it&rsquo;s worth it. Reach for R2DBC when you&rsquo;ve <em>already</em> committed to WebFlux for streaming or backpressure and need the database to not break the chain &mdash; otherwise its cost (younger ecosystem, no JPA, harder queries) rarely pays off just for throughput. The Java-21 reframing I state plainly: <b>virtual threads let you keep ordinary blocking JDBC and JPA</b> and still scale I/O-bound load, so for many teams &lsquo;thread-per-request on virtual threads + JDBC&rsquo; now beats &lsquo;WebFlux + R2DBC&rsquo; on simplicity for the same scalability &mdash; R2DBC earns its place specifically where you need reactive <em>streaming</em> and end-to-end backpressure, not merely high concurrency.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A team put WebFlux in front of a normal Spring Data JPA repository and throughput collapsed under load &mdash; what&rsquo;s wrong, and what are the two valid fixes? <span class="sc-a">JPA/JDBC is <b>blocking</b>, so every repository call parks an event-loop thread and starves the loop under load; fix it either by going non-blocking end-to-end with <b>R2DBC</b>, or &mdash; to keep JDBC/JPA &mdash; by dropping WebFlux here and running thread-per-request on <b>virtual threads</b>, where blocking is cheap (at minimum, offload the blocking calls to <code>boundedElastic</code>).</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20r2dbc%20reactive%20database%20webflux%20vs%20jdbc%20virtual%20threads%20non%20blocking"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: R2DBC vs JDBC + virtual threads</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">JDBC is blocking (poisons the loop)</span><span class="term">R2DBC non-blocking driver</span><span class="term">Mono/Flux results, streaming</span><span class="term">r2dbc-pool</span><span class="term">not JPA: no context/lazy/dirty-check</span><span class="term">end-to-end non-blocking requirement</span><span class="term">vs virtual threads + JDBC</span><span class="term">use for streaming / backpressure</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ===== TRACK 7 · PRODUCTION ===== -->
+  <section class="track" data-track="prod">
+    <div class="track-head">
+      <div class="tno">Track 07 — In production</div>
+      <h2>Production &amp; resilience</h2>
+      <p>What separates a service that behaves in production from one that doesn't: correct health probes, graceful shutdown, a clean error contract, resilience around every remote call, and observability that ties it all together.</p>
+    </div>
+
+    <article class="scenario" data-cat="prod">
+      <div class="s-top"><span class="s-no">31</span><span class="s-tag">Actuator</span></div>
+      <h3>Actuator probes health, readiness, liveness</h3>
+      <p class="why"><b>Why it matters</b>Correct probe wiring is what makes a Spring Boot app behave in Kubernetes.</p>
+      <p class="gist"><b>Analogy</b> Two different questions a hospital asks: &lsquo;are you beyond saving?&rsquo; (liveness &mdash; if yes, call it) versus &lsquo;are you well enough for visitors right now?&rsquo; (readiness &mdash; if not, hold visitors but keep treating) &mdash; mix them up and you &lsquo;resuscitate&rsquo; someone who was merely busy.</p>
+      <div class="answer">
+        <p>Actuator exposes <code>/actuator/health</code>, aggregated from health indicators — DB, disk, broker, custom. Spring Boot distinguishes <b>liveness</b> and <b>readiness</b> via health groups and the <code>ApplicationAvailability</code> state, exposed at <code>/actuator/health/liveness</code> and <code>/readiness</code>, which map to Kubernetes probes. Liveness answers "is the app broken beyond recovery?" — if it fails, restart the pod. Readiness answers "can it take traffic right now?" — if it fails (still warming up, a dependency is down), pull it from the Service endpoints but don't restart. Boot flips readiness to <code>OUT_OF_SERVICE</code> automatically during startup and graceful shutdown.</p>
+        <p>Beyond liveness/readiness there&rsquo;s a <b>startupProbe</b>: a slow-booting app (big context, cache warm-up) can fail liveness and get killed <em>before it ever finishes starting</em>, so the startupProbe guards the boot window and only then hands over to liveness. Two more: don&rsquo;t expose <code>health</code> details publicly &mdash; <code>management.endpoint.health.show-details</code> and ideally a separate <b>management port</b> keep internals off the public surface; and the app can drive its own state by publishing an <code>AvailabilityChangeEvent</code> (flip to <code>OUT_OF_SERVICE</code> while draining a queue, say).</p>
+        <p class="arch">This is the readiness-versus-liveness distinction from the platform side, realized in the app — and the classic self-inflicted outage is a shared-dependency check in the <em>liveness</em> probe, so when the DB blips every pod fails liveness and restarts at once. So I keep liveness cheap and local ("is the process wedged") and put dependency checks in readiness ("don't route to me"). Correct probes plus graceful shutdown are what make rolling deploys and autoscaling actually zero-downtime.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A heavy app with a 90-second startup goes into a crash loop the moment you add a liveness probe &mdash; what did the probe configuration miss? <span class="sc-a">A <b>startupProbe</b>: without it the liveness probe starts checking during the long boot, fails before the app is ready, and Kubernetes restarts it &mdash; forever; a startupProbe (or a generous <code>initialDelaySeconds</code>) protects the startup window, and only after it passes does liveness take over.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20startup%20probe%20liveness%20readiness%20spring%20boot%20actuator%20management%20port"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: startupProbe &amp; safe health exposure</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">/actuator/health</span><span class="term">health indicators · groups</span><span class="term">ApplicationAvailability</span><span class="term">liveness (restart) vs readiness (traffic)</span><span class="term">k8s probe mapping</span><span class="term">auto OUT_OF_SERVICE</span><span class="term">cheap-local liveness</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="prod">
+      <div class="s-top"><span class="s-no">32</span><span class="s-tag">Production</span></div>
+      <h3>A Spring Boot app shuts down gracefully</h3>
+      <p class="why"><b>Why it matters</b>Graceful shutdown is the difference between clean deploys and dropped requests.</p>
+      <p class="gist"><b>Analogy</b> Closing a shop for the night properly: lock the front door to new customers, but let the people already inside finish checking out before you kill the lights &mdash; and if someone&rsquo;s taking forever, the landlord (Kubernetes) eventually cuts the power anyway (SIGKILL).</p>
+      <div class="answer">
+        <p>On <b>SIGTERM</b> (what Kubernetes sends before SIGKILL), the JVM runs shutdown hooks and Spring closes the ApplicationContext. With graceful shutdown enabled (<code>server.shutdown=graceful</code>), the embedded server stops accepting new requests but lets in-flight ones finish up to a timeout (<code>spring.lifecycle.timeout-per-shutdown-phase</code>) before closing. <code>SmartLifecycle</code> beans stop in phases, connection pools and listeners close, and readiness flips to <code>OUT_OF_SERVICE</code> so traffic is drained first. Only after that, or at the timeout, does the process exit — and if it exceeds the grace period, Kubernetes SIGKILLs it.</p>
+        <p>The subtle race the happy path hides: flipping readiness to unready doesn&rsquo;t stop traffic <em>instantly</em> &mdash; it takes a beat for endpoints to update and every kube-proxy/ingress to stop routing, so a pod can get SIGTERM and start refusing while requests are still arriving toward it. The standard cure is a <b><code>preStop</code> sleep</b> of a few seconds before SIGTERM, covering the propagation lag. Also remember non-HTTP work &mdash; Kafka/JMS listeners, <code>@Async</code> tasks, schedulers &mdash; needs its own graceful stop, and the whole budget must fit inside <code>terminationGracePeriodSeconds</code> with room for your longest request.</p>
+        <p class="arch">The sequence that makes it truly zero-downtime is: readiness goes unready → the load balancer / endpoints stop sending new traffic → in-flight requests drain → then exit — all inside the pod's <code>terminationGracePeriodSeconds</code>. The common bug is a grace period shorter than your longest request (or no graceful config at all), so deploys drop requests. This is the app-side counterpart to the SIGTERM / preStop / drain mechanics on the Kubernetes side — both halves have to agree on the timing.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Even with <code>server.shutdown=graceful</code>, a few requests still 502 during every rollout &mdash; what race is happening and what&rsquo;s the usual fix? <span class="sc-a">There&rsquo;s a lag between readiness flipping unready and all proxies/endpoints actually stopping routing, so traffic still arrives after the pod begins shutting down; add a <b><code>preStop</code> hook that sleeps a few seconds</b> (keeping the app accepting during it) so endpoint changes propagate before SIGTERM, all within <code>terminationGracePeriodSeconds</code>.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=kubernetes%20graceful%20shutdown%20prestop%20sleep%20endpoint%20propagation%20502%20spring%20boot"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: The preStop race in zero-downtime deploys</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">SIGTERM → shutdown hook</span><span class="term">context close</span><span class="term">server.shutdown=graceful</span><span class="term">timeout-per-shutdown-phase</span><span class="term">SmartLifecycle phases</span><span class="term">readiness drain</span><span class="term">terminationGracePeriodSeconds</span><span class="term">SIGKILL on timeout</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="prod">
+      <div class="s-top"><span class="s-no">33</span><span class="s-tag">Production</span></div>
+      <h3>An unhandled exception propagates</h3>
+      <p class="why"><b>Why it matters</b>A consistent error contract is a senior/architect responsibility, not an afterthought.</p>
+      <p class="gist"><b>Analogy</b> A single complaints desk (<code>@ControllerAdvice</code>) that turns any mishap into one consistent, polite form letter with a reference number &mdash; instead of each department mailing the customer a photo of the crashed machine (a raw stack trace).</p>
+      <div class="answer">
+        <p>When a controller throws, the exception unwinds to Spring's handler-exception resolvers. The clean way to control it is <code>@ControllerAdvice</code> with <code>@ExceptionHandler</code> methods — a global, centralized place mapping exception types to HTTP responses. Spring 6 standardizes the body as <b>ProblemDetail</b> (RFC 7807/9457) — a machine-readable shape with <code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>, <code>instance</code> — so clients get consistent errors, not stack traces. Bean-validation failures (<code>@Valid</code>) surface as <code>MethodArgumentNotValidException</code> you map to 400 with field errors. Anything unmapped falls through to Boot's default <code>/error</code> handling.</p>
+        <p>The gap that bites teams: <b>errors thrown in the filter chain &mdash; before the DispatcherServlet &mdash; never reach <code>@ControllerAdvice</code></b>. An authentication or authorization failure is handled by Spring Security&rsquo;s <code>AuthenticationEntryPoint</code>/<code>AccessDeniedHandler</code>, so your 401/403 bodies won&rsquo;t match your <code>ProblemDetail</code> shape unless you customise those too. For the framework&rsquo;s own MVC exceptions (unsupported media type, missing parameter) extend <code>ResponseEntityExceptionHandler</code> rather than re-catching each, and reserve <code>@ResponseStatus</code> for simple exception-to-code mappings.</p>
+        <p class="arch">I treat the error contract as part of API design: one consistent, documented shape (ProblemDetail), correct status-code semantics (400 client vs 500 server, 409 conflict, 422 unprocessable), and never leaking internals — stack traces, SQL — to clients while still logging them with a correlation/trace ID. Centralizing in <code>@ControllerAdvice</code> keeps controllers clean and the contract uniform across the service, and it pairs with the tracing story so a client-facing error maps straight to an internal trace.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Your <code>@ControllerAdvice</code> returns tidy <code>ProblemDetail</code> bodies for business errors, but 401s and 403s come back in a totally different shape &mdash; why? <span class="sc-a">Authentication/authorization failures are raised in the <b>Spring Security filter chain, before the DispatcherServlet</b>, so they bypass <code>@ControllerAdvice</code> entirely; to unify the contract you must customise Security&rsquo;s <code>AuthenticationEntryPoint</code> (401) and <code>AccessDeniedHandler</code> (403) to emit the same <code>ProblemDetail</code> shape.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=spring%20controlleradvice%20not%20catching%20401%20403%20authentication%20entry%20point%20problemdetail"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Why @ControllerAdvice misses auth errors</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">handler exception resolver</span><span class="term">@ControllerAdvice / @ExceptionHandler</span><span class="term">ProblemDetail (RFC 7807/9457)</span><span class="term">@Valid → MethodArgumentNotValidException</span><span class="term">status-code semantics</span><span class="term">no internal leakage</span><span class="term">correlation / trace ID</span><span class="term">/error fallback</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="prod">
+      <div class="s-top"><span class="s-no">34</span><span class="s-tag">Resilience</span></div>
+      <h3>A downstream dependency fails</h3>
+      <p class="why"><b>Why it matters</b>Resilience patterns are core architect material — and where a blip becomes an outage or not.</p>
+      <p class="gist"><b>Analogy</b> Not one safety device but a stack that must be ordered right: a fuse (timeout) so nothing runs forever, a breaker (circuit breaker) that trips after repeated faults, and a retry switch wired <em>outside</em> the breaker &mdash; so a retry respects a tripped breaker instead of fighting it.</p>
+      <div class="answer">
+        <p>The tool in Spring is <b>Resilience4j</b>, applied around a downstream call. A <b>timeout</b> caps how long you wait so a slow dependency can't tie up your thread. A <b>circuit breaker</b> tracks the recent failure rate; when it crosses a threshold it <b>opens</b> and fails fast for a cooldown instead of hammering a dead dependency, then goes <b>half-open</b> to test recovery before closing. A <b>retry</b> re-attempts transient failures — with exponential backoff and jitter, and ideally only for idempotent operations. A <b>bulkhead</b> limits concurrent calls to one dependency so it can't consume all your threads, a <b>rate limiter</b> caps call rate, and a <b>fallback</b> gives a degraded response when all else fails.</p>
+        <p>Composition order is a real design decision, not incidental. Resilience4j&rsquo;s default aspect order wraps <code>Retry(CircuitBreaker(RateLimiter(TimeLimiter(Bulkhead(call)))))</code> &mdash; <b>retry outside the circuit breaker</b>, so retries stop once the breaker opens instead of hammering it. Bulkheads come in two flavours: a <b>semaphore</b> bulkhead just caps concurrency on the caller&rsquo;s thread, while a <b>thread-pool</b> bulkhead runs the call on a separate pool &mdash; the only one that can actually <em>interrupt</em> a blocking call to enforce a <code>TimeLimiter</code>. And the breaker&rsquo;s <b>sliding window</b> can be count-based or time-based, which changes how fast it reacts.</p>
+        <p class="arch">The framing is that every remote call fails eventually, so resilience is designed in, not bolted on. The interplay matters: a naive retry without a circuit breaker amplifies an outage (retry storm), and a circuit breaker without a timeout can still be tied up — so I compose them: timeout + bounded retries with backoff + circuit breaker + bulkhead, with a sensible fallback. It's the application-level realization of the same cascading-failure toolkit from the platform volume, and it's what turns a downstream outage into graceful degradation instead of a cascade.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Why does Resilience4j wrap <b>retry outside</b> the circuit breaker by default, rather than retrying inside it? <span class="sc-a">So that once the breaker is <b>open</b>, the retry sees the fast <code>CallNotPermitted</code> failure and <em>stops</em>, instead of re-attempting against a dependency you&rsquo;ve already judged down &mdash; retry-inside-breaker would keep generating calls the breaker must reject, defeating the point; retry-outside means retries respect the open circuit and back off.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=resilience4j%20decorator%20order%20retry%20circuit%20breaker%20bulkhead%20semaphore%20threadpool"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Resilience4j: ordering &amp; bulkhead types</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Resilience4j</span><span class="term">timeout</span><span class="term">circuit breaker (closed/open/half-open)</span><span class="term">retry + backoff + jitter (idempotent)</span><span class="term">bulkhead</span><span class="term">rate limiter</span><span class="term">fallback / degradation</span><span class="term">compose, don't just retry</span></div></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="prod">
+      <div class="s-top"><span class="s-no">35</span><span class="s-tag">Observability</span></div>
+      <h3>A request is measured and traced (Micrometer)</h3>
+      <p class="why"><b>Why it matters</b>Spring-native observability — how metrics and traces actually get produced.</p>
+      <p class="gist"><b>Analogy</b> One sensor on the engine feeding three gauges at once &mdash; a speedometer (metric), a flight-recorder trail (trace), and the logbook (logs) &mdash; all stamped with the same trip number, so a blip on one gauge jumps you straight to that exact moment on the others.</p>
+      <div class="answer">
+        <p>Spring Boot uses <b>Micrometer</b> as its metrics facade — a vendor-neutral API that Actuator wires up, auto-instrumenting HTTP requests, the JVM (memory, GC, threads), connection pools, and more, and exporting to a backend like Prometheus via <code>/actuator/prometheus</code> (scraped, per the platform volume). Spring 6's <b>Observation API</b> unifies metrics and tracing: you record one <code>Observation</code> around an operation and it produces both a timer/metric and a trace span, and the tracing bridge (to OpenTelemetry or Zipkin) propagates the trace context across service calls — so a single request carries a trace ID through logs, metrics, and spans.</p>
+        <p>The thing that actually takes observability stacks <em>down</em> is <b>metric cardinality</b>: tag a timer with a raw URL (<code>/users/12345</code>) or a user id and you mint a new time series per value, exploding Prometheus memory &mdash; so template path variables (<code>/users/{id}</code>) and keep tag values bounded and low-cardinality. Two more architect notes: you don&rsquo;t trace 100% of requests in production &mdash; you <b>sample</b> (head- or tail-based) &mdash; and you export <b>histograms</b> (bucketed) rather than pre-computed percentiles, because percentiles can&rsquo;t be averaged across instances but histogram buckets can be aggregated.</p>
+        <p class="arch">The point I make is "one instrumentation, three signals" — the Observation API means you don't instrument metrics and traces separately, and the trace/correlation ID stitches logs, metrics, and traces together so you pivot from a latency spike to the exact slow trace to its logs. I standardize this at the platform level — a common starter, consistent low-cardinality tags, MDC correlation IDs — so every service is observable the same way, which is what makes the golden-signals and tracing story from the platform volume actually work across a Spring fleet.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> Shortly after adding a Micrometer timer tagged with the request URI, Prometheus memory balloons and queries crawl &mdash; what happened and how do you fix it? <span class="sc-a"><b>Cardinality explosion</b>: the raw URI (with ids) made a distinct time series per unique path, so the series count exploded; fix it by tagging with the <em>templated</em> route (<code>/users/{id}</code>) and keeping every tag value low-cardinality and bounded &mdash; never user ids, request ids, or raw paths as tags.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=micrometer%20prometheus%20high%20cardinality%20labels%20explosion%20trace%20sampling%20histogram%20percentiles"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Cardinality, sampling &amp; histograms</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Micrometer (metrics facade)</span><span class="term">Actuator auto-instrumentation</span><span class="term">/actuator/prometheus</span><span class="term">Observation API (metric + span)</span><span class="term">tracing bridge (OTel/Zipkin)</span><span class="term">context propagation</span><span class="term">trace / correlation ID (MDC)</span><span class="term">low-cardinality tags</span></div></div>
+      </div>
+    </article>
+    <article class="scenario" data-cat="prod">
+      <div class="s-top"><span class="s-no">36</span><span class="s-tag">Production</span></div>
+      <h3>You take a thread dump to find a hang</h3>
+      <p class="why"><b>Why they ask</b> When a service hangs or pegs a thread pool with no exception, the thread dump is the primary evidence &mdash; reading one cold is a senior skill.</p>
+      <p class="gist"><b>Analogy</b> A freeze-frame of every worker in the building at one instant: who&rsquo;s mid-task, who&rsquo;s standing idle waiting for a key someone else holds, and who&rsquo;s in a standoff where two people each wait for what the other won&rsquo;t release (a deadlock) &mdash; the photo tells you without interrogating anyone.</p>
+      <div class="answer">
+        <p>A <b>thread dump</b> (via <code>jstack &lt;pid&gt;</code>, <code>jcmd &lt;pid&gt; Thread.print</code>, or a <code>SIGQUIT</code>) is a snapshot of every thread&rsquo;s stack and <b>state</b>: <code>RUNNABLE</code> (running, or in native/socket I/O), <code>BLOCKED</code> (waiting to enter a <code>synchronized</code> monitor another thread holds), <code>WAITING</code>/<code>TIMED_WAITING</code> (parked on a lock, condition, sleep, or <code>get()</code>). The pattern diagnoses the hang: dozens of request threads all <code>BLOCKED</code> on the <em>same</em> lock points to one slow critical section; all <code>WAITING</code> to borrow a connection points to pool exhaustion; the JVM even detects and prints <b>deadlocks</b> (&lsquo;Found 1 deadlock&rsquo;) with the exact lock cycle.</p>
+        <p>Take <b>two or three dumps a few seconds apart</b> &mdash; threads stuck on the <em>same</em> frame across all of them are truly wedged, whereas threads that move are merely busy. The complement for a slow <em>leak</em> (not a hang) is a <b>heap dump</b> opened in Eclipse MAT, whose dominator tree names what&rsquo;s retaining memory &mdash; but a live heap dump pauses the JVM and can be huge, so it&rsquo;s a heavier, more deliberate tool than a thread dump.</p>
+        <p class="arch">The discipline I bring: for a hang or a saturated pool, thread dumps first &mdash; they&rsquo;re cheap, safe to take in production, and usually name the culprit (a hot lock, a blocking downstream, a deadlock, a drained connection pool) in seconds. I automate capture (dump on liveness-probe failure, or at <code>preStop</code>) so the evidence survives a restart, and reach for continuous, low-overhead profiling (<b>async-profiler</b>, JFR) to catch what a single snapshot misses. The throughline to the rest of this volume: a thread dump is where &lsquo;blocked, not busy,&rsquo; lock contention, and pool exhaustion stop being theory and become a line you can point at.</p>
+      </div>
+      <p class="selfcheck"><b>Check yourself</b> A service stops serving requests but CPU is near zero and nothing is logged &mdash; what do you capture, and what are you looking for? <span class="sc-a">Take <b>two or three thread dumps</b> (<code>jcmd Thread.print</code>/<code>jstack</code>) a few seconds apart: near-zero CPU with a hang means threads are <em>waiting</em>, not working, so look for many threads <code>BLOCKED</code> on one monitor (a hot lock), all <code>WAITING</code> for a DB connection (pool exhaustion), or a printed <b>deadlock</b> cycle &mdash; threads stuck on the same frame across all dumps are the wedged ones.</span></p>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=java%20thread%20dump%20jstack%20jcmd%20blocked%20waiting%20deadlock%20analyze%20hang"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: Reading a thread dump to find a hang</a>
+        <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">jstack / jcmd Thread.print / SIGQUIT</span><span class="term">states: RUNNABLE/BLOCKED/WAITING</span><span class="term">BLOCKED on a monitor = hot lock</span><span class="term">WAITING for connection = pool exhaustion</span><span class="term">JVM deadlock detection</span><span class="term">take several dumps, compare frames</span><span class="term">heap dump + MAT for leaks</span><span class="term">async-profiler / JFR</span></div></div>
+      </div>
+    </article>
+  </section>
+
+  <p class="noresult" id="noresult">No scenarios match that. Clear the search or pick another track.</p>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>How to rehearse:</b> read each answer aloud once at pace — the mechanism paragraphs, then the architect / senior lens. Time yourself; each should land in 2–3 minutes.<br>
+    This is the Java 21+ &amp; Spring Boot companion to the platform "What Happens When…" volumes. Filter by track to drill one area at a time; search a term to jump to it.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  var q=document.getElementById('q');
+  var chips=Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var scenarios=Array.prototype.slice.call(document.querySelectorAll('.scenario'));
+  var sections=Array.prototype.slice.call(document.querySelectorAll('section.track'));
+  var countEl=document.getElementById('count');
+  var activeCat='all';
+
+  scenarios.forEach(function(s){ s._text=(s.textContent||'').toLowerCase(); });
+
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase();
+    var shown=0;
+    scenarios.forEach(function(s){
+      var okCat=activeCat==='all' || s.getAttribute('data-cat')===activeCat;
+      var okText=!term || s._text.indexOf(term)!==-1;
+      var vis=okCat && okText;
+      s.hidden=!vis;
+      if(vis) shown++;
+    });
+    sections.forEach(function(sec){
+      var any=Array.prototype.some.call(sec.querySelectorAll('.scenario'),function(s){return !s.hidden;});
+      sec.hidden=!any;
+    });
+    countEl.innerHTML='<b>'+shown+'</b> shown';
+    document.body.classList.toggle('empty', shown===0);
+  }
+
+  chips.forEach(function(c){
+    c.addEventListener('click',function(){
+      activeCat=c.getAttribute('data-cat');
+      chips.forEach(function(x){x.setAttribute('aria-pressed', x===c ? 'true':'false');});
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+})();
+</script>
+
+</body>
+</html>

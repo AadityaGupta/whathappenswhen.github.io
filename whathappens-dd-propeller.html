@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>Propeller Thrust & Disk Loading — Why Hovering Is So Expensive · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#2E7D8A; --accent-ink:#FFFFFF; --accent-wash:#E3EFF1;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#5FC0CE; --accent-ink:#241405; --accent-wash:#132227;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#5FC0CE; --accent-ink:#241405; --accent-wash:#132227;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 05 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>Propeller Thrust &amp; Disk Loading: Why Hovering Is So Expensive</h1>
+    <p class="dek">A rotor makes lift by throwing air down &mdash; and the brutal arithmetic of momentum says the power to hover grows with thrust to the three-halves and falls only with the square root of disk area, which is why a helicopter has a huge slow rotor and your quadcopter&rsquo;s little props drain the battery in minutes.</p>
+    <div class="meta">
+      <span>&approx; 16 min read</span>
+      <span>rotors · drones · eVTOL · aerodynamics</span>
+      <span>companion to <b>Drones</b> and <b>Control Systems</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">A helicopter, a quadcopter and a Harrier jet all do the same impossible-looking thing: they hang in the air with nothing underneath them. The trick is never mysterious &mdash; each one holds itself up by throwing air downward and catching the recoil, exactly as a rocket holds itself up by throwing propellant. But the interesting question is almost never <em>can</em> it make enough thrust; a big enough motor can always make thrust. The question that decides whether a machine flies for an hour or for four minutes, whether it whispers or roars, whether it can set down beside you or blasts you off your feet, is how much <em>power</em> that thrust costs. This piece builds the answer from one fact &mdash; thrust is momentum handed to the air &mdash; and arrives at a single startling line: hover power grows as thrust to the three-halves and shrinks only as the square root of disk area. That one line explains why helicopters carry enormous slow rotors, why your drone&rsquo;s battery dies in minutes, why a jet is powerful but thirsty, and why hovering is the most expensive thing any flying machine ever does. Then it turns to the half the textbooks skip: how you size a rotor, why a design runs short on endurance, and the things that only bite once the numbers meet real blades.</p>
+
+    <h2><span class="sn">1</span>The constraint: to hover, you must throw air down</h2>
+    <p>Start with what hovering actually demands. To hold a two-tonne helicopter or a one-kilogram drone in the air, something must push <em>up</em> on it with a force equal to its weight &mdash; continuously, for every second it stays aloft. There is nothing solid to push against up there, so the only thing within reach is the air itself. A rotor is a machine for seizing air and flinging it downward; by Newton&rsquo;s third law the air pushes back on the blades with exactly the force of that downward throw, and that reaction is the thrust that carries the craft. It is the rocket&rsquo;s trick with one happy difference: a rocket must carry every gram of mass it throws, while a rotor helps itself to the practically unlimited air all around it, so it never runs out of reaction mass.</p>
+    <p>That makes thrust the easy part. A strong enough motor turning a coarse enough blade will always generate it; thrust is for sale, and the sticker price is just a bigger engine. The hard, decisive quantity is <b>power</b> &mdash; the rate at which the engine or battery must pour energy in to keep that column of air moving. And hover is the pathological case, because the craft is going nowhere: every watt it spends buys only the privilege of staying still. So the real question for any flying machine is not &ldquo;can it make thrust&rdquo; but &ldquo;how much power does that thrust cost&rdquo; &mdash; and why the answer is worst, always, in the hover. The rest of this piece is about where that power goes.</p>
+
+    <h2><span class="sn">2</span>The reframe: model the rotor as a disk that accelerates air</h2>
+    <p>Here is the move that unlocks everything, and it is a refusal to look too closely. Do <em>not</em> model the blades &mdash; their twist, their airfoils, the vortices off the tips. Replace the whole spinning rotor with a thin, idealised &ldquo;actuator disk&rdquo; of area <span class="m"><i>A</i></span> whose only job is to accelerate the air passing straight through it. Far above the disk the air is still (we are hovering). As it approaches, the disk draws it in and speeds it up; at the disk the air is moving downward at the <b>induced velocity</b> <span class="m"><i>v</i><sub>i</sub></span>; far below, in the fully formed slipstream, it has reached a final downwash speed <span class="m"><i>w</i></span>. We never ask <em>how</em> the blades do this &mdash; only that momentum is conserved, which is enough.</p>
+    <p>Now do the bookkeeping. The mass of air flowing through the disk each second is its density times the area times the speed crossing it, <span class="m">ṁ = &rho; <i>A</i> <i>v</i><sub>i</sub></span>. Thrust is the rate at which the rotor hands downward momentum to that air &mdash; mass flow times the velocity it ends up with:</p>
+    <div class="eq"><span class="m"><i>T</i> = ṁ &middot; <i>w</i> = &rho; <i>A</i> <i>v</i><sub>i</sub> <i>w</i></span><span class="lbl">thrust = momentum given to the air per second</span></div>
+    <p>One classical result ties <span class="m"><i>v</i><sub>i</sub></span> to <span class="m"><i>w</i></span> and closes the system. Froude showed that for an ideal disk the air gains exactly <em>half</em> its final speed by the time it reaches the disk, and the other half below it: <span class="m"><i>v</i><sub>i</sub> = <i>w</i>/2</span>. The intuition is that the pressure jump lives only at the disk, but the air keeps being pushed as that pressure relaxes back to ambient downstream, so the slipstream is still accelerating well below the rotor. Substitute <span class="m"><i>w</i> = 2<i>v</i><sub>i</sub></span>:</p>
+    <div class="eq"><span class="m"><i>T</i> = &rho; <i>A</i> <i>v</i><sub>i</sub> (2<i>v</i><sub>i</sub>) = 2&rho;<i>A</i> <i>v</i><sub>i</sub><sup>2</sup></span><span class="lbl">Froude: v<sub>i</sub> = w/2</span></div>
+    <p>That is the whole of momentum theory in one line, and it is worth turning around. If you know the thrust you need and the disk you have, the speed you must drag the air through it falls straight out:</p>
+    <div class="eq"><span class="m"><i>v</i><sub>i</sub> = &radic;(<i>T</i> / 2&rho;<i>A</i>)</span><span class="lbl">induced velocity at the disk</span></div>
+
+    <h2><span class="sn">3</span>The core result: why hover is the most expensive thing a rotor does</h2>
+    <p>Power is a force times the speed at which that force moves its load. The rotor&rsquo;s force on the air is the thrust <span class="m"><i>T</i></span>, and it moves that air through the disk at speed <span class="m"><i>v</i><sub>i</sub></span>, so the rotor does work on the air at a rate <span class="m"><i>P</i> = <i>T</i> <i>v</i><sub>i</sub></span>. Put in the <span class="m"><i>v</i><sub>i</sub></span> we just found and the dependence on thrust and disk area emerges naked:</p>
+    <div class="key">
+      <span class="kl">The line the whole subject turns on</span>
+      <div class="eq"><span class="m"><i>P</i><sub>ideal</sub> = <i>T</i> <i>v</i><sub>i</sub> = <span class="frac"><span class="nu"><i>T</i><sup>&#8201;3/2</sup></span><span>&radic;(2&rho;<i>A</i>)</span></span></span></div>
+      <p>The power to hover grows as thrust to the <em>three-halves</em> and falls only as the <em>square root</em> of disk area. Double the weight and hover power climbs by 2.8&times;; double the disk and power drops only by &radic;2. That lopsided pair of exponents decides the shape of every hovering machine ever built.</p>
+    </div>
+    <p>Give the key ratio its own name. <b>Disk loading</b> <span class="m">DL = <i>T</i>/<i>A</i></span> is the thrust carried by each square metre of disk &mdash; how hard you are working the air. Rewrite the induced velocity in terms of it, <span class="m"><i>v</i><sub>i</sub> = &radic;(DL / 2&rho;)</span>, and the power <em>per unit of thrust</em> &mdash; the honest efficiency measure &mdash; is just <span class="m"><i>P</i>/<i>T</i> = <i>v</i><sub>i</sub> = &radic;(DL / 2&rho;)</span>. Power per newton of lift scales with the square root of disk loading. To lift a given weight cheaply, you want the <em>lowest</em> disk loading you can manage.</p>
+    <p>Sit with the decisive feature, because everything downstream is a reading of it: hover power grows as <span class="m"><i>T</i><sup>&#8201;3/2</sup></span> and falls only as <span class="m">&radic;<i>A</i></span>, so for a fixed weight a <b>bigger disk costs far less power</b>. Spread the same lift over more area and you accelerate a larger mass of air <em>gently</em> rather than a small mass <em>violently</em> &mdash; and since power scales with the velocity you impose, gentle is cheap. That one fact is why a helicopter carries an enormous, slow rotor; why a quadcopter&rsquo;s small, fast props drain the battery in minutes; and why a ducted fan or a jet &mdash; a tiny disk shoving a thin stream of air to very high speed, so a very high disk loading &mdash; is tremendously powerful and tremendously thirsty. Watch it move:</p>
+
+    <div class="simwrap">
+      <div class="simcap">The actuator disk — air drawn in still, flung down at twice the disk speed</div>
+      <canvas class="sim" data-sim="rotordisk" data-c="#2E7D8A" aria-label="actuator disk accelerating air downward, showing induced velocity at the disk, slipstream downwash, and hover power"></canvas>
+      <div class="ctrls" data-sim="rotordisk"></div>
+    </div>
+    <p class="simnote">Drag the <em>disk area</em> and the <em>thrust</em> and watch the induced velocity <span class="m"><i>v</i><sub>i</sub> = &radic;(<i>T</i>/2&rho;<i>A</i>)</span> respond, the downwash below settle at <span class="m">2<i>v</i><sub>i</sub></span>, and the power <span class="m"><i>P</i> = <i>T</i><i>v</i><sub>i</sub></span> track them. Shrink the disk for the same thrust and the air must move much faster &mdash; the stream turns into a jet and the power meter climbs steeply. Grow the disk and the same lift comes from a slow, wide, cheap breath of air. Thrust can stay fixed while the power to make it swings by an order of magnitude; disk area is the dial.</p>
+
+    <div class="limit">
+      <b>Limit check — read the formula at its ends</b>
+      Three ends pin the physics down. <b>Infinite disk</b> (<span class="m"><i>A</i> &rarr; &infin;</span>, a glider&rsquo;s huge wing): disk loading &rarr; 0, <span class="m"><i>v</i><sub>i</sub> &rarr; 0</span>, and induced power &rarr; 0 &mdash; lift with a vanishingly gentle downwash costs almost nothing, which is exactly why gliders and sailplanes stay up on next to no power. <b>Tiny disk / high disk loading</b> (a jet): <span class="m"><i>v</i><sub>i</sub></span> and therefore power explode &mdash; enormous thrust from a sliver of area, but at a ruinous power bill, affordable only when you are going fast enough for that thrust to earn its keep. <b>Weight growth</b>: because thrust equals weight in a hover and <span class="m"><i>P</i> &prop; <i>T</i><sup>&#8201;3/2</sup></span>, hover power <span class="m">&prop;</span> weight<sup>&#8201;3/2</sup> &mdash; a craft just 20% heavier costs about <b>31% more power to hover</b> (<span class="m">1.2<sup>1.5</sup> &approx; 1.31</span>). Every gram you add to a hovering vehicle is punished at a three-halves power.</div>
+
+    <h2><span class="sn">4</span>The consequences: figure of merit, forward flight, and the tip-speed wall</h2>
+    <p>The clean formula is a floor, not a promise. A real rotor never hits <span class="m"><i>P</i><sub>ideal</sub></span>, because real blades waste power the ideal disk does not: profile drag as the blades scythe through air, losses where the tips spill air outward, and inflow that is never the perfectly uniform column the theory assumes. Fold all of that into one honest number, the <b>figure of merit</b> <span class="m">FM = <i>P</i><sub>ideal</sub> / <i>P</i><sub>actual</sub></span> &mdash; the fraction of your power that does useful lifting. A good hovering rotor runs <span class="m">FM &approx; 0.6&ndash;0.8</span>, so the real cost is <span class="m"><i>P</i><sub>actual</sub> = <i>P</i><sub>ideal</sub> / FM</span>. The flip side is <b>power loading</b> <span class="m">PL = <i>T</i>/<i>P</i></span> &mdash; newtons of thrust per watt &mdash; which, since <span class="m"><i>P</i>/<i>T</i> &prop; &radic;DL</span>, is high precisely when disk loading is low. Power loading is the number you quote when you want to brag about efficiency, and it rewards big slow rotors.</p>
+    <p>Two further facts shape everything built on this. First, <b>induced power drops in forward flight</b>. Once the craft moves, the rotor sweeps into undisturbed air and meets a far greater mass of it per second &mdash; effectively a much larger disk &mdash; so it can make the same lift by deflecting that bigger flow more gently. Hover is the worst case; a rotor in cruise is dramatically cheaper. This is the whole reason a long-range eVTOL grows wings: let a rotor shoulder the brutal hover, then hand the lift to a wing for the efficient cruise. Second, you <b>cannot simply spin faster to make thrust</b>. Blade-tip speed is capped at roughly 0.6&ndash;0.7 Mach (about 150&ndash;220 m/s) &mdash; push past it and compressibility slams drag and noise upward as the tips approach the speed of sound. So the lever for lowering disk loading is never more RPM; it is more <em>disk</em>. You grow the rotor, not the revs.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Hover power vs rotor size — same weight, bigger disk, cheaper flight</div>
+      <canvas class="sim" data-sim="hoverpower" data-c="#2E7D8A" aria-label="hover power versus rotor diameter at fixed weight, showing power falling as the disk grows and exploding as it shrinks toward a ducted fan"></canvas>
+      <div class="ctrls" data-sim="hoverpower"></div>
+    </div>
+    <p class="simnote">Hold the <em>weight</em> fixed and sweep the <em>rotor diameter</em>. As the disk grows, disk loading falls, <span class="m"><i>v</i><sub>i</sub></span> falls as <span class="m">1/&radic;<i>A</i></span>, and the hover power follows it down &mdash; a helicopter lives far to the right. Shrink the disk toward a little drone prop, then toward a ducted fan or a jet, and the curve rears up as the air is forced to move faster and faster for the same lift. Nudge the <em>figure of merit</em> and the whole curve shifts by the same factor: a &ldquo;powerful&rdquo; motor cannot rescue a bad rotor, because FM multiplies the floor the physics already set.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: sizing a rotorcraft, and how it fails</h2>
+    <p>In real design the disk-loading chain is the <em>first</em> thing you compute, not a check at the end, and every number downstream hangs off it. The sequence is always the same: start from the all-up <b>weight</b>; that fixes the <b>total thrust</b> you must make; choose a <b>disk area</b> &mdash; rotor diameter times the number of rotors &mdash; which sets the <b>disk loading</b>; disk loading gives you the <b>induced power</b>, to which you add profile power (via the figure of merit) for <b>total hover power</b>; and hover power times your target endurance sizes the <b>battery or fuel</b>, which feeds back into the weight you started from, so you iterate. When a design goes wrong it fails in a short, recognisable vocabulary &mdash; and almost every entry traces back to disk loading:</p>
+    <dl class="speclist">
+      <dt>Hover endurance well below target</dt><dd><b>Disk loading is too high</b> &mdash; the props are too small for the weight, so induced power is large &mdash; or the figure of merit is poor (bad blades). More battery fights itself; the lever is bigger rotors.</dd>
+      <dt>Drone feels sluggish and overheats in a hover</dt><dd>You are operating near <b>maximum thrust with no margin</b>: high disk loading, motors near their limit, nothing left for control authority or gusts. Grow the disk or drop the weight.</dd>
+      <dt>Far too loud</dt><dd><b>Tip speed is too high.</b> Noise climbs steeply as the tips approach transonic; the fix is a larger, slower-turning rotor at the same thrust &mdash; more disk, fewer revs &mdash; not a quieter motor.</dd>
+      <dt>Great in cruise, terrible in a hover (eVTOL)</dt><dd><b>Expected, not a fault.</b> Hover is the worst case; induced power falls in forward flight. A vehicle tuned for efficient cruise will always look power-hungry sitting still.</dd>
+      <dt>Won&rsquo;t lift the design weight at all</dt><dd>Thrust margin, disk area or motor power is short. Check that static thrust exceeds weight with headroom &mdash; and remember a prop optimised for cruise can make surprisingly little <em>static</em> thrust.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How disk loading shapes the whole vehicle</h2>
+    <p>Disk loading is the master dial of any hovering machine, and turning it moves nearly every property you care about at once. It sets <b>endurance and the fuel or battery mass</b> through hover power; it sets the <b>acoustic signature</b>, since downwash speed and tip speed both rise with it; it sets the <b>downwash velocity</b> itself (<span class="m">2<i>v</i><sub>i</sub> &prop; &radic;DL</span>), which governs brownout, flying debris and whether you dare hover over or near people; and it sets the vehicle&rsquo;s sheer <b>footprint</b>. Push the dial one way &mdash; low disk loading, big rotors &mdash; and you get a machine that is efficient, quiet and gentle on the ground, but bulky and structurally heavy, because a large rotor is a large, flexing, expensive structure. Push it the other way &mdash; high disk loading, small fans or jets &mdash; and you get something compact, fast and mechanically simple, but power-hungry, loud, and violent enough underneath to strip topsoil. Endurance, size, speed and noise are not four independent knobs; they are four faces of this one choice, which is why sizing a hovering vehicle <em>is</em>, in large part, choosing its disk loading.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>The same arithmetic governs anything that pushes on a fluid to move: helicopters (low disk loading, built for efficient hover), multirotor drones (moderate-to-high disk loading, traded for compactness and simple control), eVTOL aircraft (low hover disk loading fought against efficient cruise), ducted fans, hovercraft, marine and aircraft propellers, and even the cooling fan in your computer, which is a tiny actuator disk obeying the identical law. When you size or select one, these are the parameters that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Disk loading</dt><dd>The master number &mdash; rotor diameter chosen for the weight. It sets hover power, endurance, noise and downwash all at once. Spec the <em>lowest</em> you can fit and afford.</dd>
+      <dt>Tip speed</dt><dd>Capped near <b>150&ndash;220 m/s</b> (~0.6&ndash;0.7 Mach) by compressibility and noise. It bounds RPM for a given radius, which is why you lower disk loading by growing the disk, not spinning faster.</dd>
+      <dt>Figure of merit</dt><dd>How close the real rotor gets to the ideal floor &mdash; set by blade twist, taper, airfoil and solidity. A good FM (0.7&ndash;0.8) is worth as much as a chunk of disk area.</dd>
+      <dt>Rotor count</dt><dd>Few big rotors are efficient (low disk loading, high FM); many small rotors buy redundancy, control authority and easier packaging at a disk-loading penalty.</dd>
+      <dt>RPM &amp; motor/ESC headroom</dt><dd>Enough margin above hover RPM to accelerate, climb and fight gusts. Hovering at the motor&rsquo;s limit leaves nothing for control and cooks the electronics.</dd>
+      <dt>Ground effect</dt><dd>Within about a rotor radius of the ground, induced power drops and thrust rises &mdash; real, useful, and worth exploiting for takeoff, but gone the moment you climb away.</dd>
+      <dt>A wing, if cruise dominates</dt><dd>If the mission is mostly forward flight, add lift you don&rsquo;t pay hover power for. The rotor handles the costly hover; the wing carries the cheap cruise.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the clean derivation won&rsquo;t tell you</span>
+      <ul>
+        <li><b>Hover is the worst case, so size your power for the hover.</b> Cruise is cheaper &mdash; often far cheaper &mdash; because the rotor meets fresh air. If a design barely closes in a hover it will be comfortable everywhere else; size the motors and battery for staying still, not for cruising.</li>
+        <li><b>What matters is total disk area, so maximise it.</b> Hover efficiency is set by disk loading, not by a &ldquo;more powerful&rdquo; motor. A bigger, slower rotor beats a stronger motor on a small one every time &mdash; the physics rewards area, not horsepower.</li>
+        <li><b>You can&rsquo;t out-RPM the tip-speed limit.</b> Past ~0.6&ndash;0.7 Mach at the tips, drag and noise detonate. The only honest way to lower disk loading is to grow the disk; spinning faster just buys you a louder, less efficient rotor.</li>
+        <li><b>The figure of merit hides a multitude of sins.</b> Two rotors of identical diameter can differ by 30% in hover power purely in blade design. A &ldquo;powerful&rdquo; setup with crude, untwisted blades throws its advantage away &mdash; FM multiplies the whole bill.</li>
+        <li><b>Downwash velocity goes as &radic;DL</b>, so high-disk-loading craft blast the ground. That is brownout in a desert landing, debris and stones at a drone site, and the reason you cannot safely hover a high-DL machine over people &mdash; the physics that makes it compact also makes it dangerous underneath.</li>
+        <li><b>The three-halves law means weight is punished hard.</b> A drone that comes in 20% overweight needs roughly <b>31% more power to hover</b> (<span class="m">1.2<sup>1.5</sup></span>), which eats endurance and margin together. On a hovering vehicle, mass discipline is power discipline.</li>
+        <li><b>A propeller is optimised for one operating point.</b> Pitch and twist tuned for cruise make poor static thrust, and vice versa. The prop that gives great hover thrust is often not the one that cruises efficiently &mdash; static thrust and cruise thrust come from different blades.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">the numbers and the procedure — so you can apply it, not just follow it</span></div>
+
+    <h2><span class="sn">9</span>Build it: a quadcopter&rsquo;s hover, sized</h2>
+    <p>Enough principle &mdash; here is a real quadcopter sized end to end, so you can copy the shape and reuse it. The job: hover a 1.5 kg aircraft on four rotors, and find out how long its battery lasts. Every line below is one formula you plug into; momentum theory already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a 1.5 kg quadcopter</span>
+      <dl class="speclist">
+        <dt>Weight &rarr; thrust</dt><dd>1.5 kg &rarr; total thrust <span class="m">&approx; 15 N</span>, so <span class="m">&approx; 3.75 N</span> per rotor across four rotors. This is what each disk must make.</dd>
+        <dt>Disk area</dt><dd>Rotor diameter 0.25 m &rarr; <span class="m"><i>A</i> = &pi;(0.125)<sup>2</sup> &approx; 0.049 m&sup2;</span> per rotor.</dd>
+        <dt>Disk loading</dt><dd><span class="m">DL = 3.75 / 0.049 &approx; 76 N/m&sup2;</span> &mdash; moderate-to-high, typical for a small multirotor and the root of its short endurance.</dd>
+        <dt>Induced velocity</dt><dd><span class="m"><i>v</i><sub>i</sub> = &radic;(3.75 / (2&middot;1.225&middot;0.049)) &approx; 5.6 m/s</span>; the <b>downwash</b> below is <span class="m">2<i>v</i><sub>i</sub> &approx; 11 m/s</span> &mdash; a stiff breeze straight down.</dd>
+        <dt>Power per rotor</dt><dd>Ideal <span class="m"><i>T</i><i>v</i><sub>i</sub> &approx; 3.75 &times; 5.6 &approx; 21 W</span>; with <span class="m">FM &approx; 0.6</span> &rarr; <span class="m">&approx; 35 W</span>, so <span class="m">&times;4 &approx; 140 W</span> induced, plus profile power &rarr; on the order of <b>~180&ndash;200 W</b> to hover.</dd>
+        <dt>Endurance</dt><dd>A 74 Wh pack (4S, 5 Ah) &mdash; of which maybe 80% is usable, driving motors and ESCs only ~75% efficient &mdash; gives a realistic <b>~12&ndash;15 min</b> hover. Short, and the disk loading is why.</dd>
+      </dl>
+    </div>
+    <p>Now see the lever. <b>Double the rotor diameter</b> and the disk area quadruples; disk loading drops to a quarter; <span class="m"><i>v</i><sub>i</sub></span> halves (it goes as <span class="m">1/&radic;<i>A</i></span>); and induced power, <span class="m"><i>T</i><i>v</i><sub>i</sub></span>, halves outright &mdash; same lift, half the hover bill. That is the whole argument for big rotors in one substitution. The plug-in set is small: induced velocity <span class="m"><i>v</i><sub>i</sub> = &radic;(<i>T</i>/2&rho;<i>A</i>)</span>; ideal power <span class="m"><i>P</i><sub>ideal</sub> = <i>T</i><i>v</i><sub>i</sub> = <i>T</i><sup>&#8201;3/2</sup>/&radic;(2&rho;<i>A</i>)</span>; real power <span class="m"><i>P</i><sub>actual</sub> = <i>P</i><sub>ideal</sub>/FM</span>; disk loading <span class="m">DL = <i>T</i>/<i>A</i></span>; downwash <span class="m">= 2<i>v</i><sub>i</sub></span>; and hover power <span class="m">&prop;</span> weight<sup>&#8201;3/2</sup>.</p>
+
+    <p><b>Size one in this order.</b> The sequence matters; skipping a step just relocates the pain:</p>
+    <ol class="recipe">
+      <li><b>Weight &rarr; total thrust</b> &mdash; take the all-up mass times <span class="m"><i>g</i></span>, and add a thrust margin for climb, gusts and control (a hover-only rotor has none to spare).</li>
+      <li><b>Pick the disk area</b> &mdash; diameter times rotor count, chosen from your endurance and footprint targets &mdash; and read off the <b>disk loading</b>. Lower is cheaper; bigger is bulkier.</li>
+      <li><b>Induced power from DL</b>, then add profile power by dividing through the figure of merit &rarr; total <b>hover power</b>.</li>
+      <li><b>Battery or fuel from power &times; endurance</b> &mdash; and feed the resulting mass back into step 1, because it changed the weight. Iterate until it settles.</li>
+      <li><b>Check tip speed</b> &mdash; <span class="m">RPM &middot; <i>R</i></span> must stay under about <b>200 m/s</b>. If it doesn&rsquo;t, grow the disk and drop the RPM; do not chase thrust with revs.</li>
+      <li><b>Add a wing if cruise dominates</b> &mdash; if the mission is mostly forward flight, don&rsquo;t pay hover power for the whole trip.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Few big rotors vs many small</dt><dd>Few and large win efficiency, FM and low noise; many and small win redundancy, control authority and tidy packaging &mdash; at a disk-loading and endurance penalty.</dd>
+      <dt>Open rotor vs ducted fan</dt><dd>An open rotor is the efficient low-DL choice; a duct adds static thrust from a smaller diameter, shields the blades and people, and packages tightly &mdash; but at higher effective disk loading and power.</dd>
+      <dt>Multirotor vs wing+rotor eVTOL</dt><dd>Pure multirotor is mechanically simple and hover-native but cruise-inefficient; a lifting wing slashes cruise power at the cost of a transition and real aerodynamic design.</dd>
+      <dt>Fixed vs variable pitch</dt><dd>Fixed pitch (vary RPM) is cheap, simple and the drone norm; variable/collective pitch gives faster thrust response and efficiency across regimes, as helicopters need &mdash; at real mechanical cost.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do with real tools</b>
+      This page sizes the rotor and its hover power and endurance, and makes the disk-loading call &mdash; it does not design the blade or predict the noise. Real blade design &mdash; airfoil, twist and taper worked through <b>blade-element-momentum theory</b> &mdash; the true figure of merit, the acoustics and the forward-flight aerodynamics each need proper tools: <b>QBlade</b>, <b>QProp</b> or <b>XROTOR</b> for blade-element design, CFD for the awkward cases, and a <b>thrust stand</b> to measure what you actually built. In practice props are usually chosen off manufacturer thrust-and-power curves (APC&rsquo;s published data, say) or simply measured on the bench. Your job here is to land the diameter, the rotor count, the disk loading and the hover-power budget &mdash; and to know what every downstream knob <em>means</em> &mdash; which, after this, you do.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">A 2 kg drone hovers for 10 minutes and you need 15. A colleague says &ldquo;put in a bigger battery.&rdquo; Why is &ldquo;bigger rotors / more disk area&rdquo; usually the better move &mdash; and what happens to hover power if, instead, the drone grows to 2.5 kg?</p><span class="a">A bigger battery is more weight, and hover power goes as weight<sup>&#8201;3/2</sup>, so it partly fights itself &mdash; the extra cells must themselves be held up. More disk area instead cuts induced power as <span class="m">1/&radic;<i>A</i></span> with no inherent weight penalty, attacking the cost directly rather than feeding it. And if the craft grows to 2.5 kg, hover power scales by <span class="m">(2.5/2)<sup>1.5</sup> = 1.25<sup>1.5</sup> &approx; 1.40</span> &mdash; <b>40% more power</b>, which is exactly how a &ldquo;just add battery&rdquo; fix eats most of its own gain.</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">Why does a helicopter lift itself with a huge, slow rotor, while a jet makes its thrust from a tiny, blisteringly fast exhaust? Both are throwing air to make force &mdash; so what&rsquo;s different?</p><span class="a">Disk loading, read at opposite ends. The helicopter accelerates a <em>huge</em> mass of air <em>gently</em> &mdash; low disk loading, low induced velocity, low induced power &mdash; which is the cheap way to make lift when you&rsquo;re hovering or flying slowly. The jet accelerates a <em>small</em> mass of air <em>enormously</em> &mdash; high disk loading, high exhaust velocity &mdash; which costs a lot of power but packages tightly and, crucially, stays efficient at <em>high</em> speed, where a big slow rotor can&rsquo;t keep up. Efficiency wants low disk loading at low speed and high exhaust velocity at high speed; the two machines simply sit at the ends of the same curve.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">Your high-disk-loading octocopter kicks up debris and can&rsquo;t safely hover near people. Which physical quantity is the culprit, and what&rsquo;s the fix?</p><span class="a">The <b>downwash velocity</b>, <span class="m">2<i>v</i><sub>i</sub> = 2&radic;(DL/2&rho;)</span>, which rises as the square root of disk loading. A high-DL craft, by definition, throws a fast column of air at the ground &mdash; that&rsquo;s the debris, the brownout, the danger underneath. There is no control trick for it; the quantity is set by disk loading, so the only real fix is to <b>lower the disk loading &mdash; bigger, slower rotors / more disk area</b> &mdash; which drops <span class="m"><i>v</i><sub>i</sub></span> and with it the downwash. The very thing that made the craft compact is the thing blasting the ground.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <span class="nextpill"><b>Done:</b> Rocket equation</span>
+      <span class="nextpill"><b>Next:</b> The op-amp &amp; negative feedback</span>
+      <span class="nextpill"><b>Then:</b> H-bridge &amp; gate drive</span>
+    </div>
+    <p class="footnote"><b>Propeller Thrust &amp; Disk Loading — Why Hovering Is So Expensive.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one fact (thrust is momentum handed to the air) and the one model (the actuator disk) from which <span class="m"><i>v</i><sub>i</sub> = &radic;(<i>T</i>/2&rho;<i>A</i>)</span>, the induced power <span class="m"><i>P</i> = <i>T</i><sup>&#8201;3/2</sup>/&radic;(2&rho;<i>A</i>)</span>, disk loading and the three-halves law all fall out &mdash; then the practitioner&rsquo;s half: how you size a rotor, why a design runs short on endurance, how disk loading shapes endurance, noise and downwash, what to spec, and what the clean derivation won&rsquo;t tell you. With live simulations of the actuator disk accelerating its air, and of hover power falling as the disk grows and exploding as it shrinks toward a jet.<br>
+    Companion volumes in the portal: <b>Drones</b> and <b>Control Systems</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* rotordisk — actuator-disk / momentum theory. A vertical streamtube: wide & slow above,
+     contracting through the rotor disk (accent bar), narrowing to a fast slipstream below.
+     Air parcels flow DOWN, slow above the disk, accelerating to ~2·vᵢ below. Readout panel
+     shows disk loading, induced velocity, downwash and ideal power. State on s.*, controls
+     via s.p.KEY, s.accent = disk colour, unicode literals only in txt(). */
+  SIMS.rotordisk={
+    controls:[
+      {k:'area',label:'Disk area A',min:0.01,max:0.30,step:0.005,val:0.049,unit:' m²',fmt:function(v){return v.toFixed(3);}},
+      {k:'thrust',label:'Thrust T',min:4,max:40,step:0.5,val:15,unit:' N'}
+    ],
+    _geom:function(s,w,h){
+      var rho=1.225;
+      s.topY=28; s.botY=h-16; s.diskY=Math.round(h*0.46);
+      s.panelX=w-Math.min(134,Math.round(w*0.36));
+      s.cx=Math.round(s.panelX*0.5);
+      s.availHW=Math.max(16,s.cx-12);
+      var A=clamp(s.p.area,0.001,0.30), T=clamp(s.p.thrust,0.1,200);
+      s.vi=Math.sqrt(T/(2*rho*A));
+      s.hwDisk=clamp(Math.sqrt(A/0.30)*s.availHW*0.60,9,s.availHW*0.62);
+      s.hwTop=Math.min(s.hwDisk*1.55,s.availHW);
+      s.hwBelow=s.hwDisk*0.70711;
+    },
+    _hwAt:function(s,y){
+      if(y<=s.diskY){ var t=clamp((y-s.topY)/(s.diskY-s.topY),0,1); return lerp(s.hwTop,s.hwDisk,t); }
+      var t2=clamp((y-s.diskY)/(s.botY-s.diskY),0,1); return lerp(s.hwDisk,s.hwBelow,Math.sqrt(t2));
+    },
+    _vmul:function(s,y){
+      if(y<=s.diskY){ var t=clamp((y-s.topY)/(s.diskY-s.topY),0,1); return lerp(0.35,1.0,t); }
+      var t2=clamp((y-s.diskY)/(s.botY-s.diskY),0,1); return lerp(1.0,2.0,t2);
+    },
+    init:function(s,w,h){
+      var R=SIMS.rotordisk; R._geom(s,w,h);
+      s.par=[];
+      for(var i=0;i<48;i++){ s.par.push({fx:Math.random()*1.8-0.9, y:s.topY+Math.random()*(s.botY-s.topY), r:1.6+Math.random()*0.9}); }
+    },
+    step:function(s,dt){
+      var R=SIMS.rotordisk, w=s.canvasW||740, h=s.canvasH||250; R._geom(s,w,h);
+      var kv=5.0, span=Math.max(1,s.botY-s.topY);
+      for(var i=0;i<s.par.length;i++){ var pc=s.par[i];
+        var v=s.vi*kv*R._vmul(s,pc.y);
+        pc.y+=v*dt;
+        if(pc.y>s.botY){ pc.y=s.topY+((pc.y-s.topY)%span); pc.fx=Math.random()*1.8-0.9; }
+      }
+    },
+    draw:function(ctx,w,h,s){
+      var R=SIMS.rotordisk; R._geom(s,w,h);
+      var i,NS=40,y,x;
+      // streamtube fill
+      ctx.beginPath();
+      for(i=0;i<=NS;i++){ y=s.topY+(s.botY-s.topY)*i/NS; x=s.cx+R._hwAt(s,y); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+      for(i=NS;i>=0;i--){ y=s.topY+(s.botY-s.topY)*i/NS; x=s.cx-R._hwAt(s,y); ctx.lineTo(x,y); }
+      ctx.closePath();
+      ctx.fillStyle=s.accent; ctx.globalAlpha=0.10; ctx.fill(); ctx.globalAlpha=1;
+      // tube edges
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.45; ctx.lineWidth=1.3;
+      ctx.beginPath(); for(i=0;i<=NS;i++){ y=s.topY+(s.botY-s.topY)*i/NS; x=s.cx+R._hwAt(s,y); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.stroke();
+      ctx.beginPath(); for(i=0;i<=NS;i++){ y=s.topY+(s.botY-s.topY)*i/NS; x=s.cx-R._hwAt(s,y); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.stroke();
+      ctx.globalAlpha=1;
+      // air parcels: dot + speed streak (short slow above, long fast below)
+      ctx.lineWidth=1.6; ctx.strokeStyle=PAL.cool;
+      for(i=0;i<s.par.length;i++){ var pc=s.par[i];
+        var hw=R._hwAt(s,pc.y); x=s.cx+pc.fx*hw*0.90;
+        var v=s.vi*5.0*R._vmul(s,pc.y); var streak=clamp(v*0.05,1.5,16);
+        ctx.globalAlpha=0.75; ctx.beginPath(); ctx.moveTo(x,pc.y); ctx.lineTo(x,pc.y-streak); ctx.stroke();
+        ctx.globalAlpha=1; dot(ctx,x,pc.y,pc.r,PAL.cool);
+      }
+      // the disk (hero, accent)
+      ctx.fillStyle=s.accent; ctx.fillRect(s.cx-s.hwDisk,s.diskY-3,s.hwDisk*2,6);
+      dot(ctx,s.cx,s.diskY,3.2,s.accent);
+      txt(ctx,'rotor disk',s.cx,s.diskY-9,s.accent,9.5,'center');
+      // flow-region annotations
+      txt(ctx,'inflow — slow, wide',s.cx,s.topY+12,PAL.faint,9,'center');
+      txt(ctx,'slipstream — fast, narrow',s.cx,s.botY-5,PAL.faint,9,'center');
+      // titles / formula / insight
+      txt(ctx,'actuator disk · momentum theory',8,13,PAL.muted,9.5,'left');
+      txt(ctx,'vᵢ = √(T / 2·ρ·A)   ρ = 1.225 kg/m³',8,24,PAL.faint,8.5,'left');
+      txt(ctx,'shrink the disk → jet speeds up, power soars',8,h-4,PAL.faint,8.5,'left');
+      // readout panel
+      var T=s.p.thrust, A=s.p.area, vi=s.vi, DL=T/A, P=T*vi, dw=2*vi;
+      function nf(vv){ return vv>=100?Math.round(vv).toString():vv.toFixed(1); }
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.7; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(s.panelX,s.topY); ctx.lineTo(s.panelX,s.botY); ctx.stroke(); ctx.globalAlpha=1;
+      var px=s.panelX+10;
+      txt(ctx,'disk loading DL',px,36,PAL.faint,8.5,'left');
+      txt(ctx,nf(DL)+' N/m²',px,50,PAL.ink,12.5,'left');
+      txt(ctx,'induced vᵢ',px,82,PAL.faint,8.5,'left');
+      txt(ctx,vi.toFixed(1)+' m/s',px,96,PAL.ink,12.5,'left');
+      txt(ctx,'downwash 2·vᵢ',px,128,PAL.faint,8.5,'left');
+      txt(ctx,dw.toFixed(1)+' m/s',px,142,PAL.ink,12.5,'left');
+      txt(ctx,'ideal power P = T·vᵢ',px,172,PAL.faint,8.5,'left');
+      txt(ctx,Math.round(P)+' W',px,188,s.accent,14,'left');
+    }
+  };
+
+  /* hoverpower — hover power P vs rotor diameter D for a fixed all-up weight (T = weight).
+     A = π·D²/4 ; vᵢ = √(T/2ρA) ; P = T·vᵢ/FM = T^1.5 / (FM·√(2ρA)) ∝ 1/D. Plots the curve
+     across D = 0.1…4.0 m on autoscaled axes; falls steeply with D and rears to a wall as D→small.
+     A faint ghost = ideal power (FM 1); dropping FM pushes the actual curve up by 1/FM. Current
+     diameter marked with a guide + dot + P and disk-loading readout. Regime labels along x. */
+  SIMS.hoverpower={
+    controls:[
+      {k:'weight',label:'All-up weight',min:5,max:160,step:1,val:15,unit:' N'},
+      {k:'dia',label:'Rotor diameter D',min:0.1,max:4.0,step:0.05,val:0.25,unit:' m'},
+      {k:'fm',label:'Figure of merit',min:0.40,max:0.85,step:0.01,val:0.60,fmt:function(v){return v.toFixed(2);}}
+    ],
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var rho=1.225, Dmin=0.1, Dmax=4.0;
+      var T=clamp(s.p.weight,0.1,1000), FM=clamp(s.p.fm,0.1,1), dia=clamp(s.p.dia,Dmin,Dmax);
+      var SQ=Math.sqrt(rho*Math.PI/2);        // √(2ρA) = D·SQ
+      var T15=Math.pow(T,1.5);
+      function Pact(D){ return T15/(FM*SQ*Math.max(D,1e-4)); }
+      function Pid(D){ return T15/(SQ*Math.max(D,1e-4)); }   // ideal: FM = 1
+      var ymax=Math.max(1,Pact(Dmin)*1.08);
+      var mL=50,mR=14,mT=30,mB=48;
+      var x0=mL,x1=w-mR,y0=mT,y1=h-mB;
+      function mx(D){ return x0+(D-Dmin)/(Dmax-Dmin)*(x1-x0); }
+      function my(P){ return y1-clamp(P/ymax,0,1)*(y1-y0); }
+      function fmtP(v){ return v>=1000?(v/1000).toFixed(v>=10000?0:1)+' kW':Math.round(v)+' W'; }
+      var i,D,xx,yy,N=150;
+      // titles + formula
+      txt(ctx,'hover power vs rotor diameter',8,14,PAL.muted,10,'left');
+      txt(ctx,'P = T^1.5 / (FM·√(2·ρ·A)) ∝ 1/D',8,24,PAL.faint,8.5,'left');
+      txt(ctx,'T '+Math.round(T)+' N   FM '+FM.toFixed(2),w-10,14,PAL.ink,9.5,'right');
+      // y gridlines + labels
+      for(i=0;i<=4;i++){ var frac=i/4; yy=y1-frac*(y1-y0);
+        ctx.strokeStyle=PAL.line; ctx.globalAlpha=i?0.45:0.9; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(x0,yy); ctx.lineTo(x1,yy); ctx.stroke(); ctx.globalAlpha=1;
+        txt(ctx,fmtP(ymax*frac),x0-5,yy+3,PAL.faint,8.5,'right');
+      }
+      // axes
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x0,y1); ctx.lineTo(x1,y1); ctx.stroke();
+      // regime dividers + x ticks
+      ctx.setLineDash([3,3]); ctx.globalAlpha=0.4; ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      [0.6,2.0].forEach(function(dd){ var xd=mx(dd); ctx.beginPath(); ctx.moveTo(xd,y0); ctx.lineTo(xd,y1); ctx.stroke(); });
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      [0.1,1,2,3,4].forEach(function(dd){ var xd=mx(dd);
+        ctx.strokeStyle=PAL.line; ctx.beginPath(); ctx.moveTo(xd,y1); ctx.lineTo(xd,y1+3); ctx.stroke();
+        txt(ctx,(dd===0.1?'0.1':String(dd)),xd,y1+13,PAL.faint,8.5,'center');
+      });
+      var cS=Math.max((x0+mx(0.6))/2,x0+30), cM=(mx(0.6)+mx(2.0))/2, cL=(mx(2.0)+x1)/2;
+      txt(ctx,'ducted fan',cS,y1+25,PAL.faint,8,'center');
+      txt(ctx,'/ drone prop',cS,y1+34,PAL.faint,8,'center');
+      txt(ctx,'multirotor',cM,y1+29,PAL.faint,8.5,'center');
+      txt(ctx,'helicopter',cL,y1+29,PAL.faint,8.5,'center');
+      txt(ctx,'rotor diameter D (m)',(x0+x1)/2,h-5,PAL.muted,9,'center');
+      // ideal (ghost) curve
+      ctx.strokeStyle=PAL.muted; ctx.globalAlpha=0.55; ctx.setLineDash([4,3]); ctx.lineWidth=1.3;
+      ctx.beginPath(); for(i=0;i<=N;i++){ D=Dmin+(Dmax-Dmin)*i/N; xx=mx(D); yy=my(Pid(D)); if(i===0)ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy); } ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      // actual curve (hero, accent)
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.2;
+      ctx.beginPath(); for(i=0;i<=N;i++){ D=Dmin+(Dmax-Dmin)*i/N; xx=mx(D); yy=my(Pact(D)); if(i===0)ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy); } ctx.stroke();
+      // legend + FM insight
+      txt(ctx,'— actual (FM '+FM.toFixed(2)+')',x1-6,y0+13,s.accent,8.5,'right');
+      txt(ctx,'— ideal (FM 1.00)',x1-6,y0+25,PAL.muted,8.5,'right');
+      txt(ctx,'actual = ideal / FM  (×'+(1/FM).toFixed(2)+')',x1-6,y0+38,PAL.faint,8,'right');
+      // current-diameter marker
+      var Pc=Pact(dia), mxD=mx(dia), myP=my(Pc);
+      ctx.strokeStyle=PAL.muted; ctx.globalAlpha=0.6; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(mxD,y1); ctx.lineTo(mxD,myP); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      var pulse=3.5+1.6*(0.5+0.5*Math.sin((s.t||0)*3));
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.5; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(mxD,myP,pulse,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1;
+      dot(ctx,mxD,myP,4,s.accent);
+      // readout at marker
+      var DLc=T/(Math.PI*dia*dia/4);
+      var tx,al; if(mxD<(x0+x1)/2){ tx=mxD+8; al='left'; } else { tx=mxD-8; al='right'; }
+      var ty=clamp(myP,y0+20,y1-26);
+      txt(ctx,'D '+dia.toFixed(2)+' m',tx,ty-12,PAL.faint,8.5,al);
+      txt(ctx,Math.round(Pc)+' W',tx,ty,s.accent,13,al);
+      txt(ctx,'DL '+(DLc>=100?Math.round(DLc):DLc.toFixed(1))+' N/m²',tx,ty+13,PAL.muted,9,al);
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

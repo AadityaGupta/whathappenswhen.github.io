@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>Field-Oriented Control — How to Make a Spinning Motor Stand Still · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#ECEAE6; --surface:#FDFCFB; --surface-2:#F4F1ED;
+    --ink:#201A14; --ink-soft:#463C32; --muted:#746857; --faint:#9C8E7C;
+    --line:#DED6CB; --line-soft:#EAE4DB;
+    --accent:#B5642E; --accent-ink:#FFFFFF; --accent-wash:#F3E7DC;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#14110D; --surface:#1C1813; --surface-2:#231E18;
+      --ink:#EFEAE2; --ink-soft:#D0C6B8; --muted:#A1927E; --faint:#776A58;
+      --line:#352E25; --line-soft:#261F18;
+      --accent:#E0985E; --accent-ink:#241405; --accent-wash:#2C2013;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14110D; --surface:#1C1813; --surface-2:#231E18;
+    --ink:#EFEAE2; --ink-soft:#D0C6B8; --muted:#A1927E; --faint:#776A58;
+    --line:#352E25; --line-soft:#261F18;
+    --accent:#E0985E; --accent-ink:#241405; --accent-wash:#2C2013;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 02 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>Field-Oriented Control: How to Make a Spinning Motor Stand Still</h1>
+    <p class="dek">A brushless motor only makes smooth torque if its magnetic field stays a precise 90° ahead of a rotor that won&rsquo;t stop moving. The fix isn&rsquo;t a faster controller &mdash; it&rsquo;s a change of coordinates that makes the whole spinning problem sit still.</p>
+    <div class="meta">
+      <span>≈ 18 min read</span>
+      <span>motors · power electronics · motion control</span>
+      <span>companion to <b>Control Systems</b> and <b>Drones</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">Every electric vehicle, every drone, every robot joint and half the appliances in your house turn a three-phase brushless motor with a technique called field-oriented control. It is one of those ideas that reads as intimidating &mdash; Clarke transforms, Park transforms, d&ndash;q frames, space-vector modulation &mdash; and feels like a wall of machinery you just have to memorise. It isn&rsquo;t. All of it falls out of a single awkward fact about how a motor makes torque, plus one move so natural you would probably have reached for it yourself once you felt the problem. This piece builds the whole thing from that fact, and then turns to the half that textbooks skip: how you actually bring one up on the bench, how it shapes the machine around it, and the things that only bite you on the third prototype.</p>
+
+    <h2><span class="sn">1</span>The constraint: torque wants the field 90° ahead, and the rotor keeps moving</h2>
+    <p>A motor makes torque by pulling one magnetic field against another. The rotor carries permanent magnets &mdash; a fixed magnetic arrow. The stator (the windings you control) makes a second field whose direction and strength you set by choosing the three phase currents. The torque between them is largest when the two fields are <b>perpendicular</b>: a stator field pointing straight at the rotor&rsquo;s pole just pulls radially and spins nothing, while a field 90° (electrical) ahead pulls entirely sideways, all torque.</p>
+    <div class="eq"><span class="m"><i>T</i> = <i>T</i><sub>max</sub> · cos <i>δ</i></span><span class="lbl">δ = error from the ideal 90°</span></div>
+    <p>So the job is simply stated: keep the stator field a quarter-turn ahead of the rotor, always. The catch is in that last word. The rotor is <em>spinning</em> &mdash; at a few thousand RPM its field sweeps through a full electrical revolution hundreds of times a second &mdash; so &ldquo;90° ahead&rdquo; is a target that races around the circle. In a brushed motor a mechanical commutator does this switching automatically as the shaft turns; that is the one thing the brushes are <em>for</em>. Take the brushes away (for the efficiency, the lifetime, the lack of sparking) and the responsibility lands on you: you must drive the three phase currents so their combined field tracks a moving target precisely.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Torque needs the stator field 90° ahead — lose the angle, lose the torque</div>
+      <canvas class="sim" data-sim="focfield" data-c="#B5642E" aria-label="FOC 90-degree field rule and torque versus angle error"></canvas>
+      <div class="ctrls" data-sim="focfield"></div>
+    </div>
+    <p class="simnote">The rotor&rsquo;s magnet (one arrow) spins; the controller holds the stator field (the other arrow) ahead of it. Dial the <em>advance error</em> <span class="m"><i>δ</i></span> away from the ideal 90° and watch the torque gauge follow <span class="m">cos <i>δ</i></span> &mdash; at 90° of error the field points straight at the pole and the torque collapses to zero. This is why knowing the rotor&rsquo;s angle is everything.</p>
+
+    <h2><span class="sn">2</span>The reframe: stop chasing the rotor — ride with it</h2>
+    <p>Here is the move. You are struggling because every quantity in the problem is a fast sinusoid: each phase current swings <span class="m"><i>i</i><sub>A</sub> = <i>I</i> cos <i>θ</i><sub>e</sub></span>, <span class="m"><i>i</i><sub>B</sub></span> and <span class="m"><i>i</i><sub>C</sub></span> lag by 120°, and the field they make is an arrow spinning around the circle at the electrical frequency. Trying to regulate a target that is itself whirling is what makes it hard &mdash; any simple controller is always chasing a value that has already moved on.</p>
+    <p>So change your point of view. First collapse the three redundant phase currents (they always sum to zero) into a single current <em>vector</em> on two fixed axes &mdash; that is the <b>Clarke transform</b>, pure geometry, three projections onto two:</p>
+    <div class="eq"><span class="m"><i>i</i><sub>α</sub> = <i>i</i><sub>A</sub> &minus; ½<i>i</i><sub>B</sub> &minus; ½<i>i</i><sub>C</sub>,&nbsp;&nbsp;&nbsp;&nbsp;<i>i</i><sub>β</sub> = <span class="frac"><span class="nu">√3</span><span>2</span></span>(<i>i</i><sub>B</sub> &minus; <i>i</i><sub>C</sub>)</span></div>
+    <p>Now you have one vector spinning in the (α, β) plane. Then &mdash; the key step &mdash; <b>rotate your coordinate frame by the rotor angle</b> <span class="m"><i>θ</i><sub>e</sub></span> so your axes spin <em>with</em> the rotor. That is the <b>Park transform</b>:</p>
+    <div class="eq"><span class="m"><i>i</i><sub>d</sub> = <i>i</i><sub>α</sub> cos <i>θ</i><sub>e</sub> + <i>i</i><sub>β</sub> sin <i>θ</i><sub>e</sub>,&nbsp;&nbsp;&nbsp;&nbsp;<i>i</i><sub>q</sub> = &minus;<i>i</i><sub>α</sub> sin <i>θ</i><sub>e</sub> + <i>i</i><sub>β</sub> cos <i>θ</i><sub>e</sub></span></div>
+    <p>In this rotating frame the whirling stops. A current vector that was racing around the circle now sits <em>still</em>, described by two steady numbers: <span class="m"><i>i</i><sub>d</sub></span>, pointing along the rotor&rsquo;s magnet (the &ldquo;direct&rdquo; axis), and <span class="m"><i>i</i><sub>q</sub></span>, pointing 90° ahead of it (the &ldquo;quadrature&rdquo; axis). The impossible job of regulating fast AC has become the easy job of holding two DC values.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Three phase currents (AC) become two numbers (DC) in the rotor frame</div>
+      <canvas class="sim" data-sim="focpark" data-c="#B5642E" aria-label="Clarke and Park transform collapsing three-phase AC to DC"></canvas>
+      <div class="ctrls" data-sim="focpark"></div>
+    </div>
+    <p class="simnote">On the left, the three phase currents sweep as sinusoids; speed the motor up and they oscillate faster. On the right, the same currents after Clarke + Park: two <em>flat</em> lines. No matter how fast the motor spins, <span class="m"><i>i</i><sub>d</sub></span> and <span class="m"><i>i</i><sub>q</sub></span> hold steady &mdash; because you are now watching from the rotor&rsquo;s own frame. That is the entire trick.</p>
+
+    <h2><span class="sn">3</span>The core result: torque is just <span class="m"><i>i</i><sub>q</sub></span></h2>
+    <p>Recall the 90°-ahead rule. In the rotating frame, &ldquo;90° ahead of the rotor&rsquo;s magnet&rdquo; is <em>exactly the q-axis</em>. So the torque-producing part of your current is simply <span class="m"><i>i</i><sub>q</sub></span>, and the part pointing uselessly at the magnet is <span class="m"><i>i</i><sub>d</sub></span>. For a surface-magnet motor the torque is linear and clean:</p>
+    <div class="key">
+      <span class="kl">The result the whole method exists to reach</span>
+      <div class="eq"><span class="m"><i>T</i> = <span class="frac"><span class="nu">3</span><span>2</span></span> <i>P</i> <i>λ</i><sub>m</sub> <i>i</i><sub>q</sub></span></div>
+      <p>Commanding torque <em>is</em> commanding <span class="m"><i>i</i><sub>q</sub></span> (<span class="m"><i>P</i></span> = pole pairs, <span class="m"><i>λ</i><sub>m</sub></span> = magnet flux). You run two simple PI loops on steady DC errors &mdash; one driving <span class="m"><i>i</i><sub>d</sub></span> to zero (don&rsquo;t waste current pushing on the magnet), one driving <span class="m"><i>i</i><sub>q</sub></span> to the torque you want &mdash; then rotate the result back out (inverse Park, inverse Clarke) and realise it with the switches. Three sinusoids go to the motor; two calm DC loops do the thinking.</p>
+    </div>
+    <p>Everything that looked like machinery is now plumbing: the transforms are coordinate changes, space-vector modulation is just how you ask three half-bridges to synthesise the voltage vector you computed. The intellectual content is one sentence &mdash; <em>watch the currents from the rotor&rsquo;s frame and torque becomes a single DC knob</em>.</p>
+    <div class="limit">
+      <b>Limit check — the rotor angle is load-bearing</b>
+      Every transform above used <span class="m"><i>θ</i><sub>e</sub></span>, the rotor&rsquo;s electrical angle. Feed in an angle that is wrong by <span class="m"><i>δ</i></span> and your &ldquo;q-axis&rdquo; current lands <span class="m"><i>δ</i></span> off from true 90°, so torque drops as <span class="m">cos <i>δ</i></span> &mdash; the same curve from §1, now as a <em>control</em> error rather than a physical one. At 90° of angle error you command full current and get zero torque (and a lot of heat). This is why half of FOC bring-up is really about measuring the rotor angle accurately, and why a good position sensor &mdash; or a good estimator &mdash; is the real heart of the system.</p>
+    </div>
+
+    <h2><span class="sn">4</span>Why not just switch the phases in steps? And the speed ceiling</h2>
+    <p>The older, simpler answer is <b>six-step (trapezoidal) commutation</b>: chop the electrical revolution into six sectors and energise a fixed pair of phases in each. It needs only crude rotor sensing (three Hall switches) and no transforms, and it is why cheap drone ESCs and fans have run it for decades. But because the field jumps between six fixed directions instead of rotating smoothly, the angle to the rotor wanders ±30° within each sector, and the torque ripples with it &mdash; a roughly 14% peak-to-peak throb at six times the electrical frequency. FOC keeps the field continuously at 90°, so the torque is flat.</p>
+    <div class="simwrap">
+      <div class="simcap">Six-step vs FOC — the torque ripple you can hear</div>
+      <canvas class="sim" data-sim="focripple" data-c="#B5642E" aria-label="six-step versus FOC torque ripple comparison"></canvas>
+      <div class="ctrls" data-sim="focripple"></div>
+    </div>
+    <p class="simnote">Instantaneous torque over one electrical revolution: six-step lumps along with ~14% ripple at 6× the electrical frequency (you hear it as whine and feel it as cogging), while FOC holds a flat line at the same average. The ripple is the price of letting the field jump instead of rotate.</p>
+    <p>One consequence is worth carrying forward, because it reappears as a design limit everywhere. As the motor speeds up, its back-EMF &mdash; the voltage the spinning magnet induces &mdash; grows until it approaches your DC-bus voltage, and the inverter can no longer push more current: that is the motor&rsquo;s <b>base speed</b>. To go faster you deliberately inject a <em>negative</em> <span class="m"><i>i</i><sub>d</sub></span>, using the axis you were holding at zero to partially cancel the magnet&rsquo;s flux. This <b>field weakening</b> trades torque for speed and gives you the constant-power region above base speed &mdash; the reason an EV keeps accelerating past the speed where its motor &ldquo;should&rdquo; have run out of voltage. The d-axis you thought was wasted is your high-speed gear.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives in the design, and how it fails on the bench</h2>
+    <p>FOC is the <b>innermost loop</b> of a motion system. From the inside out you have the current (torque) loop running fastest &mdash; typically 10&ndash;20 kHz, once per PWM cycle &mdash; then a velocity loop around it, then a position loop around that, each roughly five to ten times slower than the one it wraps. You design and tune them in that order: a wobbly current loop makes every outer loop hopeless, so you get FOC solid first. A useful back-of-envelope: the current loop&rsquo;s natural bandwidth is set by the motor&rsquo;s electrical time constant <span class="m"><i>L</i>/<i>R</i></span>, and the PI gains follow directly from <span class="m"><i>L</i></span> and <span class="m"><i>R</i></span> &mdash; which is why the first thing a modern drive does at commissioning is measure (or auto-identify) phase resistance and inductance.</p>
+    <p>Commissioning almost always runs in this sequence: identify <span class="m"><i>R</i></span> and <span class="m"><i>L</i></span> &rarr; find the <b>encoder/rotor alignment offset</b> (where is electrical zero?) &rarr; tune the current loop &rarr; close velocity &rarr; close position. And the failures cluster into a short, recognisable list:</p>
+    <dl class="speclist">
+      <dt>Draws current, gets hot, barely turns</dt><dd>Rotor-angle alignment is wrong, or two phases / the encoder direction are swapped &mdash; you&rsquo;re commanding current off the q-axis, so <span class="m">cos <i>δ</i></span> is killing your torque.</dd>
+      <dt>Works one way, bucks the other</dt><dd>Encoder offset has the wrong sign, or pole-pair count is off &mdash; the electrical angle tracks correctly in one direction only.</dd>
+      <dt>Audible whine, once-per-rev wobble</dt><dd>Current-sensor offset/gain mismatch between phases (calibrate at zero current), or the current loop tuned too aggressively and singing on PWM noise.</dd>
+      <dt>Loses control at high speed</dt><dd>You hit the back-EMF / bus-voltage ceiling and field weakening isn&rsquo;t enabled or is mistuned.</dd>
+      <dt>Rough torque at 6× electrical</dt><dd>Inverter dead-time distortion uncompensated, or you&rsquo;re actually still in six-step.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How it shapes the machine around it</h2>
+    <p>The quality of the current loop propagates into properties you&rsquo;d never think to trace back to a coordinate transform. Smooth torque means a quiet, low-vibration machine &mdash; which matters enormously on a drone, where motor vibration is the dominant noise injected into the IMU, and on a camera gimbal or an EV cabin where people feel every ripple. Efficiency rises because current is always doing useful (q-axis) work rather than heating the windings uselessly, and since copper loss scales with <span class="m"><i>i</i><sup>2</sup></span>, the current limit you can sustain sets the motor&rsquo;s thermal envelope &mdash; which in turn sizes the magnets, the inverter FETs, and the cooling. The torque <em>bandwidth</em> &mdash; how fast the loop can change torque &mdash; is exactly how tight a robot joint can be and how aggressively a drone can snap an attitude correction. And field weakening sets the top speed, which decides your gear ratio. A great many of a machine&rsquo;s headline numbers &mdash; range, noise, agility, top speed, continuous torque &mdash; trace back through the current loop to this one idea.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to keep in mind</h2>
+    <p>Anywhere a brushless or synchronous motor needs smooth, efficient, controllable torque: EV traction inverters, drone and eVTOL ESCs, robot joints and collaborative-robot actuators, CNC and industrial servos, e-bikes, hard-drive and fan spindles, and the compressors in heat pumps, fridges and washing machines. When you choose or design one, the parameters that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Rotor-position source</dt><dd>Encoder/resolver (accurate, costly, wiring) vs Hall sensors (cheap, coarse) vs <b>sensorless</b> back-EMF/observer (no sensor, but blind near zero speed). The single biggest architecture decision.</dd>
+      <dt>PWM frequency</dt><dd>Higher cuts current ripple and audible noise but raises switching loss &mdash; a trade against your FETs and heatsink.</dd>
+      <dt>Dead-time</dt><dd>Must be long enough to prevent shoot-through, short enough not to distort the voltage &mdash; and you almost always need dead-time <em>compensation</em>.</dd>
+      <dt>Current sensing</dt><dd>Shunt placement (inline vs low-side) and sample timing relative to the PWM edge decide how clean your <span class="m"><i>i</i><sub>d</sub></span>,<span class="m"><i>i</i><sub>q</sub></span> are.</dd>
+      <dt>DC-bus voltage vs back-EMF</dt><dd>Sets base speed and how much field weakening you&rsquo;ll need for your top-speed target.</dd>
+      <dt>SPMSM vs IPMSM</dt><dd>Interior-magnet motors add reluctance torque, so <span class="m"><i>i</i><sub>d</sub></span> isn&rsquo;t simply held at zero &mdash; you track a maximum-torque-per-amp (MTPA) curve.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the datasheet won&rsquo;t tell you</span>
+      <ul>
+        <li>The <b>rotor-alignment offset</b> is the number-one bring-up headache. Get its value or sign slightly wrong and the motor <em>almost</em> works &mdash; runs, warms, turns weakly &mdash; which is far more confusing than a dead failure. Budget real bench time for finding electrical zero.</li>
+        <li><b>Sensorless FOC is blind at a standstill.</b> Back-EMF is what it listens to, and a stopped motor makes none, so you need an open-loop forced start or high-frequency injection to get moving. Plenty of shipping products hide a &ldquo;kick to start&rdquo; behind a clean spec sheet.</li>
+        <li><b>Dead-time compensation is the quiet secret behind smoothness.</b> The textbook derivation ignores it; the product lives or dies by it. Uncompensated dead-time is the usual culprit when FOC still sounds rough.</li>
+        <li>Always use the <b>electrical</b> angle &mdash; pole-pairs × mechanical angle. Forgetting to multiply by pole pairs is a rite-of-passage first bug: the motor cogs and stutters because your frame rotates at the wrong rate.</li>
+        <li>A <b>once-per-revolution</b> wobble is almost never mechanical &mdash; it&rsquo;s current-sensor offset or scale mismatch between phases. Calibrate the sensors at zero current before you chase the mechanics.</li>
+        <li>The efficiency and range wins everyone quotes live in <b>MTPA and field weakening</b>, and both are model-sensitive: magnetic saturation makes <span class="m"><i>λ</i><sub>m</sub></span> and the inductances drift with current, so a model tuned at low current lies at high current.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">the numbers and the procedure — so you can apply it, not just follow it</span></div>
+
+    <h2><span class="sn">9</span>Build it: one motor, end to end</h2>
+    <p>Enough principle &mdash; here is the actual chain of numbers, with a concrete motor, so you can copy it once and reuse the shape. Take a typical robotics/drone brushless motor: <b>7 pole-pairs, phase resistance <span class="m"><i>R</i></span> = 0.08 Ω, phase inductance <span class="m"><i>L</i></span> = 25 µH, <span class="m"><i>K</i><sub>v</sub></span> = 270 RPM/V</b>, run from a <b>24 V</b> bus at <b>30 kHz</b> PWM. Four numbers decide the design, and each is a one-line formula you plug into &mdash; the method already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — the four numbers that size an FOC drive</span>
+      <dl class="speclist">
+        <dt>Base / no-load speed</dt><dd><span class="m"><i>n</i> ≈ <i>K</i><sub>v</sub> · <i>V</i><sub>bus</sub></span> = 270 × 24 ≈ <b>6,500 RPM</b> &mdash; the speed where back-EMF meets the bus (loaded, a little less). Need more? That gap is what field weakening buys.</dd>
+        <dt>Current-loop bandwidth</dt><dd>Set it to ≈ 1/10 of the PWM rate: <span class="m">ω<sub>c</sub> = 2π·(<i>f</i><sub>pwm</sub>/10)</span> = 2π·3000 ≈ <b>18,800 rad/s</b> (≈ 3 kHz) &mdash; crisp torque without amplifying PWM noise.</dd>
+        <dt>PI gains (plug straight in)</dt><dd><span class="m"><i>K</i><sub>p</sub> = ω<sub>c</sub>·<i>L</i></span> = 18,800 × 25µH ≈ <b>0.47 V/A</b>; &nbsp;<span class="m"><i>K</i><sub>i</sub> = ω<sub>c</sub>·<i>R</i></span> = 18,800 × 0.08 ≈ <b>1,500 V/(A·s)</b>. The PI zero at <span class="m"><i>R</i>/<i>L</i></span> cancels the motor's electrical pole, leaving a clean first-order loop.</dd>
+        <dt>Current ripple (a reality check)</dt><dd><span class="m">Δ<i>I</i><sub>pp</sub> ≈ <i>V</i><sub>bus</sub> / (4·<i>L</i>·<i>f</i><sub>pwm</sub>)</span> = 24 / (4·25µH·30k) ≈ <b>8 A peak-to-peak</b>. On a low-inductance motor that's large &mdash; which is <em>why</em> small motors force high PWM frequencies (or added inductance). This one line is why a drone ESC switches at 30&ndash;50 kHz, not 10.</dd>
+      </dl>
+    </div>
+    <p>That is the whole point of the method made concrete: three datasheet numbers (<span class="m"><i>R</i></span>, <span class="m"><i>L</i></span>, <span class="m"><i>K</i><sub>v</sub></span>) plus your bus and PWM choice hand you the gains to type in, the speed you'll reach, and a warning that your ripple is high &mdash; no transforms by hand, no controls theory at the keyboard.</p>
+
+    <p><b>Bring it up in this order.</b> Commissioning almost always runs the same sequence; skipping a step just relocates the pain:</p>
+    <ol class="recipe">
+      <li><b>Identify <span class="m"><i>R</i></span> and <span class="m"><i>L</i></span></b> — measure, or let the drive auto-ID. Every gain below depends on them.</li>
+      <li><b>Fix phase order &amp; sensor direction</b> — a swapped phase or a backwards encoder makes everything downstream chase the wrong way.</li>
+      <li><b>Find electrical zero (alignment)</b> — align the rotor to a known angle and store the offset. This is the step that most often goes wrong; spend real bench time here.</li>
+      <li><b>Set the current loop</b> from <span class="m"><i>K</i><sub>p</sub>=ω<sub>c</sub><i>L</i></span>, <span class="m"><i>K</i><sub>i</sub>=ω<sub>c</sub><i>R</i></span>, then verify a clean torque step &mdash; fast, no overshoot.</li>
+      <li><b>Close velocity, then position</b> — each roughly 5&ndash;10× slower than the loop it wraps.</li>
+      <li><b>Enable field weakening</b> only if you need speed past base &mdash; and only with a motor model you trust.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Encoder vs sensorless</dt><dd>Need torque from <em>zero</em> speed (a robot joint, traction, anything that holds position)? You need a real position sensor. Only ever spinning fast (a fan, a pump, a prop in flight)? Sensorless drops the sensor and its wiring &mdash; you accept a managed open-loop start.</dd>
+      <dt>FOC vs six-step</dt><dd>Smoothness, low speed, efficiency or quiet matter → FOC. Dirt-cheap, always-fast, ripple-tolerant (a cooling fan) → six-step is simpler and fine.</dd>
+      <dt>PWM frequency</dt><dd>Set by inductance: low-<span class="m"><i>L</i></span> motors (drones) force 30&ndash;50 kHz to tame ripple; high-<span class="m"><i>L</i></span> industrial motors run happily at 8&ndash;16 kHz with less switching loss.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do on hardware</b>
+      Two things this page cannot do for you, and honestly no article can. <b>Electrical-zero alignment on your actual motor and sensor</b> is a physical calibration &mdash; you run the drive's alignment routine once and store the number. And the <b>final gain trim</b>: the formulas above land you in the right ballpark on the first try, but you&rsquo;ll nudge them against a real step response. When you get to that bench, don&rsquo;t hand-roll the loop &mdash; stand on a proven implementation and tune <em>its</em> knobs: <b>SimpleFOC</b> (Arduino/ESP, ideal for learning and small robots), <b>ODrive</b> or <b>VESC</b> (robotics and e-mobility, open and well-documented), or your MCU vendor's library (<b>TI InstaSPIN / MotorControl SDK</b>, <b>ST Motor Control SDK</b>). Your job is to know what their knobs <em>mean</em> &mdash; which, after this, you do.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">Your new motor draws its rated current and gets warm, but produces almost no torque and barely spins. Nothing is mechanically jammed. What is the single most likely cause, and why does &ldquo;draws current but no torque&rdquo; point straight at it?</p><span class="a">The rotor-angle reference (encoder alignment offset / electrical zero) is wrong. Torque is <span class="m"><i>T</i> = <i>T</i><sub>max</sub> cos <i>δ</i></span> where <span class="m"><i>δ</i></span> is the error between your commanded q-axis and true 90°; a large <span class="m"><i>δ</i></span> means the current is pushing almost straight at the magnet &mdash; full copper loss (hence the heat and current) with almost no sideways pull (hence no torque). A mechanical jam would instead trip overcurrent or stall hard.</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">Why does transforming into the rotating d&ndash;q frame make the controller&rsquo;s job easy, when the three phase currents are fast sinusoids?</p><span class="a">A PI controller drives a <em>steady</em> error to zero; it lags and never catches a continuously moving target. In the frame that rotates with the rotor, a constant torque demand corresponds to constant <span class="m"><i>i</i><sub>d</sub></span>,<span class="m"><i>i</i><sub>q</sub></span> &mdash; the AC vanishes, the setpoints stop moving, and two ordinary PI loops on DC errors suffice. The transform doesn&rsquo;t change the physics; it changes the vantage point so the problem stops moving.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">Your motor runs out of speed well below where you need it, even at full current. You can&rsquo;t raise the battery voltage. What can you do in the control, and what does it cost you?</p><span class="a">Apply field weakening: inject a negative <span class="m"><i>i</i><sub>d</sub></span> to partially cancel the rotor&rsquo;s flux, lowering the back-EMF so the inverter can keep pushing current past base speed. The cost is torque &mdash; you&rsquo;re spending current on the d-axis instead of the q-axis, so you enter the constant-power region where torque falls as speed rises. It also stresses the magnets and demands a good motor model, since over-weakening risks loss of control.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <span class="nextpill"><b>Done:</b> FMCW ranging</span>
+      <span class="nextpill"><b>Next:</b> The involute gear tooth</span>
+      <span class="nextpill"><b>Then:</b> The rocket equation &amp; staging</span>
+    </div>
+    <p class="footnote"><b>Field-Oriented Control — How to Make a Spinning Motor Stand Still.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one fact (torque wants the field 90° ahead) and the one move (ride in the rotor&rsquo;s frame) from which Clarke, Park, <span class="m"><i>T</i> ∝ <i>i</i><sub>q</sub></span> and field weakening all fall out &mdash; then the practitioner&rsquo;s half: where it sits in the loop stack, how it fails on the bench, how it shapes the machine, what to spec, and what the datasheet won&rsquo;t tell you. With live simulations of the 90°-ahead torque rule, the Clarke/Park AC&rarr;DC collapse, and six-step-vs-FOC ripple.<br>
+    Companion volumes in the portal: <b>Control Systems</b> and <b>Drones</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#746857';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+  /* focpark — Park/Clarke: 3-phase AC collapses to 2 DC in the rotor frame.
+     Left: iA,iB,iC sinusoids 120° apart at ωe. Middle: current vector glued to the
+     rotating q-axis. Right: i_d≈0 and i_q=command, flat DC no matter the speed.
+     The controller injects current on the q-axis (90° ahead of the rotor), so
+     i_d=iα·cosθe+iβ·sinθe → 0 and i_q=−iα·sinθe+iβ·cosθe → command.
+     Torque T = (3/2)·P·λ_m·i_q, so torque ∝ i_q. */
+  SIMS.focpark={
+    controls:[
+      {k:'iqc',label:'i_q command (torque)',min:0,max:1,step:0.05,val:0.70,fmt:function(v){return v.toFixed(2);}},
+      {k:'we',label:'Electrical speed ωe',min:1,max:14,step:0.5,val:5,unit:' rad/s'}
+    ],
+    init:function(s){ s.theta=0; },
+    step:function(s,dt){
+      var we=s.p.we||5, g=0;
+      s.theta=(s.theta||0)+we*dt;
+      while(s.theta>6.2831853 && g<8){ s.theta-=6.2831853; g++; }
+    },
+    draw:function(ctx,w,h,s){
+      var HP=1.5707963, T23=2.0943951, SP=6.2831853, R3=1.7320508;
+      var I=clamp(s.p.iqc,0,1), th=s.theta||0;
+      var top=30, bot=h-40, mid=(top+bot)/2, amp=Math.max(6,(bot-top)/2-4);
+      var lx0=10, lx1=Math.max(lx0+40, w*0.40);
+      var rx1=w-10, rx0=Math.min(rx1-40, w*0.60);
+      txt(ctx,'3-phase AC → 2 DC (rotor frame) · torque ∝ i_q',10,13,PAL.muted,10,'left');
+
+      /* ---- left panel: three stator currents (AC) ---- */
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.55; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(lx0,mid); ctx.lineTo(lx1,mid); ctx.stroke(); ctx.globalAlpha=1;
+      var cols=72, span=4*Math.PI;
+      var phases=[{sh:0,c:PAL.cool},{sh:T23,c:PAL.warn},{sh:-T23,c:PAL.viol}];
+      for(var pI=0;pI<3;pI++){ var sh=phases[pI].sh;
+        ctx.strokeStyle=phases[pI].c; ctx.lineWidth=1.8; ctx.lineJoin='round'; ctx.beginPath();
+        for(var c=0;c<=cols;c++){ var u=c/cols, ang=th-(1-u)*span;
+          var val=I*Math.cos(ang+HP-sh), x=lx0+u*(lx1-lx0), y=mid-val*amp;
+          if(c===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        ctx.stroke();
+      }
+      txt(ctx,'iA iB iC — stator currents',lx0,top-4,PAL.faint,9,'left');
+      txt(ctx,'ωe '+(s.p.we||5).toFixed(1),lx1,top-4,PAL.faint,9,'right');
+
+      /* ---- middle: (α,β) plane, current vector locked to rotating q-axis ---- */
+      var mcx=(lx1+rx0)/2, mcy=mid, mR=Math.max(8, Math.min((rx0-lx1)/2-8, amp*0.74));
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(mcx,mcy,mR,0,SP); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mcx-mR-4,mcy); ctx.lineTo(mcx+mR+4,mcy);
+      ctx.moveTo(mcx,mcy+mR+4); ctx.lineTo(mcx,mcy-mR-4); ctx.stroke(); ctx.globalAlpha=1;
+      txt(ctx,'α',mcx+mR+6,mcy+3,PAL.faint,9,'left');
+      txt(ctx,'β',mcx+4,mcy-mR-5,PAL.faint,9,'left');
+      ctx.setLineDash([4,3]);
+      var dex=mcx+mR*Math.cos(th), dey=mcy-mR*Math.sin(th);
+      var qex=mcx+mR*Math.cos(th+HP), qey=mcy-mR*Math.sin(th+HP);
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(mcx,mcy); ctx.lineTo(dex,dey); ctx.stroke();
+      ctx.strokeStyle=PAL.cool; ctx.beginPath(); ctx.moveTo(mcx,mcy); ctx.lineTo(qex,qey); ctx.stroke();
+      ctx.setLineDash([]);
+      txt(ctx,'d',dex+(Math.cos(th)>=0?3:-10),dey+3,PAL.muted,9,'left');
+      txt(ctx,'q',qex+3,qey+3,PAL.cool,9,'left');
+      var L=I*mR, va=th+HP, vx=mcx+L*Math.cos(va), vy=mcy-L*Math.sin(va);
+      arrow(ctx,mcx,mcy,vx,vy,s.accent,2.4); dot(ctx,mcx,mcy,2.4,s.accent);
+      txt(ctx,'i vector',mcx,mcy+mR+12,s.accent,9,'center');
+      txt(ctx,'glued to q',mcx,mcy+mR+22,PAL.faint,8.5,'center');
+
+      /* ---- right panel: after Clarke+Park → two DC values ---- */
+      var iA=I*Math.cos(th+HP), iB=I*Math.cos(th+HP-T23), iC=I*Math.cos(th+HP+T23);
+      var ial=(2/3)*(iA-0.5*iB-0.5*iC), ibe=(2/3)*(R3/2)*(iB-iC);
+      var id=ial*Math.cos(th)+ibe*Math.sin(th);
+      var iq=-ial*Math.sin(th)+ibe*Math.cos(th);
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.55; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(rx0,mid); ctx.lineTo(rx1,mid); ctx.stroke(); ctx.globalAlpha=1;
+      var yq=mid-iq*amp, yd=mid-id*amp;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.6; ctx.beginPath(); ctx.moveTo(rx0,yq); ctx.lineTo(rx1,yq); ctx.stroke();
+      ctx.strokeStyle=PAL.cool; ctx.lineWidth=2.2; ctx.beginPath(); ctx.moveTo(rx0,yd); ctx.lineTo(rx1,yd); ctx.stroke();
+      var phf=(((th%SP)+SP)%SP)/SP, mxp=rx0+phf*(rx1-rx0);
+      dot(ctx,mxp,yq,3,s.accent); dot(ctx,mxp,yd,2.6,PAL.cool);
+      txt(ctx,'i_q = '+iq.toFixed(2)+' (DC)',rx0,top-4,s.accent,9.5,'left');
+      txt(ctx,'i_d = '+id.toFixed(2),rx1,top-4,PAL.cool,9.5,'right');
+      txt(ctx,'flat at any ωe',rx1,mid+amp+10,PAL.faint,9,'right');
+
+      /* ---- transform caption + torque bar ---- */
+      txt(ctx,'Clarke → αβ → Park → dq',(lx1+rx0)/2,top-14,PAL.muted,9,'center');
+      bar(ctx,rx1-70,h-11,64,I,s.accent,'T');
+      txt(ctx,'T = (3/2)·P·λ_m·i_q → i_q carries all the torque',10,h-9,PAL.muted,9.5,'left');
+    }
+  };
+
+  /* focfield — the 90°-ahead rule. The stator field is held 90°+δ (electrical) ahead of
+     the rotor flux as the rotor spins. Torque between the fields is T = T_max·cos(δ):
+     maximum at an exact 90° lead (δ=0) and → 0 as δ→±90°, where the field points straight
+     at the pole and produces only radial pull, no twist. */
+  SIMS.focfield={
+    controls:[
+      {k:'delta',label:'Advance error δ (from 90°)',min:-90,max:90,step:5,val:0,unit:'°'},
+      {k:'spd',label:'Rotor speed',min:0,max:10,step:0.5,val:3,unit:' rad/s'}
+    ],
+    init:function(s){ s.ang=0; },
+    step:function(s,dt){ var sp=s.p.spd||0,g=0; s.ang=(s.ang||0)+sp*dt; while(s.ang>6.2831853&&g<8){s.ang-=6.2831853;g++;} },
+    draw:function(ctx,w,h,s){
+      var HP=1.5707963, SP=6.2831853, D2R=0.0174533;
+      var deg=clamp(s.p.delta,-90,90), del=deg*D2R, Tr=Math.cos(del), ra=s.ang||0;
+      var cx=w*0.30, cy=h*0.54, R=Math.max(12, Math.min(w*0.26,(h-74)/2));
+      txt(ctx,'max torque when stator field leads rotor by 90° (electrical)',10,13,PAL.muted,9.5,'left');
+
+      /* stator bore + slot ticks */
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,R,0,SP); ctx.stroke();
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.55; ctx.lineWidth=1;
+      for(var k=0;k<12;k++){ var a=k/12*SP, x1=cx+R*Math.cos(a),y1=cy-R*Math.sin(a),x2=cx+(R-6)*Math.cos(a),y2=cy-(R-6)*Math.sin(a);
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); } ctx.globalAlpha=1;
+
+      /* rotor body + N/S poles (N on +flux end) */
+      var rotR=R*0.52;
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.8; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(cx,cy,rotR,0,SP); ctx.stroke(); ctx.globalAlpha=1;
+      var nx=cx+rotR*Math.cos(ra), ny=cy-rotR*Math.sin(ra);
+      var sx=cx-rotR*Math.cos(ra), sy=cy+rotR*Math.sin(ra);
+      dot(ctx,nx,ny,8,PAL.bad); dot(ctx,sx,sy,8,PAL.cool);
+      txt(ctx,'N',nx,ny+3,'#ffffff',9,'center'); txt(ctx,'S',sx,sy+3,'#ffffff',9,'center');
+
+      /* rotor flux arrow (along ra) and stator field arrow (ra+90°+δ) */
+      var fx=cx+rotR*0.92*Math.cos(ra), fy=cy-rotR*0.92*Math.sin(ra);
+      arrow(ctx,cx,cy,fx,fy,PAL.bad,2.4);
+      var sa=ra+HP+del, stx=cx+R*0.94*Math.cos(sa), sty=cy-R*0.94*Math.sin(sa);
+      arrow(ctx,cx,cy,stx,sty,s.accent,2.6); dot(ctx,cx,cy,2.4,PAL.ink);
+
+      /* angle wedge between the two fields */
+      ctx.strokeStyle=PAL.muted; ctx.globalAlpha=0.7; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.arc(cx,cy,R*0.34,-sa,-ra,false); ctx.stroke(); ctx.globalAlpha=1;
+      var mang=ra+(HP+del)/2, labx=cx+R*0.5*Math.cos(mang), laby=cy-R*0.5*Math.sin(mang);
+      txt(ctx,(90+deg).toFixed(0)+'°',labx,laby+3,PAL.ink,9,'center');
+      txt(ctx,'rotor flux',cx,cy+R+14,PAL.bad,9,'center');
+      txt(ctx,'stator field',cx,cy+R+26,s.accent,9,'center');
+
+      /* right: T = T_max·cos(δ) curve + gauge */
+      var bx=w*0.60, bw=Math.max(40,(w-14)-bx), bty=38, bby=h*0.58;
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(bx,bty); ctx.lineTo(bx,bby); ctx.lineTo(bx+bw,bby); ctx.stroke();
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.beginPath();
+      for(var dd=-90;dd<=90;dd+=3){ var xx=bx+(dd+90)/180*bw, TT=Math.cos(dd*D2R), yy=bby-TT*(bby-bty); if(dd===-90)ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy); } ctx.stroke();
+      var mxk=bx+(deg+90)/180*bw, myk=bby-Tr*(bby-bty);
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.5; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(mxk,myk); ctx.lineTo(mxk,bby); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1;
+      dot(ctx,mxk,myk,3.5,PAL.ink);
+      txt(ctx,'T = T_max·cos(δ)',bx,bty-6,PAL.muted,9.5,'left');
+      txt(ctx,'−90°',bx,bby+12,PAL.faint,8.5,'left');
+      txt(ctx,'0',bx+bw/2,bby+12,PAL.faint,8.5,'center');
+      txt(ctx,'+90°',bx+bw,bby+12,PAL.faint,8.5,'right');
+      bar(ctx,bx+28,bby+32,Math.max(10,bw-28),Math.max(0,Tr),s.accent,'T');
+      txt(ctx,'T = '+Tr.toFixed(2)+' · T_max',bx,bby+52,s.accent,10,'left');
+      txt(ctx,'lead 90°+δ = '+(90+deg).toFixed(0)+'°, δ='+(deg>=0?'+':'')+deg.toFixed(0)+'°',bx,bby+66,PAL.muted,9,'left');
+      txt(ctx,'δ→±90°: field pushes straight at the pole → T=0',10,h-8,PAL.faint,9,'left');
+    }
+  };
+
+  /* focripple — why FOC. Six-step (trapezoidal) commutation hands off between phase pairs
+     every 60° electrical, so torque dips at each commutation: ~6 humps per electrical rev,
+     ~14% peak-to-peak ripple (T∝cos of the ±30° offset → min cos30°=0.866, mean 0.955).
+     FOC/sinusoidal control keeps the current vector on the q-axis continuously, so torque
+     is flat and smooth at the same average. */
+  SIMS.focripple={
+    _six:function(deg){ var l=((deg%60)+60)%60-30; return Math.cos(l*0.0174533); },
+    controls:[
+      {k:'load',label:'Load / current level',min:0.2,max:1,step:0.05,val:0.70,fmt:function(v){return v.toFixed(2);}},
+      {btn:true,k:'pause',label:'Pause sweep'}
+    ],
+    init:function(s){ s.sweep=0; s.paused=false; },
+    onbtn:function(s,k){ if(k==='pause') s.paused=!s.paused; },
+    step:function(s,dt){ if(!s.paused){ s.sweep=(s.sweep||0)+dt*0.18; while(s.sweep>1) s.sweep-=1; } },
+    draw:function(ctx,w,h,s){
+      var load=clamp(s.p.load,0.2,1);
+      var minShape=0.8660254, meanShape=0.9549, ripple=(1-minShape)/meanShape*100;
+      var px0=30, px1=w-12, pty=36, pby=h-44;
+      var Tscale=load*1.18; if(Tscale<1e-3) Tscale=1e-3;
+      function Y(T){ return pby-(T/Tscale)*(pby-pty); }
+      function Xd(deg){ return px0+deg/360*(px1-px0); }
+      txt(ctx,'instantaneous torque vs rotor angle (one electrical rev)',10,13,PAL.muted,9.5,'left');
+
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(px0,pty); ctx.lineTo(px0,pby); ctx.lineTo(px1,pby); ctx.stroke();
+      /* six-step ripple band */
+      var yMax=Y(load*1), yMin=Y(load*minShape);
+      ctx.fillStyle=PAL.warn; ctx.globalAlpha=0.10; ctx.fillRect(px0,yMax,px1-px0,Math.max(0,yMin-yMax)); ctx.globalAlpha=1;
+      /* FOC flat line (= mean) */
+      var yFoc=Y(load*meanShape);
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.6; ctx.beginPath(); ctx.moveTo(px0,yFoc); ctx.lineTo(px1,yFoc); ctx.stroke();
+      /* six-step lumpy curve */
+      ctx.strokeStyle=PAL.warn; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.beginPath();
+      for(var d=0;d<=360;d+=2){ var T=load*SIMS.focripple._six(d), x=Xd(d), y=Y(T); if(d===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.stroke();
+      /* commutation boundaries every 60° */
+      for(var cc=60;cc<360;cc+=60){ var xc=Xd(cc); ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.setLineDash([2,3]); ctx.beginPath(); ctx.moveTo(xc,pty); ctx.lineTo(xc,pby); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; }
+      /* sweeping playhead */
+      var sw=clamp(s.sweep,0,1), degp=sw*360, xp=Xd(degp);
+      ctx.strokeStyle=PAL.ink; ctx.globalAlpha=0.5; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(xp,pty); ctx.lineTo(xp,pby); ctx.stroke(); ctx.globalAlpha=1;
+      var Tsix=load*SIMS.focripple._six(degp), Tfoc=load*meanShape;
+      dot(ctx,xp,Y(Tsix),3.2,PAL.warn); dot(ctx,xp,Y(Tfoc),3.2,s.accent);
+
+      txt(ctx,'0°',px0,pby+12,PAL.faint,8.5,'left');
+      txt(ctx,'180°',(px0+px1)/2,pby+12,PAL.faint,8.5,'center');
+      txt(ctx,'360° electrical',px1,pby+12,PAL.faint,8.5,'right');
+      txt(ctx,'six-step: '+ripple.toFixed(0)+'% ripple',px0+4,pty-6,PAL.warn,9.5,'left');
+      txt(ctx,'FOC/sinusoidal: ~0%',px1,pty-6,s.accent,9.5,'right');
+      txt(ctx,'six-step T '+Tsix.toFixed(2)+' · FOC T '+Tfoc.toFixed(2),px0,h-9,PAL.muted,9.5,'left');
+      txt(ctx,s.paused?'paused':'6 humps / rev',px1,h-9,PAL.faint,9,'right');
+    }
+  };
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>The DC-Motor Speed-Torque Line — Why a Motor Is a Torque Source in Disguise · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#8A5A2E; --accent-ink:#FFFFFF; --accent-wash:#F2E7DB;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#D99E66; --accent-ink:#241405; --accent-wash:#201509;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#D99E66; --accent-ink:#241405; --accent-wash:#201509;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 10 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>The DC-Motor Speed&ndash;Torque Line: Why a Motor Is a Torque Source in Disguise</h1>
+    <p class="dek">Hand someone a motor and a battery and ask the only two questions that matter &mdash; how fast will it spin, and how hard will it pull? The honest, complete answer is a single straight line. Two clean facts &mdash; torque follows current, and the motor fights back with a voltage that grows with speed &mdash; collapse all the messy electromechanics into one line from stall torque to no-load speed. Learn to read that line and you can size, predict and debug almost any DC drive without ever touching a differential equation.</p>
+    <div class="meta">
+      <span>&approx; 18 min read</span>
+      <span>motors · DC drives · motor sizing</span>
+      <span>companion to <b>The H-Bridge</b> and <b>Control Systems</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">Hand someone a motor and a 12-volt battery and ask the only two questions that matter &mdash; how fast will it spin, and how hard will it pull? &mdash; and the honest, complete answer turns out to be a single straight line. A motor looks as though it ought to be hopeless to predict: current makes torque, motion makes a voltage, the two fight through the winding&rsquo;s resistance and inductance, and the whole thing feeds back on itself into a tangle of coupled electromechanics you feel you ought to <em>solve</em> rather than reason about. But a brushed DC motor obeys only two linear laws &mdash; torque follows current (<span class="m"><i>T</i> = <i>k</i><sub>t</sub>&middot;<i>I</i></span>), and a spinning motor fights back with a voltage proportional to speed (<span class="m"><i>V</i><sub>emf</sub> = <i>k</i><sub>e</sub>&middot;&omega;</span>) &mdash; and from those two facts the entire tangle collapses into one line in the speed&ndash;torque plane, running from a no-load speed set purely by voltage down to a stall torque set by voltage over resistance. Learn to read that line and you can size, predict and debug almost any DC drive without writing a differential equation: raise the voltage and the whole line slides up parallel to itself, the load decides where on it you sit, and two parabolas riding on top &mdash; output power and <span class="m"><i>I</i><sup>2</sup><i>R</i></span> heat &mdash; tell you where it is efficient and where it cooks. From that one move the whole subject falls out: the no-load and stall ends, why maximum power sits uselessly hot at mid-line, why the real limit is a thermal box far below stall, and what gearing is actually for. Then the piece turns to the half the textbooks skip: how you size a drive, how it bites when it misbehaves, what to spec, and a 12&nbsp;V gearmotor for a small robot sized end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: predicting a motor looks hopeless</h2>
+    <p>Start with exactly what you want. You have a job &mdash; lift this, spin that, roll a robot forward &mdash; at some speed, against some load, from some battery, and you want to know <em>before you build it</em> how fast the motor will run, how much current it will draw, how hot it will get, and whether it can even start under that load. These are not idle questions; each one is a part you have to buy or a fuse you have to rate, and getting any of them wrong shows up as a stalled, smoking, or sluggish machine.</p>
+    <p>But a motor is a genuine tangle. Current through the windings makes torque; the resulting motion makes a voltage; that voltage and the applied voltage fight through the winding&rsquo;s resistance and inductance; and the current that results is what made the torque in the first place, so the whole thing feeds back on itself. Written out as differential equations it looks like something you sit down and integrate, not something you reason about at the bench. And yet experienced practitioners size motors in their heads in a few seconds, with nothing but a datasheet and a battery voltage. The question this piece answers is whether that tangle really does collapse into something you can simply <em>see</em> &mdash; and it does, into one line.</p>
+
+    <h2><span class="sn">2</span>The reframe: two clean facts, nothing else</h2>
+    <p>It collapses because a brushed DC motor, underneath all the coupling, obeys just two linear laws, and everything else is their consequence. The first is that <b>torque follows current</b>. The magnetic force on a current-carrying winding sitting in the motor&rsquo;s field is simply proportional to the current through it, so the torque is proportional to the current: <span class="m"><i>T</i> = <i>k</i><sub>t</sub>&middot;<i>I</i></span>, where the <b>torque constant</b> <span class="m"><i>k</i><sub>t</sub></span> is a fixed property of the magnets and the winding. Double the current, double the torque &mdash; that is all torque <em>is</em>. There is no hidden nonlinearity to find; the motor is, at heart, a device that turns amps into newton-metres at a fixed exchange rate.</p>
+    <p>The second law is that <b>the motor fights back with a voltage proportional to speed</b>. A spinning motor is also a generator: its moving windings cut the same field and produce a &ldquo;back-EMF&rdquo; that opposes the supply, <span class="m"><i>V</i><sub>emf</sub> = <i>k</i><sub>e</sub>&middot;&omega;</span>. The faster it turns, the harder it pushes back against the battery. And in SI units a small miracle holds: the back-EMF constant <span class="m"><i>k</i><sub>e</sub></span> and the torque constant <span class="m"><i>k</i><sub>t</sub></span> are numerically <em>the same number</em> &mdash; the same electromechanical coupling, read once as volts-per-rad/s and once as newton-metres-per-amp. Now the whole circuit is just the supply <span class="m"><i>V</i></span> driving current through the winding resistance <span class="m"><i>R</i></span> against that back-EMF:</p>
+    <div class="eq"><span class="m"><i>I</i> = <span class="frac"><span class="nu"><i>V</i> &minus; <i>k</i><sub>e</sub>&middot;&omega;</span><span><i>R</i></span></span></span><span class="lbl">current is whatever is left after the back-EMF opposes the supply</span></div>
+    <p>That one line is the key reframe. The current a motor draws is <em>not</em> a fixed property you look up &mdash; it is whatever is left over after the back-EMF opposes the supply, divided by the resistance. At standstill the back-EMF is zero and the current is enormous; at full speed the back-EMF nearly equals the supply and the current dwindles to almost nothing. The motor <em>self-regulates</em> its own current through its own speed, which is exactly why it does not simply draw a constant current and melt. Hold that thought, because it is the hinge the whole subject swings on.</p>
+
+    <h2><span class="sn">3</span>The core: it&rsquo;s a straight line</h2>
+    <p>Now combine the two facts and watch the tangle fall apart. Torque is current times <span class="m"><i>k</i><sub>t</sub></span>, and current is the back-EMF equation above, so <span class="m"><i>T</i> = <i>k</i><sub>t</sub>&middot;(<i>V</i> &minus; <i>k</i><sub>e</sub>&middot;&omega;)/<i>R</i></span>. Solve that for the speed and every mystery resolves into a single relation:</p>
+    <div class="eq"><span class="m">&omega; = <span class="frac"><span class="nu"><i>V</i></span><span><i>k</i><sub>e</sub></span></span> &minus; <span class="frac"><span class="nu"><i>R</i></span><span><i>k</i><sub>t</sub>&middot;<i>k</i><sub>e</sub></span></span>&middot;<i>T</i></span><span class="lbl">speed falls linearly as torque rises &mdash; a straight line</span></div>
+    <p>That is a <b>straight line</b> in the speed&ndash;torque plane, and it tells you the whole steady-state story of the motor. Read off its three features. The <b>no-load speed</b> <span class="m">&omega;<sub>0</sub> = <i>V</i>/<i>k</i><sub>e</sub></span> is where it settles with nothing to push against (<span class="m"><i>T</i> = 0</span>): the motor speeds up until its back-EMF just equals the supply and the current &mdash; and therefore the torque &mdash; falls to nothing. It is set purely by voltage. The <b>stall torque</b> <span class="m"><i>T</i><sub>s</sub> = <i>k</i><sub>t</sub>&middot;<i>V</i>/<i>R</i></span> is the other end: hold the shaft still (<span class="m">&omega; = 0</span>) and there is no back-EMF, so the full supply drives current through <span class="m"><i>R</i></span> alone &mdash; maximum current, maximum torque, maximum heat. And between them runs a line of slope <span class="m">&minus;<i>R</i>/(<i>k</i><sub>t</sub>&middot;<i>k</i><sub>e</sub>)</span>: a low-resistance (&ldquo;stiff&rdquo;) motor has a nearly flat line whose speed barely sags as you load it, while a high-resistance motor droops steeply.</p>
+    <p>So a DC motor is really a <b>torque source you command with current</b> (<span class="m"><i>T</i> = <i>k</i><sub>t</sub>&middot;<i>I</i></span>), wearing the disguise of a speed device. The speed&ndash;torque line is simply the map of every steady state it is allowed to occupy. Raise the voltage and the whole line shifts up, parallel to itself &mdash; both the no-load speed and the stall torque scale with <span class="m"><i>V</i></span> &mdash; which is exactly what PWM speed control does, chopping the effective supply up and down (Deep Dive&nbsp;#07&rsquo;s H-bridge is how you actually vary that <span class="m"><i>V</i></span>). The load, meanwhile, decides <em>where on the line</em> you sit.</p>
+    <div class="key">
+      <span class="kl">One line holds the whole motor</span>
+      <div class="eq"><span class="m">&omega; = <span class="frac"><span class="nu"><i>V</i></span><span><i>k</i><sub>e</sub></span></span> &minus; <span class="frac"><span class="nu"><i>R</i></span><span><i>k</i><sub>t</sub>&middot;<i>k</i><sub>e</sub></span></span>&middot;<i>T</i></span></div>
+      <p>The speed&ndash;torque line runs from <b>no-load speed <span class="m"><i>V</i>/<i>k</i><sub>e</sub></span></b> (at zero torque) to <b>stall torque <span class="m"><i>k</i><sub>t</sub>&middot;<i>V</i>/<i>R</i></span></b> (at zero speed). Torque is just current (<span class="m"><i>T</i> = <i>k</i><sub>t</sub>&middot;<i>I</i></span>); speed just sets the back-EMF. Change the voltage and the line slides up or down bodily; the load decides where on it you sit. Everything else in the subject &mdash; power, heat, efficiency, inrush, gearing &mdash; is a position or a slope on this one line.</p>
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">One line from no-load speed to stall torque</div>
+      <canvas class="sim" data-sim="speedtorque" data-c="#8A5A2E" aria-label="the DC-motor speed-torque line; raising voltage slides the whole line up, and the load places the operating point on it, with the output-power parabola peaking mid-line"></canvas>
+      <div class="ctrls" data-sim="speedtorque"></div>
+    </div>
+    <p class="simnote">Drag the <em>applied voltage</em> and watch the whole line slide up and down bodily &mdash; both the no-load speed where it meets the axis and the stall torque where it crosses the other move together, because both scale with <span class="m"><i>V</i></span>. Now drag the <em>load torque</em> and ride the operating point along the line: as you load it the speed sags down the slope exactly as <span class="m">&minus;<i>R</i>/(<i>k</i><sub>t</sub><i>k</i><sub>e</sub>)</span> predicts, the current climbs (it is just <span class="m"><i>T</i>/<i>k</i><sub>t</sub></span>), and the output-power parabola drawn alongside crests at the <em>midpoint</em> &mdash; half the no-load speed, half the stall torque &mdash; then collapses to zero at stall. Keep an eye on the efficiency readout: it peaks nowhere near that power peak, but up in the high-speed, low-torque corner. The line is the motor; everything you care about is a point on it.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read the line at its ends, and the box inside it</h2>
+    <p>The line earns its keep by behaving sensibly at both extremes, and reading it at its ends is the fastest way to internalise what a motor actually does. Then two parabolas riding on the line turn that picture into the real operating limit.</p>
+    <div class="limit">
+      <b>Limit check — read the line at its ends</b>
+      <b>No load</b> (<span class="m"><i>T</i> &rarr; 0</span>): speed rises to <span class="m"><i>V</i>/<i>k</i><sub>e</sub></span> and the current falls to almost nothing &mdash; just enough to overcome friction. Fast, cool, lazy. <b>Stall</b> (<span class="m">&omega; &rarr; 0</span>): there is no back-EMF, so all the voltage is across <span class="m"><i>R</i></span>, the current hits its maximum <span class="m"><i>V</i>/<i>R</i></span> and the torque its maximum <span class="m"><i>k</i><sub>t</sub>&middot;<i>V</i>/<i>R</i></span> &mdash; but the <em>output power is zero</em> (nothing is moving) and <b>100&nbsp;% of the input becomes heat in the winding</b>. A motor held near stall cooks itself in seconds, and the stall current is often <b>5&ndash;10&times; the rated current</b>. <b>Maximum output power</b> sits at the <em>midpoint</em> of the line &mdash; half the no-load speed, half the stall torque &mdash; where <span class="m"><i>P</i><sub>out</sub> = <i>T</i>&middot;&omega;</span> peaks as a parabola. You rarely want to live there: it is hot and only about half-efficient. <b>Maximum efficiency</b> is <em>not</em> at maximum power &mdash; it sits up near no-load, at a modest torque, because efficiency is killed by the <span class="m"><i>I</i><sup>2</sup><i>R</i></span> heating, which grows with torque&sup2;. Cruise motors live in the high-speed, low-torque corner. <b>Raise <span class="m"><i>V</i></span></b> and the whole line translates upward &mdash; more speed <em>and</em> more available torque, but also more stall current and heat. <b>Add series <span class="m"><i>R</i></span></b> (or feed it from a weak driver) and the line droops more steeply: the same no-load speed if <span class="m"><i>V</i></span> is held, but less stall torque and a softer, saggier response.
+    </div>
+    <p>Two parabolas ride on this line and govern everything you actually care about. <b>Output power</b> <span class="m"><i>P</i><sub>out</sub> = <i>T</i>&middot;&omega;</span> is a downward parabola &mdash; zero at both ends (no torque at no-load, no motion at stall) and peaking mid-line. <b>Dissipation</b> is <span class="m"><i>I</i><sup>2</sup><i>R</i> = (<i>T</i>/<i>k</i><sub>t</sub>)<sup>2</sup>&middot;<i>R</i></span>, so the heat grows with the <em>square</em> of torque and piles up entirely at the high-torque end. Put those two together and the motor&rsquo;s true limit is not the line itself but a <b>thermal box inside it</b>: the <em>continuous</em> (rated) torque is whatever the winding can shed as heat indefinitely, far below stall, while the full line all the way up to stall is only reachable in brief <em>peak</em> bursts before the winding overheats.</p>
+    <p>That is why every datasheet draws two regions &mdash; a continuous band and an intermittent one &mdash; and why &ldquo;it has plenty of stall torque&rdquo; is a trap: you can touch stall torque for a moment, you cannot live there. Gearing, finally, is simply a lever that <em>moves your load along the line</em>: a reduction ratio <span class="m"><i>N</i></span> multiplies torque by <span class="m"><i>N</i></span> and divides speed by <span class="m"><i>N</i></span>, letting you place a fast, weak, efficient motor exactly where a slow, strong load actually needs to sit &mdash; which is where the operating point really comes from.</p>
+
+    <div class="simwrap">
+      <div class="simcap">The operating point is where the motor line meets the load</div>
+      <canvas class="sim" data-sim="loadline" data-c="#8A5A2E" aria-label="the motor speed-torque line intersecting a load curve (constant torque, fan, or viscous); the intersection is the operating point, with the continuous-duty region shaded"></canvas>
+      <div class="ctrls" data-sim="loadline"></div>
+    </div>
+    <p class="simnote">The motor line is only half the picture; the load draws its own curve, and the <b>operating point is where the two cross</b>. Switch the load type &mdash; a constant-torque load (a hoist) is a vertical line, a fan or propeller is a rising <span class="m">&omega;<sup>2</sup></span> curve, a viscous drag rises with speed &mdash; and watch the intersection jump to a different place on the motor line. Now drag the <em>voltage</em> and the motor line slides, carrying the operating point with it. The <b>continuous-duty region</b> is shaded: when the intersection sits inside it the verdict reads <em>safe</em>; push the load up or the voltage down until the crossing drifts toward stall and it flips to <em>overload</em> &mdash; the motor is now outside its thermal box, drawing a current it cannot shed. That shaded box, not the stall torque, is the limit you design to.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: sizing a drive, and how it bites</h2>
+    <p>The speed&ndash;torque line is the <em>first</em> thing you draw when sizing any DC or BLDC drive, a gearmotor, a servo or an actuator &mdash; and the first thing you reach for when one misbehaves. The design sequence is fixed, not a flash of insight: find the <b>load</b> (the torque it needs and the speed you want, and the worst case &mdash; starting torque, peak torque); pick a <b>supply voltage</b> to set the no-load speed above your target; check that the <b>operating point</b>, where your load torque meets the line, sits in the <b>continuous</b> region with margin; check the <b>current</b> there against the driver and the thermal limit; and add <b>gearing</b> to move a mismatched load onto a good part of the line. When it misbehaves, the symptoms map straight back to the line &mdash; and almost every one is really &ldquo;you are sitting somewhere on the line you did not mean to&rdquo;:</p>
+    <dl class="speclist">
+      <dt>Runs slower than expected under load</dt><dd>You are far down the sloped part of the line &mdash; high <span class="m"><i>R</i></span>, or a load torque close to stall &mdash; and the speed <em>sags</em> with load exactly as the slope predicts. Raise the voltage or gear it down to move the operating point back up toward no-load.</dd>
+      <dt>Motor or driver gets very hot, maybe smells</dt><dd>You are operating near <b>stall / above continuous torque</b>: the current is <span class="m"><i>T</i>/<i>k</i><sub>t</sub></span>, the heat is <span class="m"><i>I</i><sup>2</sup><i>R</i></span>, and you have left the thermal box. Reduce the load, gear down, or size up &mdash; the line is fine, your point on it is not.</dd>
+      <dt>Won&rsquo;t start under load (just buzzes and heats)</dt><dd>The <b>stall torque at your voltage is below the load&rsquo;s breakaway torque</b>: <span class="m"><i>T</i><sub>s</sub> = <i>k</i><sub>t</sub>&middot;<i>V</i>/<i>R</i></span> simply isn&rsquo;t enough to move it, so it sits at zero speed drawing stall current. More voltage or more gearing.</dd>
+      <dt>Trips the current limit on startup</dt><dd><b>Inrush = stall current = <span class="m"><i>V</i>/<i>R</i></span></b> at the instant of switch-on, because the back-EMF is still zero &mdash; often 5&ndash;10&times; the running current. Soft-start or current-limit it; do not just fuse for the running current.</dd>
+      <dt>Top speed too low</dt><dd>The <b>no-load speed <span class="m"><i>V</i>/<i>k</i><sub>e</sub></span> is set by voltage</b> (and the winding). You need more volts, or a lower-<span class="m"><i>k</i><sub>e</sub></span> winding &mdash; not vaguely &ldquo;more power.&rdquo;</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How the line shapes the whole machine</h2>
+    <p>Nearly every drive decision is a move on this one line, and the knobs are not independent. <b>Voltage</b> sets the ceiling &mdash; the no-load speed &mdash; and scales the whole line, so it is your speed knob (delivered as PWM). <b>Winding resistance <span class="m"><i>R</i></span></b> sets the <em>stiffness</em>: low <span class="m"><i>R</i></span> means a flat line, so speed holds under load and efficiency is high, but the inrush is big &mdash; and this is the motor&rsquo;s quality figure of merit, the <b>motor constant <span class="m"><i>k</i><sub>m</sub> = <i>k</i><sub>t</sub>/&radic;<i>R</i></span></b>, torque per square-root-watt of heat. The <b>winding turns</b> (which set <span class="m"><i>k</i><sub>e</sub></span> and <span class="m"><i>k</i><sub>t</sub></span> together) trade speed for torque at a given voltage: more turns means a higher <span class="m"><i>k</i><sub>e</sub></span>, hence a lower no-load speed but more torque per amp. <b>Gear ratio</b> relocates the load onto the efficient stretch of the line and multiplies torque, at the cost of speed and a little loss. And the <b>thermal design</b> &mdash; winding, housing, airflow, heatsink &mdash; sets how much of the line below stall you can actually use <em>continuously</em>. Speed, torque, efficiency, heat and inrush are not five independent dials; they are all positions and slopes on this single line, and moving one moves the others.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>The same line governs brushed DC motors, BLDC and PMSM machines (with the line drawn per-phase behind field-oriented control &mdash; Deep Dive&nbsp;#02), gearmotors, servos and linear actuators; steppers and induction motors have their own curves, but the sizing <em>instinct</em> transfers intact. When you choose a motor, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Rated (continuous) torque &amp; speed</dt><dd>The point on the line you can hold forever. Your operating point must sit here, with margin &mdash; this, not stall torque, is the number you size to.</dd>
+      <dt>Stall torque &amp; stall current</dt><dd>The ceiling and the inrush. Size the driver and the protection for the <b>stall current</b>, not the running current.</dd>
+      <dt>No-load speed &amp; rated voltage</dt><dd>The top of the line; the no-load speed at your supply must comfortably exceed your target running speed.</dd>
+      <dt><span class="m"><i>k</i><sub>t</sub></span> / <span class="m"><i>k</i><sub>e</sub></span> (torque &amp; back-EMF constants)</dt><dd>Torque per amp and volts per rad/s. They let you predict the current and the speed directly, without a test rig.</dd>
+      <dt>Terminal resistance <span class="m"><i>R</i></span> (and <span class="m"><i>k</i><sub>m</sub> = <i>k</i><sub>t</sub>/&radic;<i>R</i></span>)</dt><dd>The slope and stiffness of the line, and the honest efficiency figure of merit. Compare competing motors by <span class="m"><i>k</i><sub>m</sub></span>, not by nameplate watts.</dd>
+      <dt>Thermal rating / continuous vs peak region</dt><dd>How long you may exceed continuous torque. This is the real limit &mdash; the line without it is a lie by omission.</dd>
+      <dt>Gear ratio &amp; efficiency (for a gearmotor)</dt><dd>Where it places the load on the line, and what the reduction costs you in loss and backlash.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the datasheet won&rsquo;t tell you</span>
+      <ul>
+        <li><b>A motor is a torque (current) source, not a speed source.</b> Command the current and you command the torque directly and instantly; the speed is simply whatever the load and the back-EMF settle to. This is why servo loops almost always put a <em>current</em>/torque loop on the inside &mdash; it is the variable you really control.</li>
+        <li><b>Stall is a thermal event, not an operating point.</b> You can brush against stall torque for a moment; live there and the <span class="m"><i>I</i><sup>2</sup><i>R</i></span> cooks the winding in seconds. Stall current is 5&ndash;10&times; rated &mdash; budget the driver and fuse for it, and never DC-hold a motor stalled.</li>
+        <li><b>Inrush <em>is</em> the stall current, every single time you switch on.</b> At <span class="m"><i>t</i> = 0</span> the back-EMF is zero, so the current is <span class="m"><i>V</i>/<i>R</i></span>. Soft-start, current-limit, or in-line resistance &mdash; otherwise you trip protection or weld contacts on every start.</li>
+        <li><b>Efficiency peaks nowhere near maximum power.</b> Max power is the hot, lossy mid-line; the efficient zone is high-speed and low-torque. Size so your <em>cruise</em> point lives up there and your <em>peak</em> point only dips toward mid-line briefly.</li>
+        <li><b>Compare motors by <span class="m"><i>k</i><sub>m</sub> = <i>k</i><sub>t</sub>/&radic;<i>R</i></span>, not by &ldquo;watts.&rdquo;</b> The motor constant is torque per &radic;(heat) &mdash; the honest, voltage-independent quality number. A bigger nameplate wattage sitting on a worse <span class="m"><i>k</i><sub>m</sub></span> is simply a worse motor.</li>
+        <li><b>Gearing is the cheapest torque you will ever buy.</b> <span class="m"><i>N</i>&times;</span> torque for <span class="m">1/<i>N</i></span> speed, and it usually beats buying a bigger motor &mdash; but it adds backlash, reflects the motor&rsquo;s inertia up by <span class="m"><i>N</i><sup>2</sup></span>, and spends a little efficiency.</li>
+        <li><b>The line sags when the winding is hot.</b> Copper resistance rises about <b>+0.4&nbsp;%/&deg;C</b>, so a hot motor has a steeper line &mdash; less torque and less speed than the cold datasheet promises. Design with the hot-winding <span class="m"><i>R</i></span>, not the 25&nbsp;&deg;C value.</li>
+        <li><b>&ldquo;It has enough stall torque&rdquo; is a trap.</b> Stall torque is the ceiling you can touch, not the shelf you can stand on. Size to <em>continuous</em> torque with margin, and treat stall as inrush and emergency only.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">sizing a 12 V robot gearmotor</span></div>
+
+    <h2><span class="sn">9</span>Build it: sizing a 12 V gearmotor to drive a small robot wheel</h2>
+    <p>Enough principle &mdash; here is a real drive sized end to end, so you can copy the shape and reuse it. The job: move a <span class="m">&approx;&nbsp;5&nbsp;kg</span> robot at <span class="m">&approx;&nbsp;1&nbsp;m/s</span> on 100&nbsp;mm wheels, up a gentle ramp, from a 12&nbsp;V battery. Every line below is one number you read straight off the speed&ndash;torque line; the derivation already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a 12 V gearmotor for a small robot</span>
+      <dl class="speclist">
+        <dt>Load torque &amp; speed at the wheel</dt><dd>Wheel radius <span class="m"><i>r</i> = 0.05&nbsp;m</span>. To push the robot up the ramp takes a worst-case drive force of maybe <span class="m">&approx;&nbsp;10&nbsp;N</span>, so the wheel torque is <span class="m"><i>T</i><sub>wheel</sub> = <i>F</i>&middot;<i>r</i> = 10&middot;0.05 = <b>0.5&nbsp;N&middot;m</b></span>. The wheel speed for 1&nbsp;m/s is <span class="m"><i>v</i>/<i>r</i> = 1/0.05 = 20&nbsp;rad/s &approx; <b>190&nbsp;rpm</b></span>.</dd>
+        <dt>Pick a motor + gear</dt><dd>A small 12&nbsp;V motor runs <span class="m">&approx;&nbsp;<b>6000&nbsp;rpm</b></span> no-load and makes maybe <span class="m">0.02&nbsp;N&middot;m</span> continuous &mdash; nowhere near 0.5&nbsp;N&middot;m directly. Add a gearbox: the ratio <span class="m"><i>N</i></span> must bring 6000&nbsp;rpm down toward ~190&ndash;400&nbsp;rpm (the loaded speed sags), so <span class="m"><i>N</i> &approx; <b>20:1</b></span> gives ~300&nbsp;rpm no-load at the output and multiplies torque <span class="m">&times;20 &rarr; &approx;&nbsp;0.4&nbsp;N&middot;m</span> continuous at the wheel &mdash; the right range (go 30:1 for margin).</dd>
+        <dt>Check the operating point on the line</dt><dd>Reflect the load back to the motor shaft: <span class="m">0.5&nbsp;N&middot;m &divide; 20 = 0.025&nbsp;N&middot;m</span> at the motor. Confirm the motor sits in its <b>continuous</b> region there, not up near stall. If the motor-shaft torque exceeds the continuous rating, increase <span class="m"><i>N</i></span> (more reduction) or size up.</dd>
+        <dt>Current &amp; inrush</dt><dd>Running current <span class="m">&approx; <i>T</i><sub>motor</sub>/<i>k</i><sub>t</sub></span> &mdash; an amp or so. But the <b>stall / inrush current is <span class="m"><i>V</i>/<i>R</i></span></b> (e.g. <span class="m">12&nbsp;V / 1.5&nbsp;&Omega; = <b>8&nbsp;A</b></span>) and it hits <em>every start</em>. Size the driver (an H-bridge, Deep Dive&nbsp;#07) and the fuse for <em>that</em>, with a soft-start &mdash; not for the ~1&nbsp;A running current.</dd>
+        <dt>Thermal sanity</dt><dd>Continuous dissipation <span class="m">&approx; <i>I</i><sup>2</sup><i>R</i></span> at the running current; confirm the motor can shed it. Climbing the ramp is a <em>peak</em> event, brief &mdash; so short excursions above continuous torque are fine as long as they stay short.</dd>
+        <dt>Speed knob</dt><dd>Vary the wheel speed with <b>PWM</b> on the supply, which slides the line up and down. Closed-loop, regulate the <em>current</em> (torque) in the inner loop and let speed fall out of it.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a mass, a speed, a wheel size, a ramp and a battery voltage hand you the wheel torque, the gear ratio, the operating point, the inrush, and &mdash; loudly &mdash; the fact that your real risk is not the running load but the 8&nbsp;A that slams the driver on every start. The plug-in set is small and you already have all of it: torque <span class="m"><i>T</i> = <i>k</i><sub>t</sub>&middot;<i>I</i></span> and back-EMF <span class="m"><i>V</i><sub>emf</sub> = <i>k</i><sub>e</sub>&middot;&omega;</span> (SI: <span class="m"><i>k</i><sub>e</sub> = <i>k</i><sub>t</sub></span>); current <span class="m"><i>I</i> = (<i>V</i> &minus; <i>k</i><sub>e</sub>&middot;&omega;)/<i>R</i></span>; the line <span class="m">&omega; = <i>V</i>/<i>k</i><sub>e</sub> &minus; (<i>R</i>/(<i>k</i><sub>t</sub>&middot;<i>k</i><sub>e</sub>))&middot;<i>T</i></span>; no-load speed <span class="m">&omega;<sub>0</sub> = <i>V</i>/<i>k</i><sub>e</sub></span>, stall torque <span class="m"><i>T</i><sub>s</sub> = <i>k</i><sub>t</sub>&middot;<i>V</i>/<i>R</i></span>, stall current <span class="m"><i>I</i><sub>s</sub> = <i>V</i>/<i>R</i></span>; output power <span class="m"><i>P</i><sub>out</sub> = <i>T</i>&middot;&omega;</span> (peaking at <span class="m">&omega;<sub>0</sub>/2</span>, <span class="m"><i>T</i><sub>s</sub>/2</span>) and heat <span class="m"><i>P</i><sub>loss</sub> = <i>I</i><sup>2</sup><i>R</i> = (<i>T</i>/<i>k</i><sub>t</sub>)<sup>2</sup>&middot;<i>R</i></span>; the quality number <span class="m"><i>k</i><sub>m</sub> = <i>k</i><sub>t</sub>/&radic;<i>R</i></span>; and gearing <span class="m"><i>T</i><sub>out</sub> = <i>N</i>&middot;<i>T</i><sub>motor</sub></span>, <span class="m">&omega;<sub>out</sub> = &omega;<sub>motor</sub>/<i>N</i></span>.</p>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment the winding cooks or the driver trips:</p>
+    <ol class="recipe">
+      <li><b>Measure the constants.</b> Spin the motor unloaded at a known voltage and read the no-load speed &rarr; <span class="m"><i>k</i><sub>e</sub> = <i>V</i>/&omega;<sub>0</sub></span>. Stall it <em>briefly</em> (or measure <span class="m"><i>R</i></span> with a meter) and read the stall current &rarr; confirm <span class="m"><i>I</i><sub>s</sub> = <i>V</i>/<i>R</i></span> and <span class="m"><i>k</i><sub>t</sub> = <i>T</i><sub>s</sub>/<i>I</i><sub>s</sub></span>. Now you own its line.</li>
+      <li><b>Draw the line and mark your load.</b> Plot the no-load speed and the stall torque, mark where your load torque lands, and confirm the speed there meets your target.</li>
+      <li><b>Check the operating point is in the continuous box</b> &mdash; comfortably below stall, with a current the winding can shed. If it isn&rsquo;t, re-gear or size up <em>before</em> going further.</li>
+      <li><b>Set up the driver for inrush.</b> Size the H-bridge / driver and protection for the <b>stall current</b>, and add current-limiting or a soft-start so startup neither trips nor welds.</li>
+      <li><b>Add PWM speed control and close the current loop.</b> Vary the voltage for speed, regulate the current (torque) on the inside, and confirm the operating point slides along the line as predicted.</li>
+      <li><b>Thermal soak test.</b> Run the real duty cycle to temperature and confirm the winding stabilises &mdash; remembering that <span class="m"><i>R</i></span>, and the whole line, sag once it is hot.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Direct-drive vs geared</dt><dd>Direct-drive is simple, backlash-free and fast, but needs a big low-<span class="m"><i>k</i><sub>m</sub></span> motor to make torque; gearing gets torque cheaply from a small efficient motor at the cost of backlash, reflected inertia (<span class="m"><i>N</i><sup>2</sup></span>), and a little loss. Most robots gear.</dd>
+      <dt>High-speed / low-<span class="m"><i>k</i><sub>e</sub></span> winding vs low-speed / high-<span class="m"><i>k</i><sub>e</sub></span></dt><dd>Pick the winding so your target speed sits comfortably below no-load at the voltage you have: too high a <span class="m"><i>k</i><sub>e</sub></span> and you cannot reach speed; too low and you lack torque per amp.</dd>
+      <dt>Voltage (speed) vs gear ratio (torque)</dt><dd>Need more speed &rarr; more volts; need more torque &rarr; more reduction. Trade the two to land the operating point in the continuous, efficient zone rather than brute-forcing either.</dd>
+      <dt>Brushed vs BLDC</dt><dd>Brushed is cheap and trivially driven (just a voltage) but wears its brushes; BLDC is efficient, long-lived and higher-<span class="m"><i>k</i><sub>m</sub></span> but needs commutation electronics (and FOC &mdash; Deep Dive&nbsp;#02). The <em>line</em> reasoning is identical for both.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do on the bench</b>
+      This page gets you to the right motor class, a sound gear ratio, a safe driver sizing, and an operating point you can defend &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% lives on the bench and in the duty cycle. <b>Measure the real constants and the hot-winding <span class="m"><i>R</i></span></b>: datasheet <span class="m"><i>k</i><sub>t</sub></span>, <span class="m"><i>k</i><sub>e</sub></span> and <span class="m"><i>R</i></span> are nominal and cold, so the line you actually get is a bit lower &mdash; and worse when hot. Verify <span class="m"><i>k</i><sub>e</sub></span> from the no-load speed and <span class="m"><i>R</i></span> with a meter on <em>your</em> unit. <b>Characterise the real load</b> &mdash; breakaway and starting torque, friction, and the true worst case (the ramp, the jam, the cold grease) are usually well above the &ldquo;nominal&rdquo; torque; size to the worst case, not the average. <b>Do the thermal duty-cycle math</b>: continuous versus peak is really about <em>time at torque</em>, and an RMS-torque calculation over your actual cycle tells you whether a brief stall-ish peak is fine or fatal. And <b>validate inrush and protection on the bench</b> &mdash; scope the startup current, confirm the soft-start and current limit behave, and that nothing browns out. Tools to stand on: the motor&rsquo;s <b>datasheet curves</b>, a <b>dynamometer or a simple brake plus a current meter</b> to measure the real line, an <b>H-bridge driver with current sense</b> (Deep Dive&nbsp;#07), and an RMS-torque / thermal spreadsheet. The two laws in Part&nbsp;I never change; the last mile is pinning down <em>your</em> motor&rsquo;s real constants and <em>your</em> load&rsquo;s real worst case.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">Two 12&nbsp;V motors have the same no-load speed, but motor A&rsquo;s speed barely drops when you load it while motor B&rsquo;s sags a lot. Which has the lower winding resistance, and which will draw the bigger inrush current at switch-on?</p><p class="a">Motor <b>A</b> has the lower resistance. The slope of the speed&ndash;torque line is <span class="m">&minus;<i>R</i>/(<i>k</i><sub>t</sub><i>k</i><sub>e</sub>)</span>, so a flatter line &mdash; speed holding under load &mdash; means a smaller <span class="m"><i>R</i></span>; A is the stiff, efficient motor. But that same low <span class="m"><i>R</i></span> gives A the <em>bigger</em> inrush, because the stall / inrush current is <span class="m"><i>V</i>/<i>R</i></span> &mdash; smaller <span class="m"><i>R</i></span>, larger <span class="m"><i>V</i>/<i>R</i></span>. So the very motor that holds its speed gracefully is also the one that slams the biggest current into your driver the instant you switch it on; stiffness and inrush are the same property read two ways, and you must budget the driver and protection for A&rsquo;s larger startup spike.</p></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">You need more torque from your drive and you&rsquo;re tempted to raise the supply voltage. Explain what raising the voltage actually does to the speed&ndash;torque line, and why gearing is usually the better way to get torque.</p><p class="a">Raising <span class="m"><i>V</i></span> translates the whole line <em>up</em>, parallel to itself: both the no-load speed <span class="m"><i>V</i>/<i>k</i><sub>e</sub></span> and the stall torque <span class="m"><i>k</i><sub>t</sub>&middot;<i>V</i>/<i>R</i></span> scale with voltage. So you do get more available torque &mdash; but you also get more speed you may not want, and a bigger stall current and more heat, and you can easily blow straight past the thermal box. Gearing does something cleaner: a ratio <span class="m"><i>N</i></span> multiplies torque by <span class="m"><i>N</i></span> while <em>dividing</em> speed by <span class="m"><i>N</i></span>, which takes a small, efficient motor&rsquo;s good high-speed operating region and places it exactly where a slow, high-torque load lives. You buy the torque without inflating the current, the heat or the top speed &mdash; cheaper and cooler than brute-forcing it with volts.</p></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">A motor&rsquo;s datasheet lists a stall torque of 2&nbsp;N&middot;m. Your load needs 1.5&nbsp;N&middot;m continuously. Why is this motor a bad choice even though 1.5 &lt; 2?</p><p class="a">Because stall torque is the ceiling you can only <em>touch</em>, not a shelf you can stand on. At stall the motor is at maximum current, moving nothing, and dissipating 100&nbsp;% of the input as <span class="m"><i>I</i><sup>2</sup><i>R</i></span> heat in the winding &mdash; it cooks itself in seconds. Your 1.5&nbsp;N&middot;m is about 75&nbsp;% of that stall figure, deep outside the continuous thermal box, where the current is enormous and the heat is <span class="m">(<i>T</i>/<i>k</i><sub>t</sub>)<sup>2</sup>&middot;<i>R</i></span>. The continuous torque a motor can actually hold forever is a small fraction of its stall torque, so this one would overheat almost immediately. Size to the <em>continuous</em> rating with margin, and treat stall torque as inrush and emergency headroom only.</p></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-deltasigma.html"><b>&larr; Prev:</b> The Delta-Sigma ADC</a>
+      <span class="nextpill"><b>Coming next:</b> Harmonic / Strain-Wave Gearing</span>
+    </div>
+    <p class="footnote"><b>The DC-Motor Speed&ndash;Torque Line — Why a Motor Is a Torque Source in Disguise.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (a motor looks like a tangle of coupled electromechanics you ought to solve, not reason about) and the one reframe (just two linear laws &mdash; torque follows current, and the motor fights back with a voltage proportional to speed) from which the current <span class="m"><i>I</i> = (<i>V</i> &minus; <i>k</i><sub>e</sub>&middot;&omega;)/<i>R</i></span>, the whole motor as one straight line <span class="m">&omega; = <i>V</i>/<i>k</i><sub>e</sub> &minus; (<i>R</i>/(<i>k</i><sub>t</sub>&middot;<i>k</i><sub>e</sub>))&middot;<i>T</i></span> from no-load speed <span class="m"><i>V</i>/<i>k</i><sub>e</sub></span> to stall torque <span class="m"><i>k</i><sub>t</sub>&middot;<i>V</i>/<i>R</i></span>, the power <span class="m"><i>P</i><sub>out</sub> = <i>T</i>&middot;&omega;</span> peaking mid-line, the heat <span class="m">(<i>T</i>/<i>k</i><sub>t</sub>)<sup>2</sup>&middot;<i>R</i></span> that defines the thermal box, and the quality number <span class="m"><i>k</i><sub>m</sub> = <i>k</i><sub>t</sub>/&radic;<i>R</i></span> all fall out &mdash; then the practitioner&rsquo;s half: how you size a drive, why it runs slow, overheats, won&rsquo;t start or trips on inrush, what to spec, and a 12&nbsp;V robot gearmotor sized end to end. With live simulations of the speed&ndash;torque line sliding under voltage while the load rides it, and of the operating point where the motor line meets a load curve inside the shaded continuous-duty box. The honest truth of it: this gets you the right motor class, gear ratio, driver sizing and a defensible operating point &mdash; the real constants, the worst-case load, and the thermal duty cycle are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The H-Bridge / Power Switching</b> and <b>Control Systems</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* speedtorque — the DC-motor speed–torque line and the operating point riding it. Torque on x
+     (0..T_s at max voltage, fixed), speed ω on y (0..ω₀ at max voltage, fixed) so the axes stay put
+     while the line moves. Motor line in s.accent runs from (0, ω₀) to (T_s, 0); the output-power
+     parabola P_out(T)=T·ω(T) in PAL.cool rides a right-side scale and peaks mid-line. Raising VOLTAGE
+     slides the whole line up (ω₀ and T_s both grow); LOAD places the dot along the line toward stall.
+     Near stall current/heat max out while power and efficiency collapse. Motor model inlined, no
+     globals; constants k_t = k_e = 0.02, R = 1.5. s.accent = motor line, unicode literals only. */
+  SIMS.speedtorque={
+    controls:[
+      {k:'volt',label:'Applied voltage',min:3,max:24,step:0.5,val:12,unit:' V'},
+      {k:'load',label:'Load torque',min:0,max:100,step:1,val:30,unit:' % of stall'}
+    ],
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var kt=0.02, ke=0.02, R=1.5, slope=R/(kt*ke);   // 3750
+      var V=clamp(s.p.volt,3,24);
+      var w0=V/ke;            // no-load speed (rad/s)
+      var Ts=kt*V/R;          // stall torque (N·m)
+      var Vmax=24, Wmax=Vmax/ke, Tmax=kt*Vmax/R, Pmax=100;  // 1200 rad/s, 0.32 N·m
+
+      var load=clamp(s.p.load,0,100);
+      var Top=load/100*Ts;
+      var wop=w0-slope*Top; if(!(wop>0)) wop=0;
+      var Iop=Top/kt;
+      var Pout=Top*wop;
+      var Pin=V*Iop;
+      var eff=(Pin>1e-9)?(Pout/Pin):0;
+      var rpm=wop*60/(2*Math.PI);
+
+      var mL=36,mR=42,mT=28,mB=36;
+      var x0=mL, x1=Math.max(mL+20,w-mR), yTop=mT, yBot=Math.max(mT+20,h-mB);
+      function xOf(T){ return clamp(x0+clamp(T,0,Tmax)/Tmax*(x1-x0),x0,x1); }
+      function yW(wv){ return clamp(yBot-clamp(wv,0,Wmax)/Wmax*(yBot-yTop),yTop,yBot); }
+      function yP(P){ return clamp(yBot-clamp(P,0,Pmax)/Pmax*(yBot-yTop),yTop,yBot); }
+
+      // frame + grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,yTop,x1-x0,yBot-yTop);
+      ctx.globalAlpha=0.5;
+      for(var gi=1;gi<5;gi++){ var gx=clamp(x0+(x1-x0)*gi/5,x0,x1);
+        ctx.beginPath(); ctx.moveTo(gx,yTop); ctx.lineTo(gx,yBot); ctx.stroke(); }
+      ctx.globalAlpha=1;
+
+      // axis names + ticks
+      txt(ctx,'ω (rad/s)',x0+2,yTop-3,s.accent,8.5,'left');
+      txt(ctx,'P (W)',x1-2,yTop-3,PAL.cool,8.5,'right');
+      var ti,yi;
+      for(ti=0;ti<=4;ti++){ var Tv=Tmax*ti/4; var txx=xOf(Tv);
+        ctx.strokeStyle=PAL.line; ctx.beginPath(); ctx.moveTo(txx,yBot); ctx.lineTo(txx,yBot+3); ctx.stroke();
+        txt(ctx,Tv.toFixed(2),txx,yBot+12,PAL.faint,7,'center'); }
+      txt(ctx,'torque (N·m) →',x0+2,yBot+22,PAL.muted,8,'left');
+      for(yi=0;yi<=4;yi++){ var wv=Wmax*yi/4; txt(ctx,Math.round(wv)+'',x0-3,yW(wv)+3,PAL.faint,7,'right'); }
+      for(var pp=0;pp<=Pmax;pp+=25){ txt(ctx,pp+'',x1+3,yP(pp)+3,PAL.faint,7,'left'); }
+
+      // output-power parabola P_out(T) (PAL.cool, right scale)
+      ctx.strokeStyle=PAL.cool; ctx.lineWidth=2; ctx.globalAlpha=0.9;
+      ctx.beginPath(); var started=false, N=120, i;
+      for(i=0;i<=N;i++){ var T=Ts*i/N; var wl=w0-slope*T; if(!(wl>0)) wl=0; var P=T*wl;
+        var px=xOf(T), py=yP(P);
+        if(!started){ ctx.moveTo(px,py); started=true; } else ctx.lineTo(px,py); }
+      ctx.stroke(); ctx.globalAlpha=1;
+
+      // motor line (accent)
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.moveTo(xOf(0),yW(w0)); ctx.lineTo(xOf(Ts),yW(0)); ctx.stroke();
+
+      // intercept labels
+      txt(ctx,'ω₀ '+Math.round(w0),clamp(xOf(0)+5,x0+2,x1-30),clamp(yW(w0)+11,yTop+10,yBot-4),s.accent,8,'left');
+      txt(ctx,'T_s '+Ts.toFixed(2),clamp(xOf(Ts)-2,x0+22,x1-4),clamp(yW(0)-6,yTop+8,yBot-4),s.accent,8,'right');
+
+      // operating point + dashed guides to both axes
+      var ox=xOf(Top), oy=yW(wop);
+      ctx.strokeStyle=PAL.ink; ctx.globalAlpha=0.3; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox,yBot); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(x0,oy); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      dot(ctx,ox,yP(Pout),3,PAL.cool);
+      dot(ctx,ox,oy,4,PAL.ink);
+
+      // title + readouts + caption
+      txt(ctx,'speed–torque line',8,13,PAL.muted,10,'left');
+      txt(ctx,Math.round(rpm)+' rpm · '+Iop.toFixed(1)+' A · '+Top.toFixed(3)+' N·m',w-8,13,PAL.ink,8.5,'right');
+      txt(ctx,Pout.toFixed(1)+' W out · '+Math.round(eff*100)+'% eff',w-8,24,PAL.muted,8,'right');
+      txt(ctx,'one line from no-load speed to stall torque — voltage slides it, load places you on it',
+          (x0+x1)/2,h-5,PAL.faint,8,'center');
+    }
+  };
+
+  /* loadline — the motor line meeting a load curve. Same fixed axes (torque x 0..T_s@maxV, speed ω y
+     0..ω₀@maxV). Motor line in s.accent for the current voltage; the load curve in PAL.cool is one of
+     three shapes: constant torque (vertical at T_c), fan ∝ ω² (rising ω = √(T/c)), or viscous ∝ ω
+     (straight ω = T/b). The operating point is their intersection, found by scanning T from 0 to T_s
+     for where motor-line ω meets load-curve ω; a faint PAL.good box marks the continuous-duty region
+     (0..T_cont ≈ 28% of stall at max V) and flips to PAL.bad "overload" when the point crosses out of
+     it. Raising voltage lifts the line so the intersection climbs; load type/magnitude move the curve.
+     Motor model inlined (k_t = k_e = 0.02, R = 1.5); s.accent = motor line, unicode literals only. */
+  SIMS.loadline={
+    controls:[
+      {k:'volt',label:'Applied voltage',min:3,max:24,step:0.5,val:12,unit:' V'},
+      {k:'loadtype',label:'Load type',min:0,max:2,step:1,val:1,fmt:function(v){return ['constant torque','fan (∝ ω²)','viscous (∝ ω)'][v];}},
+      {k:'loadmag',label:'Load magnitude',min:10,max:100,step:5,val:50,unit:' %'}
+    ],
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var kt=0.02, ke=0.02, R=1.5, slope=R/(kt*ke);   // 3750
+      var V=clamp(s.p.volt,3,24);
+      var w0=V/ke, Ts=kt*V/R;
+      var Vmax=24, Wmax=Vmax/ke, Tmax=kt*Vmax/R;       // 1200 rad/s, 0.32 N·m
+      var ltype=Math.round(clamp(s.p.loadtype,0,2));
+      var mag=clamp(s.p.loadmag,10,100);
+      var Tcont=0.28*Tmax;                              // continuous-duty torque
+
+      var Tc=mag/100*Tmax*0.6;        // constant-torque demand
+      var cfan=mag/100*8.5e-7;        // fan:     T = cfan·ω²  (>0)
+      var bvis=mag/100*3.2e-4;        // viscous: T = bvis·ω   (>0)
+      function loadOmega(T){
+        var tt=(T>0)?T:0;
+        if(ltype===1){ return Math.sqrt(tt/cfan); }   // fan
+        return tt/bvis;                               // viscous
+      }
+      function motW(T){ var wv=w0-slope*T; return (wv>0)?wv:0; }
+
+      // operating point (intersection)
+      var Top, wop;
+      if(ltype===0){
+        Top=clamp(Tc,0,Ts);
+      } else {
+        var N=240, prevT=0, prevF=w0, found=false, k;
+        Top=Ts;
+        for(k=1;k<=N;k++){
+          var T=Ts*k/N; var f=motW(T)-loadOmega(T);
+          if(f<=0){ var dd=prevF-f; var frac=(dd>1e-9)?(prevF/dd):0;
+            Top=prevT+(T-prevT)*clamp(frac,0,1); found=true; break; }
+          prevT=T; prevF=f;
+        }
+        if(!found){ Top=Ts; }
+      }
+      wop=motW(Top);
+      var rpm=wop*60/(2*Math.PI);
+      var overload=Top>Tcont;
+
+      var mL=36,mR=16,mT=28,mB=36;
+      var x0=mL, x1=Math.max(mL+20,w-mR), yTop=mT, yBot=Math.max(mT+20,h-mB);
+      function xOf(T){ return clamp(x0+clamp(T,0,Tmax)/Tmax*(x1-x0),x0,x1); }
+      function yW(wv){ return clamp(yBot-clamp(wv,0,Wmax)/Wmax*(yBot-yTop),yTop,yBot); }
+
+      // continuous-duty region (0..Tcont), good or bad tint
+      var cxr=xOf(Tcont);
+      ctx.globalAlpha=0.12; ctx.fillStyle=overload?PAL.bad:PAL.good;
+      ctx.fillRect(x0,yTop,clamp(cxr-x0,0,x1-x0),yBot-yTop);
+      ctx.globalAlpha=1;
+
+      // frame + grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,yTop,x1-x0,yBot-yTop);
+      ctx.globalAlpha=0.5;
+      for(var gi=1;gi<5;gi++){ var gx=clamp(x0+(x1-x0)*gi/5,x0,x1);
+        ctx.beginPath(); ctx.moveTo(gx,yTop); ctx.lineTo(gx,yBot); ctx.stroke(); }
+      ctx.globalAlpha=1;
+
+      // axis names + ticks
+      txt(ctx,'ω (rad/s)',x0+2,yTop-3,PAL.muted,8.5,'left');
+      var ti,yi;
+      for(ti=0;ti<=4;ti++){ var Tv=Tmax*ti/4; var txx=xOf(Tv);
+        ctx.strokeStyle=PAL.line; ctx.beginPath(); ctx.moveTo(txx,yBot); ctx.lineTo(txx,yBot+3); ctx.stroke();
+        txt(ctx,Tv.toFixed(2),txx,yBot+12,PAL.faint,7,'center'); }
+      txt(ctx,'torque (N·m) →',x0+2,yBot+22,PAL.muted,8,'left');
+      for(yi=0;yi<=4;yi++){ var wv=Wmax*yi/4; txt(ctx,Math.round(wv)+'',x0-3,yW(wv)+3,PAL.faint,7,'right'); }
+
+      // continuous-region tag
+      txt(ctx,'continuous',clamp((x0+cxr)/2,x0+2,x1-2),yTop+10,overload?PAL.bad:PAL.good,7.5,'center');
+
+      // load curve (PAL.cool)
+      ctx.strokeStyle=PAL.cool; ctx.lineWidth=2;
+      if(ltype===0){
+        var lx=xOf(Tc);
+        ctx.beginPath(); ctx.moveTo(lx,yW(0)); ctx.lineTo(lx,yW(Wmax)); ctx.stroke();
+      } else {
+        ctx.beginPath(); var started=false, M=120, j;
+        for(j=0;j<=M;j++){ var wv2=Wmax*j/M; var Tl=(ltype===1)?(cfan*wv2*wv2):(bvis*wv2);
+          var px=xOf(Tl), py=yW(wv2);
+          if(!started){ ctx.moveTo(px,py); started=true; } else ctx.lineTo(px,py); }
+        ctx.stroke();
+      }
+
+      // motor line (accent)
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.moveTo(xOf(0),yW(w0)); ctx.lineTo(xOf(Ts),yW(0)); ctx.stroke();
+
+      // operating point + dashed guides
+      var ox=xOf(Top), oy=yW(wop);
+      ctx.strokeStyle=PAL.ink; ctx.globalAlpha=0.3; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox,yBot); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(x0,oy); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      dot(ctx,ox,oy,4,overload?PAL.bad:PAL.ink);
+
+      // title + readouts + verdict + caption
+      txt(ctx,'motor line meets load',8,13,PAL.muted,10,'left');
+      txt(ctx,Math.round(rpm)+' rpm · '+Top.toFixed(3)+' N·m',w-8,13,PAL.ink,8.5,'right');
+      txt(ctx,overload?'overload — outside continuous region':'OK — continuous',
+          w-8,24,overload?PAL.bad:PAL.good,8.5,'right');
+      txt(ctx,'the operating point is where the motor line meets the load',
+          (x0+x1)/2,h-5,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

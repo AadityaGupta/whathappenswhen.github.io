@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>Harmonic Drive — 100:1 and Zero Backlash From a Gear That Flexes · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#4E6E7E; --accent-ink:#FFFFFF; --accent-wash:#E6EDF0;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#8CB4C8; --accent-ink:#241405; --accent-wash:#17242B;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#8CB4C8; --accent-ink:#241405; --accent-wash:#17242B;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 11 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>Harmonic Drive: 100:1 and Zero Backlash From a Gear That Flexes</h1>
+    <p class="dek">Every precise robot joint hides the same strange part &mdash; a thin steel cup with teeth, deliberately squashed into an ellipse and made to walk, one or two teeth per turn, around a rigid ring. From that flexing comes a 100:1 reduction in a single stage, with essentially zero backlash, in a package a conventional gear train can&rsquo;t touch. It looks as though it shouldn&rsquo;t work; it is in fact the cleanest way to get huge, precise reduction into a joint.</p>
+    <div class="meta">
+      <span>&approx; 18 min read</span>
+      <span>robotics · gearing · precision actuation</span>
+      <span>companion to <b>The DC-Motor</b> and <b>Control Systems</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">Hand a robot designer a fast, light electric motor and ask them to turn it into a joint &mdash; slow, strong, and precise enough to place a tool to a hair &mdash; and they reach, almost every time, for a part that looks as though it was designed as a dare. A thin steel cup with teeth cut around its rim, deliberately squashed out of round into an ellipse, and made to flex its way around a rigid ring that has a couple more teeth than it does. Spin the ellipse and the cup <em>walks</em> &mdash; creeping backward a tooth or two for every fast turn of the input &mdash; and out of that walking comes a 100:1 reduction in a single stage, with essentially no backlash, in a disc you could hold in your palm. A normal gear train cannot come close: big reduction means a stack of meshes, and every mesh <em>must</em> carry clearance or it jams, so the lost motion piles up exactly where a joint can least afford it. The escape is one reframe &mdash; stop treating the gear as rigid, make it flexible, and give it the <em>wrong number of teeth</em> &mdash; and from that single move the whole subject falls out: why the ratio is just a tooth-count difference, why so many teeth share the load that backlash vanishes, and why the same flexing that buys you all of this also makes the gearbox a soft spring with a fatigue clock. Then the piece turns to the half the textbooks skip: how you actually spec a joint, how it bites when it misbehaves, what to put on the purchase order, and a 100:1 cobot elbow sized end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: robot joints want the impossible gearbox</h2>
+    <p>Start with exactly what a joint asks of its gearbox, because it asks for four things at once and ordinary gears can give you at most three. It wants a <b>large reduction</b> &mdash; typically 50:1 to 160:1 &mdash; because a small, fast, efficient motor has to become a slow, strong joint. It wants <b>near-zero backlash</b>, because any lost motion between teeth becomes slop at the end of the arm: the joint can no longer tell exactly where it is, and a position loop built on top of that slop jitters, buzzes, or hunts. It wants to be <b>compact and light</b>, because every gram at a joint near the shoulder is paid for again and again by every link it has to swing. And it wants to be <b>coaxial and stiff</b> &mdash; the motor in line with the output, nothing cantilevered out to one side.</p>
+    <p>A conventional spur-gear train walks straight into a wall. A big reduction out of spur stages means <em>many</em> stages &mdash; bulky, heavy, and lossy &mdash; and every meshing pair of teeth <em>must</em> have backlash, a deliberate clearance, or the teeth bind and wear as they roll through mesh and the housing grows with heat. You cannot simply machine the backlash out; teeth need room to move. So the one thing a joint most wants &mdash; huge reduction with no lost motion in a small, coaxial package &mdash; is precisely the combination a normal gear train is worst at. The question this piece answers is how you escape that wall, and the escape turns out to be a single strange idea.</p>
+
+    <h2><span class="sn">2</span>The reframe: make one gear flexible and give it the wrong tooth count</h2>
+    <p>The escape is to stop treating the gear as rigid. Take a <b>thin, flexible steel cup with external teeth</b> &mdash; the <b>flexspline</b> &mdash; and surround it with a <b>rigid internal ring gear</b> &mdash; the <b>circular spline</b> &mdash; that has <b>just a few more teeth</b>, almost always exactly <b>two</b> more. Because the flexspline is flexible, you can deform it into an ellipse with a smooth elliptical bearing &mdash; the <b>wave generator</b> &mdash; pressed onto the motor shaft. The ellipse pushes the flexspline&rsquo;s teeth into full engagement with the ring at the <b>two ends of the major axis</b> and pulls them completely clear at the minor axis. The teeth mesh only in those two moving zones; everywhere else they float free.</p>
+    <p>Now the trick. Spin the wave generator one full turn. The zone of engagement travels around the ring like a wave &mdash; nothing is sliding in the ordinary gear sense, the <em>bulge</em> is what moves. But the flexspline has two fewer teeth than the ring, so when the wave has gone all the way around and the same stretch of flexspline is back in mesh, the flexspline has been forced to <b>slip back by exactly two teeth</b> relative to the ring. One fast turn of the input becomes a tiny, two-tooth backward creep of the output. The reduction is not built from a train of meshes handing motion down a line; it is built from a <b>tooth-count mismatch that the continuous flexing silently takes up</b>, a little each turn, forever.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Spin the ellipse fast — the flexible gear walks back a couple of teeth per turn</div>
+      <canvas class="sim" data-sim="strainwave" data-c="#4E6E7E" aria-label="an elliptical wave generator spinning inside a toothed flexspline inside a rigid circular spline; teeth mesh at the major-axis ends and the flexspline creeps slowly backward by the tooth difference per input turn"></canvas>
+      <div class="ctrls" data-sim="strainwave"></div>
+    </div>
+    <p class="simnote">Spin the wave generator and watch the three parts work together: the ellipse presses the flexspline into the ring at its two ends, the engagement zones chase the major axis around, and &mdash; this is the whole thing &mdash; a gold reference tooth on the flexspline creeps slowly <em>backward</em>, against the spin. Set the flexspline tooth count and the tooth difference and the creep rate changes with them: the reference tooth walks back by the tooth difference per input turn, so it drifts at exactly <span class="m">1/ratio</span> of the input speed. Fast in, a hair out, and backward &mdash; the reduction made visible.</p>
+
+    <h2><span class="sn">3</span>The core: the ratio is a tooth-count difference</h2>
+    <p>Count the walking carefully and the ratio falls right out, with no gear train to track. Per full turn of the wave generator, the flexspline rotates relative to the fixed circular spline by the tooth difference, in the <em>opposite</em> direction. Divide the input turn by that creep and the reduction is simply:</p>
+    <div class="eq"><span class="m">ratio = <span class="frac"><span class="nu"><i>N</i><sub>f</sub></span><span><i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub></span></span> = <span class="frac"><span class="nu"><i>N</i><sub>f</sub></span><span>2</span></span></span><span class="lbl"><i>N</i><sub>f</sub> flexspline teeth, <i>N</i><sub>c</sub> ring teeth; the usual difference is two</span></div>
+    <p>where <span class="m"><i>N</i><sub>f</sub></span> is the flexspline tooth count and <span class="m"><i>N</i><sub>c</sub></span> the circular spline&rsquo;s. With the standard difference of <b>two teeth</b> (<span class="m"><i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub> = 2</span>) the ratio is just <b>half the flexspline tooth count</b>. So a flexspline with <b>200 teeth</b> inside a <b>202-tooth</b> ring gives a clean <b>100:1</b> in a single stage &mdash; and the output turns <em>backward</em> relative to the input. The number of teeth <em>directly</em> sets the ratio; there is no stack of stages, just how many teeth the wave has to swallow per revolution. (Hold a different element fixed &mdash; drive the circular spline, fix the flexspline, or take the output off a different member &mdash; and the same three parts give different ratios and signs; the fixed-circular-spline, output-on-flexspline case is the common one.)</p>
+    <div class="key">
+      <span class="kl">The whole drive in one line</span>
+      <div class="eq"><span class="m">ratio = <span class="frac"><span class="nu"><i>N</i><sub>f</sub></span><span><i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub></span></span> = <span class="frac"><span class="nu"><i>N</i><sub>f</sub></span><span>2</span></span></span></div>
+      <p>Deform a flexible gear into an ellipse inside a rigid ring that has a few more teeth, and spin the ellipse. The flexible gear walks backward by the tooth difference each input turn, so the reduction is <span class="m"><i>N</i><sub>f</sub>/(<i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub>) = <i>N</i><sub>f</sub>/2</span> for the usual two-tooth difference &mdash; <b>100:1 from a 200/202 pair</b>, in one compact, coaxial stage, output running opposite the input. No train, and no clearance to stack up.</p>
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">Tooth count sets the ratio directly — no gear train</div>
+      <canvas class="sim" data-sim="ratio" data-c="#4E6E7E" aria-label="the reduction ratio N_f over tooth difference, output speed and direction, and the engaged-teeth fraction, compared with a single spur or planetary stage"></canvas>
+      <div class="ctrls" data-sim="ratio"></div>
+    </div>
+    <p class="simnote">Set the flexspline tooth count <span class="m"><i>N</i><sub>f</sub></span> and the tooth difference and read the three numbers that follow straight from them: the <b>ratio</b> <span class="m"><i>N</i><sub>f</sub>/(<i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub>)</span>, the <b>output speed</b> (tiny, and <em>backward</em>), and the <b>fraction of teeth engaged at once</b>. Push the difference to one and the ratio leaps to <span class="m"><i>N</i><sub>f</sub></span> itself; open it up and the ratio collapses toward ordinary values. Alongside sits a single spur stage for scale &mdash; one harmonic stage at 100:1 dwarfs what a spur or planetary stage reaches before you have stacked three of them. The reduction is a tooth-count difference you dial in, nothing more.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read the ratio at its ends, and what the flexing costs</h2>
+    <p>The formula earns its keep at the extremes, and reading it there is the fastest way to see both where the magic comes from and what it will cost you.</p>
+    <div class="limit">
+      <b>Limit check — read the ratio at its ends</b>
+      <b>Tooth difference = 1</b> (<span class="m"><i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub> = 1</span>): the ratio becomes <span class="m"><i>N</i><sub>f</sub></span> itself &mdash; the <em>maximum</em> for a given size &mdash; but a one-tooth difference is fragile, hard to make run smoothly, and throws the ellipse off balance, so it is rare. <b>Difference = 2</b> is the near-universal standard: still a high ratio (<span class="m"><i>N</i><sub>f</sub>/2</span>), robust, and symmetric &mdash; the two engagement zones sit opposite each other and balance the radial loads. <b>Difference large / few flexspline teeth</b>: the ratio drops back toward conventional values, and you have thrown away the harmonic drive&rsquo;s whole reason to exist. <b>Many teeth engaged at once</b>: because the ellipse presses a long arc of teeth into mesh at each end, <b>~10&ndash;30 % of all the teeth are engaged simultaneously</b> &mdash; against one or two in a spur mesh &mdash; and this one fact is where the headline benefits come from: enormous torque density (the load is shared across many teeth), near-zero backlash (the teeth are held preloaded in mesh with no clearance to take up), and <em>averaging</em> (position accuracy beats any single tooth&rsquo;s error, because many teeth vote at once). <b>Flexspline flex &rarr; 0</b> (make the cup rigid): the mechanism simply stops working &mdash; the whole principle <em>is</em> the elastic deformation. The flexspline must flex through a full ellipse twice per input turn, forever, which is also exactly its life limit.
+    </div>
+    <p>That last line is the hinge of the whole part, because the same flexing that makes the drive work also writes its character. Because many preloaded teeth share the load you get <b>zero backlash and very high torque density</b> &mdash; the twin signatures that put harmonic drives in every precision robot wrist and joint. But the flexspline is a <b>thin elastic cup</b>, so the drive is <b>torsionally compliant</b>: apply torque and the output twists a little before it truly moves. The gearbox is also a soft <em>spring</em> sitting in series with your joint. That compliance &mdash; plus a small hysteresis and a tiny, repeatable &ldquo;kinematic error&rdquo; that cycles twice per input turn &mdash; sets a ceiling on <b>control bandwidth</b>: you cannot servo a joint stiffer than its own gearbox, so the harmonic drive&rsquo;s springiness decides how hard you can tune the position loop before it rings. And the relentless double-flex is a <b>fatigue</b> process &mdash; the flexspline is the wear-and-life-limiting part, rated for a finite number of cycles. Zero backlash is bought with compliance and a fatigue clock; that trade is the entire personality of the part, and everything in Part II is about living with it.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: speccing a joint, and how it bites</h2>
+    <p>Harmonic drives live wherever precise, compact, zero-backlash reduction matters and cost is secondary: the joints of industrial arms and collaborative robots, the actuators of humanoid and legged robots, antenna and camera gimbals, satellite and telescope pointing mechanisms, CNC rotary and indexing tables, and semiconductor wafer handlers. You usually select one as a <em>unit</em> &mdash; increasingly an integrated motor + harmonic drive + encoder &ldquo;actuator module.&rdquo; The design sequence is fixed, not a flash of insight: fix the <b>output torque</b> (continuous and peak) and the <b>ratio</b> your motor-to-joint speeds demand; pick a <b>frame size</b> rated for that torque <em>and</em> for the <b>moment / overhung load</b> the joint actually sees; confirm the <b>torsional stiffness</b> is high enough for the control bandwidth you want; and budget the <b>flexspline life</b> against your duty cycle &mdash; in cycles, not hours. When a harmonic joint misbehaves it is almost always the compliance or the life talking, in a short and legible vocabulary:</p>
+    <dl class="speclist">
+      <dt>Joint rings or buzzes when you tighten the position loop</dt><dd>You have hit the <b>torsional compliance</b> ceiling: the gearbox spring plus the arm inertia set a resonance you cannot servo past. Add a load-side sensor and a notch filter, or accept lower bandwidth &mdash; a faster motor will not help.</dd>
+      <dt>End-of-arm position is slightly off under load and springs back when unloaded</dt><dd><b>Wind-up</b>: the flexspline twists elastically under torque. This is not backlash &mdash; it is recoverable deflection &mdash; so compensate it with a load-side encoder or a stiffness model, not by hunting for slop that isn&rsquo;t there.</dd>
+      <dt>A small, repeatable position error that cycles twice per input revolution</dt><dd><b>Kinematic transmission error</b>, inherent to the two-lobe wave. Map it and compensate in software if you need the last arc-seconds; otherwise live with it.</dd>
+      <dt>Premature roughness or failure after long service</dt><dd><b>Flexspline fatigue</b> or lubrication breakdown: you have exceeded the rated cycles, lived too near the peak-torque limit, or starved the grease. It is a life-limited part &mdash; respect the cycle rating.</dd>
+      <dt>Grinding or ratcheting under shock</dt><dd><b>Dedoidal failure</b> &mdash; tooth jumping &mdash; from a momentary overload past peak torque. Size peak torque for the worst shock the joint will ever take, not the average.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How the flexing shapes the whole actuator</h2>
+    <p>Nearly everything about a harmonic-driven joint traces back to the flexing cup, and the properties are not independent dials. <b>Zero backlash</b> is why you can close a precise position loop on the joint at all &mdash; but the <b>torsional stiffness</b> of that same cup <em>caps</em> the loop&rsquo;s bandwidth, so stiffness is the number that quietly governs how responsive the joint is ever allowed to be. <b>Torque density</b> &mdash; torque per unit mass and volume, straight from the many engaged teeth &mdash; is why the arm can be light and the joint compact, which is a direct win on reach and payload. The <b>single-stage coaxial</b> form keeps the actuator short and the motor in line, instead of stacking reduction stages down the arm. And the <b>fatigue life</b> sets the maintenance interval and the real duty-cycle limit. So choosing a harmonic drive is choosing a point on a coupled surface of {ratio, torque, stiffness, backlash, life, mass}, where the flexspline&rsquo;s elasticity ties several of those axes together &mdash; you cannot independently maximize stiffness and ratio and life. Move one and you have moved the others, which is why selection is a negotiation, not a lookup.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>The same part runs industrial and collaborative robot joints, humanoid and legged-robot actuators, satellite and telescope pointing mechanisms, gimbals, CNC rotary and indexing tables, and medical and semiconductor automation &mdash; anywhere precise, compact, zero-backlash reduction is worth paying for. When you select one, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Reduction ratio</dt><dd>Set by tooth count (<span class="m"><i>N</i><sub>f</sub>/2</span> for the standard two-tooth difference). Pick it so the motor&rsquo;s efficient speed lands at the joint&rsquo;s needed speed.</dd>
+      <dt>Rated (continuous) &amp; peak/momentary torque</dt><dd>Size continuous torque to the duty and peak torque to the worst shock. Peak is a <b>flexspline-survival</b> limit, not a duty you may sit at.</dd>
+      <dt>Torsional stiffness</dt><dd>The number that sets your achievable control bandwidth. Higher means stiffer, more responsive joints &mdash; but usually a larger, heavier unit.</dd>
+      <dt>Backlash / hysteresis / lost motion</dt><dd>Near-zero is the entire point. Check the spec, and check that it holds over the rated life, not just when new.</dd>
+      <dt>Rated life (cycles) &amp; allowable moment / overhung load</dt><dd>The flexspline&rsquo;s fatigue rating and the output bearing&rsquo;s load capacity &mdash; and a joint sees big moments, not just pure torque.</dd>
+      <dt>Frame size / mass / form</dt><dd>Component set (lightest, but you own the bearings and alignment), housed unit (adds the cross-roller bearing), or integrated actuator (drop-in motor + drive + encoders + brake).</dd>
+      <dt>Efficiency &amp; lubrication</dt><dd>Harmonic efficiency sags at low load and low temperature; the maker&rsquo;s grease and the thermal environment matter more than the headline number.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the datasheet won&rsquo;t tell you</span>
+      <ul>
+        <li><b>It is zero-<em>backlash</em>, not zero-<em>compliance</em>.</b> People conflate the two and are shocked when a loaded joint deflects. There is no lost motion, but the flexspline is a spring &mdash; model the wind-up or add a load-side encoder if you need accuracy under torque.</li>
+        <li><b>The gearbox sets your control bandwidth, not the motor.</b> You cannot servo the joint stiffer than its own torsional resonance, so a &ldquo;faster&rdquo; motor buys you nothing once you are up against the gearbox spring. Pick the stiffness for the bandwidth you need.</li>
+        <li><b>It is a life-limited part &mdash; count cycles, not hours.</b> The flexspline fatigues with every revolution&rsquo;s double-flex, so a lightly-loaded joint that moves constantly can wear out before a heavily-loaded one that rarely moves. Hours on a nameplate tell you little.</li>
+        <li><b>Efficiency is lousy at light load and cold.</b> Harmonic drives can fall to <b>30&ndash;50 %</b> efficiency at low torque or low temperature &mdash; starting friction is high &mdash; so never assume the headline efficiency at your actual operating point. Budget motor heat accordingly.</li>
+        <li><b>Peak torque is a survival rating, not a duty.</b> You can touch peak for a moment (a collision, a shock); live near it and the flexspline fatigues or a tooth jumps (dedoidal failure). Size continuous torque for the job and peak for the accident.</li>
+        <li><b>Mind the kinematic error and the grease.</b> There is a tiny, repeatable error twice per input turn and a real sensitivity to lubrication and temperature; precision-pointing applications map and compensate that error and control the thermal environment, rather than wishing it away.</li>
+        <li><b>Alignment and the wave generator are where it dies young.</b> A component set assembled with poor concentricity or the wrong flexspline preload runs rough and fails early &mdash; one reason integrated actuator modules are popular: the maker owns the hard assembly, and you inherit it done right.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">a 100:1 cobot elbow joint</span></div>
+
+    <h2><span class="sn">9</span>Build it: a cobot elbow joint, 100:1</h2>
+    <p>Enough principle &mdash; here is a real joint sized end to end, so you can copy the shape and reuse it. The job: a collaborative-robot elbow that holds <span class="m">&approx; 40 N&middot;m</span> at the joint, moves at up to <span class="m">&approx; 60 &deg;/s</span>, and must repeat its position to arc-minutes. Walk the choices, and every one of them reads straight off the part you already understand.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a 100:1 cobot elbow</span>
+      <dl class="speclist">
+        <dt>Ratio from the speeds</dt><dd>A BLDC servo runs comfortably at <span class="m">&approx; 3000 rpm</span>; the joint needs <span class="m">&approx; 60 &deg;/s = 10 rpm</span>. A naïve <span class="m">3000/10 &approx; 300</span> is too much for one harmonic stage at this torque, so target <b>100:1</b> (a <b>200/202</b> flexspline/circular-spline pair) and let the motor run a little slower, or trim the motor speed to suit. The output turns backward &mdash; account for the sign in firmware.</dd>
+        <dt>Torque sizing</dt><dd>The joint needs <span class="m">&approx; 40 N&middot;m</span> continuous; at 100:1 the motor supplies only <span class="m">&approx; 0.4 N&middot;m</span> before efficiency. Choose a <b>frame size whose rated continuous torque exceeds 40 N&middot;m with margin</b>, and whose <b>peak rating</b> covers the worst collision shock &mdash; a cobot <em>will</em> be hit &mdash; often <b>2&ndash;3&times;</b> continuous.</dd>
+        <dt>Stiffness vs bandwidth</dt><dd>Look up the unit&rsquo;s torsional stiffness; with the arm inertia it fixes the joint&rsquo;s resonant frequency. For a <span class="m">10&ndash;20 Hz</span> position bandwidth, the gearbox stiffness must put that resonance comfortably above it. If it cannot, add a <b>load-side encoder</b> and close an outer loop on the true joint angle.</dd>
+        <dt>Dual encoders</dt><dd>Put one encoder on the <b>motor</b> (for commutation and velocity) and one on the <b>output/load side</b> (for true joint angle, to see past the wind-up and kinematic error). This is standard on precise cobot joints, not a luxury.</dd>
+        <dt>Life</dt><dd>Estimate the revolutions over the robot&rsquo;s service life from the duty cycle and confirm it is within the flexspline&rsquo;s <b>rated cycles</b> at your average torque &mdash; derated for peak events. Count cycles, not hours.</dd>
+        <dt>Lubrication &amp; thermal</dt><dd>Spec the maker&rsquo;s grease and expect lower efficiency when cold; budget the motor heat accordingly, because the drive&rsquo;s losses land in the same small housing as the windings.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a torque, a speed, an accuracy target and a motor speed hand you the ratio, the tooth pair, the frame size, the control architecture, and &mdash; loudly &mdash; the fact that your real risks are the collision peak and the gearbox spring, not the steady 40&nbsp;N&middot;m. The plug-in set is small and you already have all of it. The reduction is the tooth-count difference, and the output runs opposite the input:</p>
+    <div class="eq"><span class="m">ratio = <span class="frac"><span class="nu"><i>N</i><sub>f</sub></span><span><i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub></span></span> = <span class="frac"><span class="nu"><i>N</i><sub>f</sub></span><span>2</span></span></span><span class="lbl">tooth count sets the ratio directly</span></div>
+    <p>Speed divides by the ratio and torque multiplies by it, less the efficiency, which is poor at light load:</p>
+    <div class="eq"><span class="m">&omega;<sub>out</sub> = <span class="frac"><span class="nu">&omega;<sub>in</sub></span><span>ratio</span></span></span><span class="lbl">the output creeps; the input races</span></div>
+    <div class="eq"><span class="m">&tau;<sub>out</sub> = ratio &middot; &tau;<sub>in</sub> &middot; &eta;</span><span class="lbl">&eta; = efficiency, often only 0.3&ndash;0.5 when cold or lightly loaded</span></div>
+    <p>Roughly <span class="m">10&ndash;30 %</span> of the flexspline&rsquo;s teeth are engaged at once, which is what buys the torque density and the zero backlash. And the compliance limit &mdash; the ceiling on how hard you may tune the loop &mdash; is a resonance of the gearbox spring against the load inertia:</p>
+    <div class="eq"><span class="m"><i>f</i><sub>res</sub> &approx; <span class="frac"><span class="nu">1</span><span>2&pi;</span></span>&radic;<span class="frac"><span class="nu"><i>K</i><sub>torsional</sub></span><span><i>J</i><sub>load</sub></span></span></span><span class="lbl">the stiffness-vs-inertia resonance that caps the bandwidth</span></div>
+    <p>Finally, the total output revolutions over the service life must stay inside the rated cycle life, derated for peak torque &mdash; the fatigue clock, written as a budget rather than a hope.</p>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment the loop rings or the flexspline wears out early:</p>
+    <ol class="recipe">
+      <li><b>Confirm ratio and direction.</b> Command one motor revolution, measure the output motion &rarr; verify it is <span class="m">1/ratio</span> and in the expected (reversed) direction before you trust any kinematics.</li>
+      <li><b>Measure backlash and wind-up separately.</b> Lock the input, apply a known output torque both ways, and measure the output deflection &rarr; that is <em>compliance</em> (recoverable). Backlash proper should be near zero; distinguish the two now, before they confuse a field diagnosis later.</li>
+      <li><b>Find the torsional resonance.</b> With the real arm attached, do a frequency sweep &mdash; chirp the torque, watch the load-side encoder &mdash; and the resonant peak is your control-bandwidth ceiling.</li>
+      <li><b>Set up dual-encoder control.</b> Commutate and take velocity from the motor encoder; close the position loop on the <b>load-side</b> encoder to reject wind-up and kinematic error.</li>
+      <li><b>Map the kinematic error</b> (optional, for arc-second work): command slow, constant output motion, log the load-side error against input angle, and store the twice-per-turn correction.</li>
+      <li><b>Validate the peak/shock case and log the duty.</b> Exercise a worst-case stop or collision within the peak rating, confirm nothing jumps a tooth, and start a cycle counter for life tracking.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Harmonic vs cycloidal vs planetary</dt><dd><b>Harmonic</b> for the highest ratio, zero backlash, and lowest mass &mdash; robot wrists and distal joints. <b>Cycloidal (RV)</b> for higher torque, higher stiffness, and shock tolerance at proximal joints (heavier, a little backlash). <b>Planetary</b> when you need high efficiency and a moderate ratio cheaply and can tolerate some backlash.</dd>
+      <dt>Component set vs housed unit vs integrated actuator</dt><dd>Component set is lightest and cheapest but you own the bearings, alignment, and flexspline preload (hard); a housed unit adds the cross-roller bearing; an integrated actuator (motor + drive + encoders + brake) is drop-in and de-risks the assembly.</dd>
+      <dt>Single vs dual encoder</dt><dd>Motor-only is fine for speed, commutation, and rough position; add a <b>load-side encoder</b> the moment wind-up or kinematic error would blow your accuracy budget &mdash; which, on a precise cobot, it will.</dd>
+      <dt>Ratio: higher vs lower</dt><dd>A higher ratio (more flexspline teeth) means more reduction and torque density but lower output speed and a touch more compliance per unit; match it to the motor&rsquo;s efficient speed and the joint&rsquo;s speed need rather than maximizing it blindly.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do on the bench</b>
+      This page gets you the right gearbox <em>type</em>, a sound ratio, a frame size that covers continuous <em>and</em> peak torque, and a control architecture built around dual encoders &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% is the mechanical reality of a flexing part and a stiff control loop. <b>Measure the real torsional stiffness and resonance</b> on <em>your</em> assembled joint with the real arm inertia; the catalog stiffness plus your structure&rsquo;s own compliance set the true bandwidth ceiling, and it is always lower than you hoped. <b>Budget flexspline life against the real duty cycle in cycles</b>, derated for peak and shock events &mdash; a cobot that is constantly nudged clocks cycles faster than you think. <b>Handle the wind-up and kinematic error</b> with a load-side encoder (and a stored error map for arc-second work); do not try to out-stiffen them in software past the resonance. And <b>respect lubrication and thermal</b> &mdash; use the maker&rsquo;s grease, expect low cold efficiency, and keep the gearbox in its temperature band for precision work. Tools to stand on: the maker&rsquo;s <b>selection software and catalog curves</b> (Harmonic Drive LLC, Nabtesco for cycloidal), an <b>integrated actuator module</b> to de-risk assembly, <b>dual encoders with a load-side angle sensor</b>, and a <b>frequency-response / chirp test</b> to find the real resonance. The flexing-tooth principle in Part&nbsp;I never changes; the last mile is learning to live with the spring and the fatigue clock that come attached to the zero backlash.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">A harmonic drive has a flexspline with 200 teeth and a circular spline with 202. What is the reduction ratio, which way does the output turn relative to the input, and what would a flexspline with 160 teeth (still two fewer than its ring) give?</p><p class="a">The ratio is <span class="m"><i>N</i><sub>f</sub>/(<i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub>) = 200/2 = <b>100:1</b></span>, with the output turning <em>opposite</em> to the input. A 160/162 pair gives <span class="m">160/2 = <b>80:1</b></span>, again reversed. For the standard two-tooth difference the ratio is simply <b>half the flexspline tooth count</b> &mdash; no gear train to work through, just how many teeth the wave walks back per turn. Change the tooth count and you change the ratio directly.</p></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">Your cobot joint shows essentially zero backlash on the bench, yet when it holds a payload the tool tip sags a few arc-minutes and springs back the instant you remove the load. A colleague says the gearbox is worn. Why is he probably wrong, and what single sensor addition fixes the accuracy?</p><p class="a">That is not backlash &mdash; backlash is lost motion independent of load, and it would not spring back. It is <b>torsional wind-up</b>: the flexspline is an elastic spring and twists under torque, recovering fully when unloaded. The gearbox is not worn at all; it is doing exactly what a flexing cup does. The fix is a <b>load-side encoder</b> &mdash; close the position loop on the true joint angle so the controller sees and compensates the deflection directly, instead of trusting the motor-side angle through a spring.</p></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">You fit a &ldquo;faster&rdquo; motor to make your robot joint more responsive, but the position loop still rings at the same frequency no matter how you tune it. What is actually limiting the bandwidth, and what would raise the ceiling?</p><p class="a">The <b>torsional compliance of the harmonic drive</b> &mdash; the flexspline spring &mdash; together with the arm inertia sets a mechanical resonance, <span class="m"><i>f</i><sub>res</sub> &approx; (1/2&pi;)&radic;(<i>K</i>/<i>J</i>)</span>, and that resonance caps the achievable bandwidth. A faster motor cannot servo past the gearbox&rsquo;s own spring, which is why the ring frequency does not move. To raise the ceiling you need a <em>stiffer</em> gearbox (higher <span class="m"><i>K</i></span>), a lower load inertia (<span class="m"><i>J</i></span>), or a load-side sensor with resonance-aware control &mdash; not more motor.</p></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-dcmotor.html"><b>&larr; Prev:</b> The DC-Motor Speed&ndash;Torque Line</a>
+      <span class="nextpill"><b>Coming next:</b> The Differential</span>
+    </div>
+    <p class="footnote"><b>Harmonic Drive — 100:1 and Zero Backlash From a Gear That Flexes.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (a robot joint wants huge reduction, zero backlash, and a small coaxial package all at once &mdash; the one thing an ordinary gear train is worst at) and the one reframe (make a gear flexible and give it the wrong number of teeth) from which the ratio <span class="m"><i>N</i><sub>f</sub>/(<i>N</i><sub>c</sub> &minus; <i>N</i><sub>f</sub>) = <i>N</i><sub>f</sub>/2</span>, the backward-creeping output <span class="m">&omega;<sub>out</sub> = &omega;<sub>in</sub>/ratio</span>, the torque <span class="m">&tau;<sub>out</sub> = ratio&middot;&tau;<sub>in</sub>&middot;&eta;</span>, the 10&ndash;30 % of teeth engaged that buy the torque density and zero backlash, and the compliance resonance <span class="m"><i>f</i><sub>res</sub> &approx; (1/2&pi;)&radic;(<i>K</i>/<i>J</i>)</span> that caps the control bandwidth all fall out &mdash; then the practitioner&rsquo;s half: how you spec a joint, why it rings, winds up, drifts, or wears out, what to put on the order, and a 100:1 cobot elbow sized end to end. With live simulations of the three parts in motion as the flexspline walks backward, and of the tooth-count ratio explorer against a single spur stage. The honest truth of it: this gets you the right gearbox type, ratio, frame size, and control architecture &mdash; the real stiffness and resonance, the flexspline&rsquo;s fatigue life, and the wind-up compensation are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The DC-Motor Speed&ndash;Torque Line</b> and <b>Control Systems</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* strainwave — the three parts of a harmonic (strain-wave) drive in motion. An elliptical wave
+     generator (cool) whirls FAST inside a flexible toothed ring, the flexspline (accent), making it
+     bulge into mesh with a rigid circular spline (line) only at the two ends of the ellipse. Because
+     the flexspline has N_f teeth and the circular spline N_c = N_f + diff, one turn of the generator
+     walks the flexspline BACKWARD by exactly `diff` teeth, so its material (gold reference tooth)
+     creeps the other way at 1/ratio. Controls read via s.p.KEY only; unicode literals in txt. */
+  SIMS.strainwave={
+    controls:[
+      {k:'teeth',label:'Flexspline teeth N_f',min:30,max:60,step:2,val:40},
+      {k:'diff',label:'Tooth difference',min:1,max:3,step:1,val:2}
+    ],
+    init:function(s,w,h){ s.ready=true; },
+    step:function(s,dt){ /* geometry is driven directly off s.t in draw */ },
+    draw:function(ctx,w,h,s){
+      var Nf=Math.round(s.p.teeth), df=Math.max(1,Math.round(s.p.diff));
+      var Nc=Nf+df, ratio=Nf/df;
+      var cx=w*0.5, cy=h*0.46;
+      var r0=Math.min(w,h)*0.30;
+      var D=r0*0.07;
+      var thwg=s.t*1.4;                 // wave generator angle — the FAST input
+      var thfs=-thwg/ratio;             // flexspline material — slow, backward
+      var Rring=r0+D+8;
+
+      // --- wave generator: rotating ellipse (cam), semi-major r0+D along thwg ---
+      var a=r0+D, b=r0-D, cw=Math.cos(thwg), sw=Math.sin(thwg);
+      ctx.beginPath();
+      for(var k=0;k<=56;k++){
+        var tt=k/56*Math.PI*2, ex=a*Math.cos(tt), ey=b*Math.sin(tt);
+        var px=cx+ex*cw-ey*sw, py=cy+ex*sw+ey*cw;
+        if(k===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      ctx.fillStyle=PAL.cool; ctx.globalAlpha=0.12; ctx.fill();
+      ctx.globalAlpha=0.9; ctx.strokeStyle=PAL.cool; ctx.lineWidth=1.6; ctx.stroke();
+      ctx.globalAlpha=1;
+      // hub + major-axis spoke so the whirl is obvious
+      ctx.strokeStyle=PAL.cool; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.moveTo(cx-(r0+D)*cw,cy-(r0+D)*sw); ctx.lineTo(cx+(r0+D)*cw,cy+(r0+D)*sw); ctx.stroke();
+
+      // --- circular spline: fixed rigid ring with N_c inward tooth ticks ---
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.8;
+      ctx.beginPath(); ctx.arc(cx,cy,Rring,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=1.1;
+      for(var j=0;j<Nc;j++){
+        var ang=j/Nc*Math.PI*2, ca=Math.cos(ang), sa=Math.sin(ang);
+        ctx.beginPath();
+        ctx.moveTo(cx+Rring*ca,cy+Rring*sa);
+        ctx.lineTo(cx+(Rring-5)*ca,cy+(Rring-5)*sa);
+        ctx.stroke();
+      }
+
+      // --- engagement zones: the two ends of the ellipse where teeth are meshed ---
+      ctx.strokeStyle=PAL.good; ctx.lineWidth=3.2; ctx.globalAlpha=0.7;
+      ctx.beginPath(); ctx.arc(cx,cy,Rring,thwg-0.30,thwg+0.30); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,cy,Rring,thwg+Math.PI-0.30,thwg+Math.PI+0.30); ctx.stroke();
+      ctx.globalAlpha=1;
+
+      // --- flexspline: N_f teeth, radius modulated by the ellipse envelope ---
+      var pts=[];
+      for(var i=0;i<Nf;i++){
+        var phi=thfs+i*(2*Math.PI/Nf);
+        var eng=Math.cos(2*(phi-thwg));           // +1 at major axis (engaged), -1 at minor
+        var ri=r0+D*eng;
+        pts.push({x:cx+ri*Math.cos(phi),y:cy+ri*Math.sin(phi),eng:eng});
+      }
+      // smooth closed rim
+      ctx.strokeStyle=s.accent; ctx.lineWidth=1.8; ctx.globalAlpha=0.95;
+      ctx.beginPath();
+      for(var i2=0;i2<=Nf;i2++){ var p=pts[i2%Nf]; if(i2===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y); }
+      ctx.closePath(); ctx.stroke(); ctx.globalAlpha=1;
+      // teeth marks — engaged ones brighter/thicker
+      for(var i3=1;i3<Nf;i3++){
+        var p3=pts[i3];
+        if(p3.eng>0.6){ dot(ctx,p3.x,p3.y,2.8,s.accent); }
+        else { dot(ctx,p3.x,p3.y,1.4,PAL.faint); }
+      }
+
+      // --- reference tooth i=0 (gold) — watch it creep slowly BACKWARD ---
+      dot(ctx,pts[0].x,pts[0].y,4.6,PAL.gold);
+      dot(ctx,cx,cy,2.6,PAL.ink);
+
+      // --- readouts ---
+      var rtxt=(ratio%1===0)?ratio.toFixed(0):ratio.toFixed(1);
+      txt(ctx,'N_f = '+Nf+' (flexspline)',12,16,s.accent,10,'left');
+      txt(ctx,'N_c = '+Nc+' (circular spline)',12,30,PAL.muted,10,'left');
+      txt(ctx,'ratio  N_f/diff = '+rtxt+':1',w-12,16,PAL.ink,10.5,'right');
+      txt(ctx,'1 input turn → output creeps back '+df+' teeth',w-12,30,PAL.gold,9.5,'right');
+
+      // --- legend + caption ---
+      dot(ctx,16,h-38,3,PAL.cool);  txt(ctx,'wave generator (fast input)',24,h-35,PAL.muted,8.5,'left');
+      dot(ctx,16,h-25,3,PAL.gold);  txt(ctx,'reference tooth — creeps back slowly',24,h-22,PAL.gold,8.5,'left');
+      txt(ctx,'spin the ellipse fast — the flexible gear walks back a couple of teeth per turn',cx,h-9,PAL.faint,9.5,'center');
+    }
+  };
+  /* ratio — the quantitative ratio explorer. A single harmonic stage reduces by N_f/(N_c−N_f) =
+     N_f/diff, with the output turning BACKWARD at 1/ratio of the input. diff=1 gives the maximum
+     (ratio = N_f); diff=2 halves it. Two dials show the real relative speeds (input whirls, output
+     barely creeps); a log-scaled bar pits one harmonic stage against a single spur (~5:1) and a
+     single planetary (~8:1) stage; and ~20% of the teeth mesh at once → zero backlash + torque. */
+  SIMS.ratio={
+    controls:[
+      {k:'nf',label:'Flexspline teeth N_f',min:100,max:320,step:2,val:200},
+      {k:'diff',label:'Tooth difference',min:1,max:4,step:1,val:2}
+    ],
+    init:function(s,w,h){ s.ready=true; },
+    step:function(s,dt){ /* dials are driven directly off s.t in draw */ },
+    draw:function(ctx,w,h,s){
+      var Nf=Math.round(s.p.nf), df=Math.max(1,Math.round(s.p.diff));
+      var Nc=Nf+df, ratio=Nf/df;
+      var rtxt=(ratio%1===0)?ratio.toFixed(0):ratio.toFixed(1);
+      var cx=w*0.5;
+
+      // --- hero readout ---
+      txt(ctx,'single-stage harmonic reduction',12,16,PAL.muted,10,'left');
+      txt(ctx,'ratio = N_f/(N_c−N_f) = '+Nf+'/'+df+' = '+rtxt+':1',12,38,s.accent,16,'left');
+      txt(ctx,'N_c = '+Nc+' · output turns BACKWARD at 1/ratio of input speed',12,55,PAL.muted,9.5,'left');
+
+      // --- two dials: input fast, output slow + reverse ---
+      var dcy=h*0.40, dr=Math.min(24,h*0.10);
+      var ix=w*0.33, ox=w*0.63;
+      var inAng=s.t*2.2;              // fast input
+      var outAng=-inAng/ratio;       // slow, backward
+      function dial(dx,ang,col,l1,l2){
+        ctx.strokeStyle=PAL.line; ctx.lineWidth=1.4;
+        ctx.beginPath(); ctx.arc(dx,dcy,dr,0,Math.PI*2); ctx.stroke();
+        var hx=dx+dr*Math.cos(ang), hy=dcy+dr*Math.sin(ang);
+        ctx.strokeStyle=col; ctx.lineWidth=2.6;
+        ctx.beginPath(); ctx.moveTo(dx,dcy); ctx.lineTo(hx,hy); ctx.stroke();
+        dot(ctx,hx,hy,3,col); dot(ctx,dx,dcy,2.2,PAL.ink);
+        txt(ctx,l1,dx,dcy+dr+12,col,9.5,'center');
+        txt(ctx,l2,dx,dcy+dr+24,PAL.faint,8.5,'center');
+      }
+      dial(ix,inAng,PAL.cool,'INPUT · wave gen','whirls fast');
+      dial(ox,outAng,s.accent,'OUTPUT · flexspline','1/'+rtxt+'× · reverse');
+      // sense arrows between
+      txt(ctx,'→',ix,dcy-dr-4,PAL.cool,11,'center');
+      txt(ctx,'←',ox,dcy-dr-4,s.accent,11,'center');
+
+      // --- comparison: one harmonic stage vs single spur / planetary (log scale) ---
+      var items=[
+        {n:'single spur stage',v:5,c:PAL.muted},
+        {n:'single planetary stage',v:8,c:PAL.cool},
+        {n:'this harmonic stage',v:ratio,c:s.accent}
+      ];
+      var maxV=Math.max(ratio,8)*1.15, L=Math.log10(maxV);
+      var barX=14, barMaxW=w-28, hdrY=h*0.57, rowH=18;
+      txt(ctx,'how extreme one stage is (log scale)',barX,hdrY,PAL.muted,9,'left');
+      for(var bi=0;bi<items.length;bi++){
+        var it=items[bi], ry=hdrY+8+bi*rowH;
+        var frac=clamp(Math.log10(Math.max(it.v,1.0001))/L,0.02,1);
+        var len=clamp(barMaxW*frac,2,barMaxW);
+        ctx.fillStyle=it.c; ctx.globalAlpha=0.22; ctx.fillRect(barX,ry,barMaxW,7); ctx.globalAlpha=1;
+        ctx.fillStyle=it.c; ctx.fillRect(barX,ry,len,7);
+        txt(ctx,it.n,barX+3,ry-2,it.c,8.5,'left');
+        txt(ctx,Math.round(it.v)+':1',w-14,ry+6,it.c,9.5,'right');
+      }
+
+      // --- engaged-teeth note + caption ---
+      var engaged=Math.round(0.2*Nf);
+      txt(ctx,'≈'+engaged+' of '+Nf+' teeth mesh at once (~20%) · zero backlash · high torque density',cx,h-22,PAL.good,9,'center');
+      txt(ctx,'tooth count sets the ratio directly — no gear train',cx,h-8,PAL.faint,9.5,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

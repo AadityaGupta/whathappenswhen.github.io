@@ -1,0 +1,1730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>What Happens When · Drones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E7ECEE; --surface:#FCFDFD; --surface-2:#F1F4F5;
+    --ink:#151B1F; --ink-soft:#3A454B; --muted:#63717A; --faint:#8A97A0;
+    --line:#D3DBDF; --line-soft:#E2E8EB;
+    --accent:#0E7C86; --accent-ink:#FFFFFF; --accent-wash:#DCEDEE;
+
+    --basics:#3A6EA5; --nav:#2F8055; --comms:#A9721A; --auto:#7A4F9E; --cuas:#B23A48; --swarm:#B0517E; --adv:#4C63B6;
+    --deep:#B5642E; --xdom:#1E8AA8;
+
+    --shadow:0 1px 2px rgba(20,30,36,.05), 0 8px 24px -14px rgba(20,30,36,.18);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+      --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+      --line:#273035; --line-soft:#20282D;
+      --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+      --basics:#7AA7DA; --nav:#5FB98C; --comms:#D6A24A; --auto:#B98BD6; --cuas:#E28088; --swarm:#D983AE; --adv:#8493E0;
+      --deep:#E0985E; --xdom:#5CC2DE;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+    --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+    --line:#273035; --line-soft:#20282D;
+    --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+    --basics:#7AA7DA; --nav:#5FB98C; --comms:#D6A24A; --auto:#B98BD6; --cuas:#E28088; --swarm:#D983AE; --adv:#8493E0;
+    --deep:#E0985E; --xdom:#5CC2DE;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:840px;margin:0 auto;padding-inline:20px;padding-block:0}
+
+  header.top{padding-block:56px 20px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  .vol{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 9px}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(2.1rem,6vw,3.15rem);line-height:1.02;letter-spacing:-.02em;margin:.32em 0 .1em;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.16rem;color:var(--ink-soft);max-width:64ch;margin:.6em 0 0}
+  .metaline{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .metaline b{color:var(--ink);font-weight:600}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  .controls{position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(9px);border-bottom:1px solid var(--line-soft);margin-top:12px}
+  .controls .wrap{padding-block:12px;display:flex;flex-direction:column;gap:11px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .search input{width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--ink)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);padding:5px 12px 5px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:border-color .12s,color .12s,background .12s}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,var(--faint))}
+  .chip[data-cat="all"]{--dot:var(--accent)}
+  .chip[data-cat="basics"]{--dot:var(--basics)}
+  .chip[data-cat="nav"]{--dot:var(--nav)}
+  .chip[data-cat="comms"]{--dot:var(--comms)}
+  .chip[data-cat="auto"]{--dot:var(--auto)}
+  .chip[data-cat="cuas"]{--dot:var(--cuas)}
+  .chip[data-cat="swarm"]{--dot:var(--swarm)}
+  .chip[data-cat="adv"]{--dot:var(--adv)}
+  .chip[data-cat="deep"]{--dot:var(--deep)}
+  .chip[data-cat="xdom"]{--dot:var(--xdom)}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--ink)}
+
+  section.track{padding-top:40px}
+  .track-head{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:6px}
+  .track-head .tno{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--track,var(--accent));font-weight:600}
+  .track-head h2{font-family:var(--sans);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:.15em 0 .1em}
+  .track-head p{font-family:var(--serif);color:var(--muted);margin:.2em 0 0;font-size:1rem;max-width:64ch}
+  section[data-track="basics"]{--track:var(--basics)}
+  section[data-track="nav"]{--track:var(--nav)}
+  section[data-track="comms"]{--track:var(--comms)}
+  section[data-track="auto"]{--track:var(--auto)}
+  section[data-track="cuas"]{--track:var(--cuas)}
+  section[data-track="swarm"]{--track:var(--swarm)}
+  section[data-track="adv"]{--track:var(--adv)}
+  section[data-track="deep"]{--track:var(--deep)}
+  section[data-track="xdom"]{--track:var(--xdom)}
+
+  .scenario{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--cat,var(--accent));border-radius:12px;padding:22px 24px 20px;margin-top:16px;box-shadow:var(--shadow)}
+  .scenario[data-cat="basics"]{--cat:var(--basics)}
+  .scenario[data-cat="nav"]{--cat:var(--nav)}
+  .scenario[data-cat="comms"]{--cat:var(--comms)}
+  .scenario[data-cat="auto"]{--cat:var(--auto)}
+  .scenario[data-cat="cuas"]{--cat:var(--cuas)}
+  .scenario[data-cat="swarm"]{--cat:var(--swarm)}
+  .scenario[data-cat="adv"]{--cat:var(--adv)}
+  .scenario[data-cat="deep"]{--cat:var(--deep)}
+  .scenario[data-cat="xdom"]{--cat:var(--xdom)}
+
+  .s-top{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .s-no{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--cat,var(--accent));flex:none}
+  .s-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:500;margin-left:auto;flex:none}
+  .scenario h3{font-family:var(--sans);font-weight:600;font-size:1.24rem;line-height:1.22;letter-spacing:-.01em;margin:.1em 0 .5em;text-wrap:balance}
+  .gist{font-family:var(--serif);font-style:italic;font-size:1.02rem;color:var(--ink);margin:0 0 12px;padding-left:12px;border-left:2px solid var(--cat,var(--accent))}
+  .gist b{font-style:normal;font-weight:600}
+  .answer{font-family:var(--serif);font-size:1.06rem;line-height:1.6;color:var(--ink-soft)}
+  .answer p{margin:0 0 .8em}
+  .answer p:last-child{margin-bottom:0}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);color:var(--ink);padding:1px 5px;border-radius:5px;border:1px solid var(--line-soft)}
+
+  /* --- Simulation --- */
+  .simwrap{margin:16px 0 6px;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden;background:var(--surface-2)}
+  canvas.sim{display:block;width:100%;height:230px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:6px 12px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--cat,var(--accent));cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--cat,var(--accent));color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12px;color:var(--muted);margin:4px 0 0;padding-left:2px}
+
+  .milciv{font-family:var(--sans);font-size:12.5px;color:var(--ink-soft);margin:14px 0 0;padding:10px 12px;background:var(--surface-2);border-radius:8px}
+  .milciv b{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;display:block;margin-bottom:3px}
+
+  .foot-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .ytlink{font-family:var(--sans);font-size:12.5px;font-weight:500;color:var(--cat,var(--accent));text-decoration:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+  .ytlink:hover{border-color:var(--cat,var(--accent));background:var(--surface-2)}
+  .ytlink svg{width:15px;height:15px;flex:none}
+  .terms{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+  .term{font-family:var(--mono);font-size:11px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;line-height:1.3}
+
+  .noresult{display:none;text-align:center;font-family:var(--serif);color:var(--muted);padding:48px 0 12px;font-size:1.05rem}
+  body.empty .noresult{display:block}
+
+  footer.foot{margin-top:52px;padding:26px 0 60px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.7}
+  footer.foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:520px){
+    .scenario{padding:18px 16px 16px}
+    header.top{padding-block:40px 16px}
+    .s-tag{display:none}
+    canvas.sim{height:200px}
+  }
+  @media print{ .toggle,.controls,.simwrap{display:none} body{background:#fff;color:#000} .scenario{box-shadow:none;border:1px solid #ccc;break-inside:avoid} }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html" title="Back to all volumes" aria-label="Back to all volumes">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker"><span class="vol">Drone Technology · Basic → Frontier</span> Interactive Field Guide</div>
+    <h1>What Happens <em>When…</em></h1>
+    <p class="lede">How drones actually fly, sense, talk, think, get defeated, and swarm — built to be reasoned about, not just memorized — and how the very same ideas carry across the air, the ground, and under the sea. Each scenario pairs a plain-language explanation (with an analogy) and a live, tweakable animation, plus a military ↔ civilian note and a video to watch it for real. Drag the sliders; the point is to play.</p>
+    <div class="metaline">
+      <span><b>34</b> scenarios</span>
+      <span><b>21</b> live simulations</span>
+      <span><b>9</b> tracks · basic → cross-domain</span>
+      <span>Air · land · sea · military &amp; civilian</span>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Search — e.g. PID, GPS, jamming, boids, gimbal, SLAM, sonar, buoyancy" aria-label="Search scenarios">
+      </label>
+      <span class="count" id="count"><b>34</b> shown</span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by track">
+      <button class="chip" data-cat="all" aria-pressed="true"><span class="dot"></span>All</button>
+      <button class="chip" data-cat="basics" aria-pressed="false"><span class="dot"></span>Fundamentals</button>
+      <button class="chip" data-cat="nav" aria-pressed="false"><span class="dot"></span>Sensing &amp; nav</button>
+      <button class="chip" data-cat="comms" aria-pressed="false"><span class="dot"></span>Comms &amp; control</button>
+      <button class="chip" data-cat="auto" aria-pressed="false"><span class="dot"></span>Autonomy</button>
+      <button class="chip" data-cat="cuas" aria-pressed="false"><span class="dot"></span>Counter-UAS</button>
+      <button class="chip" data-cat="swarm" aria-pressed="false"><span class="dot"></span>Swarms</button>
+      <button class="chip" data-cat="adv" aria-pressed="false"><span class="dot"></span>Frontier &amp; uses</button>
+      <button class="chip" data-cat="deep" aria-pressed="false"><span class="dot"></span>Deeper machine</button>
+      <button class="chip" data-cat="xdom" aria-pressed="false"><span class="dot"></span>Air · land · sea</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="list">
+
+  <!-- ============ FUNDAMENTALS ============ -->
+  <section class="track" data-track="basics">
+    <div class="track-head">
+      <div class="tno">Track 01 — How a drone flies</div>
+      <h2>Fundamentals</h2>
+      <p>Four spinning props and a fast little computer. Everything a multirotor does comes from changing how fast each rotor turns, thousands of times a second — lift, turning, and staying upright all fall out of that one lever.</p>
+    </div>
+
+    <article class="scenario" data-cat="basics">
+      <div class="s-top"><span class="s-no">01</span><span class="s-tag">Fundamentals</span></div>
+      <h3>A quadcopter lifts off and hovers</h3>
+      <p class="gist"><b>Analogy:</b> four fans pushing air down; the drone floats when the downward push exactly equals its weight — like treading water.</p>
+      <div class="answer">
+        <p>Each rotor is a small wing spinning fast, throwing air downward and getting pushed up in return (Newton's third law). Add the four thrusts; when the total upward force equals the drone's weight, it <b>hovers</b> — net force zero. Spin them all a bit faster and thrust beats gravity, so it climbs; slower and it descends. Because thrust rises with the <em>square</em> of rotor RPM, control is delicate — a small RPM change is a big force change. Heavier payload or thinner air (altitude, heat) means the motors must work harder just to hold station, which is why hover eats battery fast.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · throttle → hover, climb, descend</div>
+        <canvas class="sim" data-sim="hover" data-c="#3A6EA5" aria-label="Hover simulation"></canvas>
+        <div class="ctrls" data-sim="hover"></div>
+      </div>
+      <p class="simnote">Set throttle to ~50% to balance thrust and weight (hover). Above it the drone climbs; below it, it sinks. Watch the thrust vs weight bars.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>The physics is identical; the difference is payload and endurance. A civilian inspection drone trades battery for a camera; a military quad or a delivery drone trades it for sensors or cargo — and every gram of payload steals hover time.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+does+a+quadcopter+fly+lift+thrust+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how a quadcopter flies</a>
+        <div class="terms"><span class="term">thrust = weight → hover</span><span class="term">thrust ∝ RPM²</span><span class="term">Newton's 3rd law</span><span class="term">air density / payload</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="basics">
+      <div class="s-top"><span class="s-no">02</span><span class="s-tag">Fundamentals</span></div>
+      <h3>A drone turns: yaw, pitch, and roll (motor mixing)</h3>
+      <p class="gist"><b>Analogy:</b> like steering a rowboat by pulling harder on one oar — the drone tilts and turns by spinning some rotors faster than others.</p>
+      <div class="answer">
+        <p>A quad can't steer like a car; it moves by <b>tilting</b>. To go forward it speeds up the two rear rotors so the nose dips (pitch), and the tilted thrust now has a forward component. Sideways is the same idea across (roll). Turning in place (yaw) is the clever one: adjacent rotors spin in <em>opposite</em> directions, so their twisting reaction torques normally cancel; to yaw, you let one spin-direction pair win, and the whole body rotates to conserve angular momentum. The flight controller does this blending — called <b>motor mixing</b> — turning your "forward / left / spin" commands into four individual motor speeds, hundreds of times a second.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · top-down · mixing commands → motor speeds</div>
+        <canvas class="sim" data-sim="mixing" data-c="#3A6EA5" aria-label="Motor mixing simulation"></canvas>
+        <div class="ctrls" data-sim="mixing"></div>
+      </div>
+      <p class="simnote">Move pitch/roll/yaw. Brighter rotors spin faster; the arrow shows the resulting motion. Notice yaw drives the diagonal (same-spin) pair.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Aggressive FPV racers and attack drones push extreme tilt angles for speed and agility; camera/survey drones stay gentle to keep footage smooth. Same mixing math, very different tuning.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=quadcopter+yaw+pitch+roll+motor+mixing+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: yaw, pitch &amp; roll explained</a>
+        <div class="terms"><span class="term">tilt to translate</span><span class="term">counter-rotating props</span><span class="term">reaction torque → yaw</span><span class="term">motor mixing</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="basics">
+      <div class="s-top"><span class="s-no">03</span><span class="s-tag">Fundamentals</span></div>
+      <h3>The drone keeps itself level (the PID loop)</h3>
+      <p class="gist"><b>Analogy:</b> like balancing a broom on your palm — sense the tilt, nudge to correct, but nudge too hard and it wobbles worse.</p>
+      <div class="answer">
+        <p>A multirotor is inherently unstable — left alone it tips and flips. What keeps it up is a control loop running hundreds of times a second: sensors measure the tilt, the flight controller computes the error from "level," and it corrects the motors. The workhorse is the <b>PID controller</b>. <b>P</b> (proportional) pushes back in proportion to how far off you are — strong but overshoots. <b>D</b> (derivative) reacts to how <em>fast</em> the error is changing, damping the wobble like a shock absorber. <b>I</b> (integral) slowly cancels a stubborn steady offset (wind, an off-center payload). Tune them well and it snaps level and holds; tune P too high or D too low and it oscillates itself apart.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · disturb the drone, then tune the PID</div>
+        <canvas class="sim" data-sim="pid" data-c="#3A6EA5" aria-label="PID stabilization simulation"></canvas>
+        <div class="ctrls" data-sim="pid"></div>
+      </div>
+      <p class="simnote">Hit "Kick it" to disturb. High P with low D → oscillation; add D to damp; add I to kill a steady lean. The trace shows tilt over time settling (or not).</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Every stabilized drone on earth — a hobby quad, a survey drone, a military ISR platform, a guided munition — runs a loop like this. The difference is robustness: military autopilots must stay stable through damage, gusts, and jamming-induced sensor loss.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=PID+controller+drone+explained+tuning"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: PID control for drones</a>
+        <div class="terms"><span class="term">inherently unstable</span><span class="term">P / I / D</span><span class="term">overshoot &amp; oscillation</span><span class="term">damping</span><span class="term">control loop rate</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="basics">
+      <div class="s-top"><span class="s-no">04</span><span class="s-tag">Fundamentals</span></div>
+      <h3>Multirotor vs fixed-wing vs VTOL — why the shape matters</h3>
+      <p class="gist"><b>Analogy:</b> a multirotor is a helicopter (hovers, burns energy standing still); a fixed-wing is an airplane (must keep moving, but glides efficiently).</p>
+      <div class="answer">
+        <p>A multirotor makes lift by brute force — rotors constantly pushing air down — so it can hover and fly anywhere, but it's energy-hungry and slow-range. A <b>fixed-wing</b> gets lift from air flowing over its wings, so once it's moving it stays up almost for free — far more range and endurance — but it can't hover and needs speed (below its <em>stall speed</em> the wing quits lifting and it drops). <b>VTOL</b> designs try to get both: rotors to take off and land vertically, then a wing to cruise efficiently, at the cost of weight and complexity. The choice is a mission decision: hover and precision (inspect a tower, hold over a target) vs. cover ground (map farmland, patrol a border, long-range strike).</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: multirotors for photography/inspection, fixed-wings for mapping/agriculture, VTOL for long-range survey. Military: quads for short-range recon, fixed-wing/VTOL for long-endurance ISR and strike (e.g., large surveillance UAVs). Endurance almost always favors a wing.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=fixed+wing+vs+multirotor+vs+VTOL+drone+comparison"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: fixed-wing vs multirotor vs VTOL</a>
+        <div class="terms"><span class="term">rotor lift vs wing lift</span><span class="term">stall speed</span><span class="term">endurance vs hover</span><span class="term">VTOL hybrid</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ SENSING & NAV ============ -->
+  <section class="track" data-track="nav">
+    <div class="track-head">
+      <div class="tno">Track 02 — Where am I, which way is up</div>
+      <h2>Sensing &amp; navigation</h2>
+      <p>A drone can't fly what it can't measure. It fuses satellites, spinning-mass sensors, cameras, and pressure into a single confident answer to "where am I, how am I tilted, and what's in front of me?"</p>
+    </div>
+
+    <article class="scenario" data-cat="nav">
+      <div class="s-top"><span class="s-no">05</span><span class="s-tag">Sensing &amp; nav</span></div>
+      <h3>The drone finds its position (GPS / GNSS trilateration)</h3>
+      <p class="gist"><b>Analogy:</b> like figuring out where you're standing from how long three friends' shouts take to reach you — each distance is a circle, and the circles cross at one point.</p>
+      <div class="answer">
+        <p>Satellites (GPS, plus GLONASS/Galileo/BeiDou — together "GNSS") each broadcast the exact time and their position. The receiver measures how long each signal took to arrive, multiplies by the speed of light to get a distance, and each distance defines a sphere it must be on. Three spheres nearly pin a point; a <b>fourth</b> is needed to solve the receiver's own clock error. This is <b>trilateration</b>. More satellites in view and better geometry (spread across the sky) give a tighter fix; obstacles, reflections ("multipath"), and few satellites make it wander by metres. That's why a drone getting GPS lock waits for enough satellites, and why it drifts near buildings or under trees.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · satellites → overlapping ranges → position fix</div>
+        <canvas class="sim" data-sim="gps" data-c="#2F8055" aria-label="GPS trilateration simulation"></canvas>
+        <div class="ctrls" data-sim="gps"></div>
+      </div>
+      <p class="simnote">Each satellite's ring is its measured distance. More satellites + less noise shrink the shaded uncertainty where they overlap — that's your position error.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian drones lean almost entirely on GNSS for position hold and return-to-home. Militaries know GNSS is jammable/spoofable (later cards), so they add encrypted military signals, inertial backup, and vision — treating GPS as helpful, not trusted.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+GPS+works+trilateration+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how GPS trilateration works</a>
+        <div class="terms"><span class="term">GNSS (GPS/Galileo/…)</span><span class="term">time-of-flight → distance</span><span class="term">trilateration (4 sats)</span><span class="term">multipath / geometry (DOP)</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="nav">
+      <div class="s-top"><span class="s-no">06</span><span class="s-tag">Sensing &amp; nav</span></div>
+      <h3>The drone knows which way is up (IMU &amp; sensor fusion)</h3>
+      <p class="gist"><b>Analogy:</b> one sensor is a jittery honest friend, the other a smooth liar who drifts — you average them so the truth is both steady and correct.</p>
+      <div class="answer">
+        <p>The <b>IMU</b> combines a gyroscope (measures rotation rate) and an accelerometer (measures acceleration, including gravity's pull, so it can tell "down"). Each alone is bad: the <b>gyro</b> is smooth short-term but its tiny errors add up, so its angle slowly <em>drifts</em>; the <b>accelerometer</b> knows true "down" on average but is noisy and fooled by the drone's own motion. <b>Sensor fusion</b> — a complementary filter or a Kalman filter — trusts the gyro for fast changes and gently pulls its estimate back toward the accelerometer's long-term "down," giving an attitude estimate that's both responsive and drift-free. A magnetometer (compass) adds heading; a barometer adds altitude. This fused attitude is what the PID loop actually controls.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · true tilt vs gyro (drifts) vs accel (noisy) vs fused</div>
+        <canvas class="sim" data-sim="fusion" data-c="#2F8055" aria-label="Sensor fusion simulation"></canvas>
+        <div class="ctrls" data-sim="fusion"></div>
+      </div>
+      <p class="simnote">Raise gyro drift and watch that line wander off; raise accel noise and watch it scatter. The fused estimate (bold) stays glued to the true angle.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Better (more expensive) IMUs drift less — critical for military drones that must navigate on inertial sensing alone when GPS is jammed. A cheap hobby IMU drifts in seconds without GPS; a tactical-grade one holds course for minutes to hours.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=IMU+sensor+fusion+gyroscope+accelerometer+complementary+filter"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: IMU sensor fusion explained</a>
+        <div class="terms"><span class="term">gyro (drifts) + accel (noisy)</span><span class="term">complementary / Kalman filter</span><span class="term">attitude estimate</span><span class="term">magnetometer / baro</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="nav">
+      <div class="s-top"><span class="s-no">07</span><span class="s-tag">Sensing &amp; nav</span></div>
+      <h3>Holding position with no GPS (optical flow &amp; VIO)</h3>
+      <p class="gist"><b>Analogy:</b> like a computer mouse looking at the desk — the drone watches the ground slide beneath a downward camera to sense how it's moving.</p>
+      <div class="answer">
+        <p>Indoors or in a GPS-denied area, a drone can still hold still by <b>watching the world move</b>. A downward camera plus a range sensor does <b>optical flow</b>: if the ground texture shifts left across the image, the drone knows it drifted right, and it corrects — exactly how an optical mouse works, but you also need the height to convert pixel motion into real speed. Richer systems do <b>visual-inertial odometry (VIO)</b> / SLAM: fuse camera features with the IMU to track full 3D position and build a map as they go. It's dead-reckoning by eyesight — no satellites needed — but errors accumulate over distance, and it struggles on blank walls, over water, or in the dark.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: stable indoor/low-altitude hover for cinematography and warehouse drones. Military: the primary answer to GPS jamming/denial — navigate by vision and inertia when satellites can't be trusted, increasingly with onboard AI doing terrain recognition.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+optical+flow+visual+inertial+odometry+GPS+denied"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: optical flow &amp; VIO navigation</a>
+        <div class="terms"><span class="term">optical flow (mouse-like)</span><span class="term">VIO / visual SLAM</span><span class="term">GPS-denied</span><span class="term">drift over distance</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="nav">
+      <div class="s-top"><span class="s-no">08</span><span class="s-tag">Sensing &amp; nav</span></div>
+      <h3>The drone sees and dodges an obstacle</h3>
+      <p class="gist"><b>Analogy:</b> like a bat feeling out a dark room — cast out "feelers," and steer away from whatever comes back close.</p>
+      <div class="answer">
+        <p>Sense-and-avoid works in two stages: <b>perceive</b>, then <b>react</b>. Sensors — stereo cameras (depth from two eyes), lidar (laser rangefinding), ultrasonic, or radar — measure distance to nearby surfaces and build a quick local picture of free vs. blocked space. Then the drone reacts: the simple version steers directly away from the nearest return (reactive avoidance); the smarter version feeds that into a planner (next track) that reroutes toward the goal while skirting the obstacle. The tension is speed vs. compute: a fast FPV drone has milliseconds to notice a wire, so it needs low-latency sensing and quick reflexes, not a slow, perfect map.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · sensor rays detect obstacles → steer around</div>
+        <canvas class="sim" data-sim="avoid" data-c="#2F8055" aria-label="Obstacle avoidance simulation"></canvas>
+        <div class="ctrls" data-sim="avoid"></div>
+      </div>
+      <p class="simnote">The drone crosses left-to-right; its forward "feelers" push it away from obstacles. Shrink the sensor range or crowd the field and watch it get into trouble.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: collision avoidance is a safety and regulatory feature (don't hit people/buildings). Military: terrain/obstacle avoidance enables ultra-low "nap-of-the-earth" flight to hide from radar — and FPV attack drones increasingly use onboard avoidance to fly through windows and tree lines.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+obstacle+avoidance+depth+camera+lidar+demo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: drone obstacle avoidance</a>
+        <div class="terms"><span class="term">stereo / lidar / radar depth</span><span class="term">reactive vs planned avoidance</span><span class="term">latency vs compute</span><span class="term">nap-of-the-earth</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ COMMS & CONTROL ============ -->
+  <section class="track" data-track="comms">
+    <div class="track-head">
+      <div class="tno">Track 03 — The invisible tether</div>
+      <h2>Communication &amp; control</h2>
+      <p>Most drones are only as good as their radio link — the thread carrying your commands up and video down. Understand the link and you understand both how to fly far and how a drone gets defeated.</p>
+    </div>
+
+    <article class="scenario" data-cat="comms">
+      <div class="s-top"><span class="s-no">09</span><span class="s-tag">Comms &amp; control</span></div>
+      <h3>Commands and video cross the radio link (RF &amp; latency)</h3>
+      <p class="gist"><b>Analogy:</b> like a walkie-talkie conversation — there's always a small delay, and if you talk too long after moving, you're reacting to old news.</p>
+      <div class="answer">
+        <p>Two radio streams run at once: a <b>control uplink</b> (your stick commands to the drone, low-bandwidth but must be reliable) and a <b>video/telemetry downlink</b> (what the drone sees and its status, high-bandwidth). They ride RF bands — commonly 2.4&nbsp;GHz and 5.8&nbsp;GHz — chosen to trade range against data rate (lower frequency reaches farther and through obstacles; higher carries more data). Everything has <b>latency</b>: the time from your input to the drone acting, plus video coming back. Small delays are invisible; large ones make precise flying impossible because you're always steering the drone's <em>past</em> position. This end-to-end lag is why FPV pilots obsess over "glass-to-glass" latency.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · latency between command and response</div>
+        <canvas class="sim" data-sim="link" data-c="#A9721A" aria-label="Link latency simulation"></canvas>
+        <div class="ctrls" data-sim="link"></div>
+      </div>
+      <p class="simnote">The hollow marker is your command; the drone (solid) trails it by the latency you set. Crank latency up and see how far it lags behind what you intend.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian links prioritize clean video and legal power limits. Military links add encryption, frequency-hopping (to resist jamming), and sometimes satellite relay for beyond-horizon control — accepting big latency (a global strike drone can have ~1s of satellite delay) as the price of range.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+radio+link+2.4ghz+5.8ghz+latency+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how drone radio links work</a>
+        <div class="terms"><span class="term">control uplink / video downlink</span><span class="term">2.4 vs 5.8 GHz</span><span class="term">latency (glass-to-glass)</span><span class="term">frequency hopping · encryption</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="comms">
+      <div class="s-top"><span class="s-no">10</span><span class="s-tag">Comms &amp; control</span></div>
+      <h3>The link reaches only so far (range, path loss &amp; line of sight)</h3>
+      <p class="gist"><b>Analogy:</b> like a candle in fog — the light fades fast with distance, and a wall between you kills it entirely.</p>
+      <div class="answer">
+        <p>Radio signals weaken with distance — roughly the inverse square of range (<b>free-space path loss</b>), so doubling the distance quarters the power. A link works only while the received signal stays above the noise by enough margin (the <b>link budget</b>). Range is set by transmit power, antenna gain (directional antennas focus energy like a flashlight vs. a bare bulb), receiver sensitivity, frequency, and — crucially — <b>line of sight</b>. Obstacles (hills, buildings, even the drone's own body when it banks) block or attenuate the signal, and lower frequencies bend/penetrate better. When margin runs out, video breaks up first, then control drops, triggering failsafe.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · distance &amp; power → signal margin &amp; range ring</div>
+        <canvas class="sim" data-sim="pathloss" data-c="#A9721A" aria-label="Path loss simulation"></canvas>
+        <div class="ctrls" data-sim="pathloss"></div>
+      </div>
+      <p class="simnote">Push the drone out in distance and watch the signal margin fall toward the red line — cross it and the link is lost. More power or antenna gain extends the green range ring.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian power is legally capped, so range is modest by design. Military systems use high-gain tracking antennas, relays, and satellites to reach hundreds or thousands of kilometres — and deliberately exploit an enemy drone's limited range as a weakness to push it out of control.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=RF+free+space+path+loss+link+budget+antenna+gain+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: RF path loss &amp; link budget</a>
+        <div class="terms"><span class="term">inverse-square path loss</span><span class="term">link budget / margin</span><span class="term">antenna gain</span><span class="term">line of sight</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="comms">
+      <div class="s-top"><span class="s-no">11</span><span class="s-tag">Comms &amp; control</span></div>
+      <h3>The pilot lets go: autonomous missions &amp; lost-link failsafe</h3>
+      <p class="gist"><b>Analogy:</b> like a homing pigeon with a route card — it flies the planned stops itself, and if it loses contact, it just flies home.</p>
+      <div class="answer">
+        <p>Most drones can fly a pre-loaded mission: a list of GPS <b>waypoints</b> with altitudes and actions ("go here, take a photo, then there"), executed by the autopilot without stick input. Two safety systems wrap this. A <b>geofence</b> is an invisible boundary (a max altitude and a perimeter) the drone refuses to cross — it stops or turns back at the wall. And the <b>lost-link failsafe</b>: if the control link drops for a set time, the drone doesn't just fall or fly away — it executes a pre-set behavior, usually <b>Return-To-Launch</b> (climb to a safe height, fly straight back to the takeoff point, and land) or hover/land in place. This is why a drone flown out of range typically comes home on its own.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian regulators often <em>mandate</em> geofencing (around airports) and RTL for safety. Militaries use waypoint autonomy so a drone can complete a mission through jamming or radio silence — but a predictable "fly home on lost link" is also a vulnerability an adversary can force and exploit, so combat drones may instead continue the mission or self-neutralize.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+waypoint+mission+return+to+home+failsafe+geofence"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: waypoints, RTL &amp; geofencing</a>
+        <div class="terms"><span class="term">waypoint mission</span><span class="term">geofence</span><span class="term">lost-link failsafe</span><span class="term">Return-To-Launch (RTL)</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ AUTONOMY ============ -->
+  <section class="track" data-track="auto">
+    <div class="track-head">
+      <div class="tno">Track 04 — The drone decides</div>
+      <h2>Autonomy &amp; intelligence</h2>
+      <p>Where a drone stops being a flying camera on a string and starts making choices — planning routes, recognizing what it sees, and deciding how much a human is still in the loop.</p>
+    </div>
+
+    <article class="scenario" data-cat="auto">
+      <div class="s-top"><span class="s-no">12</span><span class="s-tag">Autonomy</span></div>
+      <h3>The drone plans a route around obstacles (path planning)</h3>
+      <p class="gist"><b>Analogy:</b> like water finding the shortest path downhill through a maze — the planner explores outward from the start until it reaches the goal, then traces the best route back.</p>
+      <div class="answer">
+        <p>Reactive dodging (earlier) handles "don't hit that." <b>Path planning</b> answers the bigger question: what's the best whole route from here to the goal through a cluttered space? Two families dominate. Graph-search planners like <b>A*</b> lay a grid over the world and explore cells outward from the start, always expanding the most promising one (closest to the goal by an estimate) until they reach it, guaranteeing the shortest path — great for structured spaces. Sampling planners like <b>RRT</b> throw random points and grow a tree toward the goal — better for high-dimensional or wide-open spaces. Either way the drone gets a route it then flies, <b>replanning</b> when the world changes (a new obstacle appears).</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · A* explores the grid, then draws the shortest path</div>
+        <canvas class="sim" data-sim="plan" data-c="#7A4F9E" aria-label="Path planning simulation"></canvas>
+        <div class="ctrls" data-sim="plan"></div>
+      </div>
+      <p class="simnote">Faded cells are the search "exploring"; the bold line is the chosen shortest path. Add obstacles or hit "New map" — watch the search route around walls.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: delivery and inspection drones plan efficient, safe routes and replan around no-fly zones. Military: planners also weigh <em>threat</em> — routing through radar shadows and terrain to minimize exposure — so the "cost" of a cell includes being seen or shot, not just distance.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=A+star+pathfinding+RRT+path+planning+robot+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: A* &amp; RRT path planning</a>
+        <div class="terms"><span class="term">A* graph search</span><span class="term">RRT sampling</span><span class="term">heuristic / cost</span><span class="term">replanning</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="auto">
+      <div class="s-top"><span class="s-no">13</span><span class="s-tag">Autonomy</span></div>
+      <h3>The drone recognizes and follows a target (onboard AI)</h3>
+      <p class="gist"><b>Analogy:</b> like a dog that's been shown a ball — it can now spot the ball in a crowd and keep chasing it as it rolls.</p>
+      <div class="answer">
+        <p>A camera feeds frames to a neural network running <em>on the drone</em> (edge inference, on a small AI accelerator). A <b>detector</b> draws boxes around objects it recognizes ("person," "car," "that specific thing"); a <b>tracker</b> then keeps a lock on one target frame-to-frame even as it moves, and the flight controller adjusts to keep the target centered and at a set distance — that's "follow-me" and "active track." Doing it onboard matters: it keeps working when the radio link is jammed or laggy, since the drone isn't waiting on a human or a cloud server to decide. The hard parts are doing it fast enough on a tiny power budget, and not losing the target behind occlusions or in clutter.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: follow-me for filming, crop/asset recognition, search-and-rescue spotting. Military: automatic target recognition and terminal guidance — and this is exactly where the ethics get sharp, because a drone that can identify and track a target on its own is one software change away from engaging it (see the final card).</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+onboard+AI+object+detection+tracking+follow+me"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: onboard AI detection &amp; tracking</a>
+        <div class="terms"><span class="term">edge inference</span><span class="term">detector + tracker</span><span class="term">follow-me / active track</span><span class="term">occlusion</span><span class="term">automatic target recognition</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="auto">
+      <div class="s-top"><span class="s-no">14</span><span class="s-tag">Autonomy</span></div>
+      <h3>Who's actually flying? (levels of autonomy)</h3>
+      <p class="gist"><b>Analogy:</b> the spectrum from driving a car yourself, to cruise control, to a self-driving taxi — the question is only <em>which decisions</em> the human still makes.</p>
+      <div class="answer">
+        <p>"Drone autonomy" isn't one thing; it's a ladder. At the bottom, <b>manual/teleoperation</b> — a human flies every input. Then <b>stabilized/assisted</b> — the drone holds attitude and altitude while you steer intent (almost all consumer drones). Then <b>automated</b> — it flies pre-planned waypoints but a human supervises and can take over. At the top, <b>autonomous</b> — it perceives, decides, and acts toward a goal on its own. The critical framing is where the human sits relative to the decision loop: <b>in the loop</b> (approves each action), <b>on the loop</b> (monitors and can veto), or <b>out of the loop</b> (the machine acts alone). Every level up trades human control for speed, scale, and resilience to a lost link.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian regulation generally keeps a human in or on the loop and demands the ability to intervene. Military doctrine deliberately spans the ladder — and "human out of the loop" for lethal decisions is the exact line the Lethal Autonomous Weapons (LAWS) debate is fighting over. Autonomy also becomes mandatory the moment jamming severs the human link.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=levels+of+drone+autonomy+human+in+the+loop+on+the+loop"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: levels of drone autonomy</a>
+        <div class="terms"><span class="term">teleop → assisted → automated → autonomous</span><span class="term">in / on / out of the loop</span><span class="term">supervisory control</span><span class="term">LAWS debate</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ COUNTER-UAS ============ -->
+  <section class="track" data-track="cuas">
+    <div class="track-head">
+      <div class="tno">Track 05 — Stopping a drone</div>
+      <h2>Counter-UAS</h2>
+      <p>Every capability above is also an attack surface. Counter-drone work is a chain: first you have to <em>find</em> it, then decide, then defeat it — usually by attacking its weakest link, the radio and the GPS.</p>
+    </div>
+
+    <article class="scenario" data-cat="cuas">
+      <div class="s-top"><span class="s-no">15</span><span class="s-tag">Counter-UAS</span></div>
+      <h3>You detect a drone in the first place</h3>
+      <p class="gist"><b>Analogy:</b> spotting an intruder by four different senses at once — the sound they make, the radio they carry, the shape on radar, and the heat they give off.</p>
+      <div class="answer">
+        <p>You can't defeat what you can't find, and small drones are hard to find — tiny, slow, low-flying, and easily mistaken for birds. So detection layers multiple sensors, each catching a different <b>signature</b>. <b>RF detection</b> listens for the drone's control/video radio and can often locate both drone and pilot — the most common method, but it fails against radio-silent autonomous drones. <b>Radar</b> sees the physical object but struggles with tiny, slow targets amid clutter. <b>Acoustic</b> sensors recognize the distinctive buzz (short range). <b>EO/IR</b> cameras (visual + thermal) confirm and identify visually. Fusing them cuts false alarms (a bird isn't emitting RF) and raises confidence before anyone acts.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: airports, prisons, and stadiums use mostly passive RF + camera detection (legal, safe, no emissions). Military: adds powerful radar and networked sensors across a defended area, because threats arrive faster, lower, and in numbers — and increasingly radio-silent, which is pushing detection toward radar, acoustics, and AI vision.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=counter+drone+detection+RF+radar+acoustic+EO+IR+system"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: counter-drone detection systems</a>
+        <div class="terms"><span class="term">RF / radar / acoustic / EO-IR</span><span class="term">signatures</span><span class="term">sensor fusion</span><span class="term">radio-silent drones</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="cuas">
+      <div class="s-top"><span class="s-no">16</span><span class="s-tag">Counter-UAS</span></div>
+      <h3>RF jamming cuts the drone's link</h3>
+      <p class="gist"><b>Analogy:</b> like shouting over someone on the phone until they can't hear you — flood the frequency with noise so the drone can't pick out its pilot's voice.</p>
+      <div class="answer">
+        <p>A jammer transmits strong noise on the drone's control and/or video frequencies (and often the GPS band too). This raises the <b>noise floor</b> at the drone's receiver until the real signal is buried — the signal-to-noise ratio drops below what the radio can decode, and the link effectively dies. What happens next is set by the drone's failsafe: hover, land, or return-to-home (and if you also jam GPS, it can't even navigate home, so it may just drift or descend). Jamming is popular because it's <b>non-kinetic</b> (nothing falls out of the sky as debris) and cheap, but it's blunt: it can knock out your own Wi-Fi, GPS, and comms in the area, and it does nothing against a fully autonomous, radio-silent drone.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · jammer power vs signal → link up or down</div>
+        <canvas class="sim" data-sim="jam" data-c="#B23A48" aria-label="RF jamming simulation"></canvas>
+        <div class="ctrls" data-sim="jam"></div>
+      </div>
+      <p class="simnote">The green bar is the drone's signal; red is the jammer's noise floor. Raise jammer power or move it closer until noise buries signal — the link drops and the drone hits failsafe.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Jamming spectrum is tightly restricted for civilians (it's usually illegal to operate a jammer) so civilian counter-UAS leans on detection + authorities. Militaries field jammers from handheld "drone guns" to vehicle and area systems — and it's now a constant electronic-warfare duel with frequency-hopping and autonomous drones designed to survive jamming.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+drone+RF+jamming+works+drone+gun+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how RF drone jamming works</a>
+        <div class="terms"><span class="term">noise floor / SNR</span><span class="term">non-kinetic defeat</span><span class="term">triggers failsafe</span><span class="term">collateral interference</span><span class="term">useless vs radio-silent</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="cuas">
+      <div class="s-top"><span class="s-no">17</span><span class="s-tag">Counter-UAS</span></div>
+      <h3>GPS spoofing feeds the drone a lie</h3>
+      <p class="gist"><b>Analogy:</b> like slipping a fake map into a hiker's GPS — they follow it confidently and walk straight off the trail, never realizing they're lost.</p>
+      <div class="answer">
+        <p>Jamming is loud denial; <b>spoofing</b> is quiet deception. GPS signals are extremely weak by the time they reach the ground, so a spoofer transmits <em>counterfeit</em> satellite signals that are slightly stronger, and the drone's receiver — unable to tell fake from real — locks onto them. Now the attacker controls what the drone <em>believes</em> its position and time are. Slowly walk the fake position, and the drone, thinking it's drifting, "corrects" — flying somewhere the attacker chose while believing it's on course. Done well it can be steered into a capture zone or made to think it's crossed a geofence and turn back. It's far more sophisticated than jamming and much harder to detect, because to the drone everything looks normal.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · true position vs the position the drone believes</div>
+        <canvas class="sim" data-sim="spoof" data-c="#B23A48" aria-label="GPS spoofing simulation"></canvas>
+        <div class="ctrls" data-sim="spoof"></div>
+      </div>
+      <p class="simnote">The drone tries to hold the target. Raise spoof strength and its <em>believed</em> position (ghost) is pulled away — so its <em>true</em> position (solid) drifts the opposite way, without it ever "knowing."</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian relevance is mostly defensive awareness (and famous incidents of spoofing near sensitive sites). Militaries both use spoofing offensively (capture/misdirect enemy drones) and defend against it with encrypted military GNSS, anti-spoof receivers, and inertial/vision backup — which is why serious platforms never fully trust GPS.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=GPS+spoofing+drone+explained+how+it+works"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how GPS spoofing works</a>
+        <div class="terms"><span class="term">counterfeit satellite signals</span><span class="term">deception vs denial</span><span class="term">believed vs true position</span><span class="term">anti-spoof GNSS</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="cuas">
+      <div class="s-top"><span class="s-no">18</span><span class="s-tag">Counter-UAS</span></div>
+      <h3>Bringing it down: kinetic, capture &amp; the layered kill chain</h3>
+      <p class="gist"><b>Analogy:</b> defending a castle — you spot the attacker (detect), confirm friend-or-foe (identify), then choose the right response, from a net to an arrow to knocking out their signals.</p>
+      <div class="answer">
+        <p>When soft defeat (jamming/spoofing) won't do — or the drone is autonomous — you need a <b>hard defeat</b>, and there's a menu: <b>nets</b> (fired from the ground or carried by an interceptor drone) to entangle and capture it intact; <b>kinetic</b> options (guns, interceptor drones, even trained birds); <b>directed energy</b> (high-power lasers to burn it, or high-power microwave to fry its electronics — attractive because a "shot" costs almost nothing and can hit many drones). But no single tool is the answer; effective counter-UAS is a <b>layered kill chain</b>: detect → track → identify → decide → defeat, with multiple sensors and effectors, because you must handle everything from one hobbyist quad to a coordinated swarm. The identify step is the legal/ethical crux: you must be sure it's hostile before you fire in populated airspace.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian defeat is heavily constrained — shooting down or jamming drones is illegal in most places, so airports/prisons rely on detection + capture + law enforcement. Military layers everything from directed-energy and gun systems down to cheap interceptors, and the current problem is <em>cost-exchange</em>: you can't fire a million-dollar missile at a thousand-dollar drone, so cheap defeat (microwave, interceptor drones, guns) is the frontier.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=counter+UAS+kill+chain+net+laser+microwave+interceptor+drone"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: layered counter-drone defeat</a>
+        <div class="terms"><span class="term">net / capture</span><span class="term">kinetic / interceptor</span><span class="term">directed energy (laser / HPM)</span><span class="term">kill chain: detect→identify→defeat</span><span class="term">cost-exchange problem</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ SWARMS ============ -->
+  <section class="track" data-track="swarm">
+    <div class="track-head">
+      <div class="tno">Track 06 — Many as one</div>
+      <h2>Swarms</h2>
+      <p>A swarm isn't one big brain — it's many simple drones following local rules, from which complex group behavior <em>emerges</em>. That's what makes swarms cheap, scalable, and frighteningly hard to stop.</p>
+    </div>
+
+    <article class="scenario" data-cat="swarm">
+      <div class="s-top"><span class="s-no">19</span><span class="s-tag">Swarms</span></div>
+      <h3>A flock emerges from simple rules (boids)</h3>
+      <p class="gist"><b>Analogy:</b> a flock of starlings — no bird is in charge; each just watches its neighbors, and the mesmerizing whole appears from that alone.</p>
+      <div class="answer">
+        <p>The foundational insight (Reynolds' 1986 "<b>boids</b>") is that lifelike flocking needs only three local rules, each agent watching just its nearby neighbors: <b>separation</b> (don't crowd — steer away from those too close), <b>alignment</b> (match the average heading of neighbors), and <b>cohesion</b> (steer toward the average position of neighbors, so the group stays together). No leader, no global plan, no central computer — yet a coherent, adaptive flock <b>emerges</b>. Tune the three weights and you get everything from a tight ball to a loose stream. This "simple local rules → complex global behavior" is the heart of swarm robotics: it's why swarms scale to thousands and degrade gracefully.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · separation + alignment + cohesion = flock</div>
+        <canvas class="sim" data-sim="boids" data-c="#B0517E" aria-label="Boids flocking simulation"></canvas>
+        <div class="ctrls" data-sim="boids"></div>
+      </div>
+      <p class="simnote">Turn cohesion to zero → they scatter. Turn separation to zero → they clump and collide. Balance all three and a living flock appears. Neighbor radius sets how "local" each drone's view is.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: light shows (thousands of coordinated drones), search patterns, agricultural coverage. Military: attack swarms that saturate defenses and self-organize around losses. The same three rules underlie both — the difference is payload and intent, not the algorithm.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=boids+flocking+algorithm+separation+alignment+cohesion+swarm"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: boids &amp; emergent flocking</a>
+        <div class="terms"><span class="term">separation / alignment / cohesion</span><span class="term">local rules → emergence</span><span class="term">no leader</span><span class="term">neighbor radius</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="swarm">
+      <div class="s-top"><span class="s-no">20</span><span class="s-tag">Swarms</span></div>
+      <h3>The swarm agrees and forms up (coordination &amp; consensus)</h3>
+      <p class="gist"><b>Analogy:</b> a marching band taking formation — nobody sees the whole field, but by matching neighbors everyone ends up in the right spot.</p>
+      <div class="answer">
+        <p>Flocking keeps a group together; <b>coordination</b> makes it do a <em>job</em> — take a formation, split a search area, agree on a target. This can be <b>centralized</b> (one controller assigns roles — simple, optimal, but a single point of failure and a bottleneck) or <b>decentralized</b> (each drone talks only to neighbors and they reach <b>consensus</b> — no leader to kill, scales, but harder to guarantee). Decentralized consensus is powerful: by repeatedly averaging their info with neighbors, agents converge to agreement (a shared formation, a synchronized clock, a joint decision) using only local communication. That local-comms design is exactly why comms range matters — too short and the swarm fragments into disconnected islands.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · scattered agents reach a formation via neighbors</div>
+        <canvas class="sim" data-sim="formation" data-c="#B0517E" aria-label="Formation consensus simulation"></canvas>
+        <div class="ctrls" data-sim="formation"></div>
+      </div>
+      <p class="simnote">Agents self-assemble into the target formation using only local attraction/spacing. Shrink comms range and the swarm can fragment; hit "Scatter" to watch it re-form.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: coordinated mapping, delivery fleets, light shows synced to a plan. Military: decentralized consensus is prized because there's no leader node for the enemy to jam or destroy — the swarm keeps functioning even as pieces are lost, which is the whole point of the next card.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+swarm+consensus+decentralized+formation+control"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: decentralized swarm coordination</a>
+        <div class="terms"><span class="term">centralized vs decentralized</span><span class="term">consensus / averaging</span><span class="term">formation control</span><span class="term">comms range → connectivity</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="swarm">
+      <div class="s-top"><span class="s-no">21</span><span class="s-tag">Swarms</span></div>
+      <h3>Why swarms are so hard to stop (resilience &amp; saturation)</h3>
+      <p class="gist"><b>Analogy:</b> like trying to swat a whole cloud of mosquitoes — killing a few doesn't matter, and there are always more getting through.</p>
+      <div class="answer">
+        <p>Swarms invert the economics of air defense. Because behavior is decentralized and each drone is cheap and expendable, a swarm is <b>resilient</b>: knock out 20% and the rest reorganize and carry on — there's no head to cut off. And it's a <b>saturation</b> threat: a defender can track and engage only so many targets at once, so enough simultaneous cheap drones simply overwhelm the defense — some always get through. That flips the cost-exchange badly against the defender (expensive interceptors vs. throwaway drones). The counters being developed match the logic: area-effect defeat (high-power microwave, which hits many at once), electronic warfare against their comms/GPS, and <em>counter-swarms</em> — defensive drones that fight the attacking swarm on its own terms.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: the same resilience makes swarm light shows and search fleets robust to a few failures. Military: saturation and attrition-tolerance are precisely why swarms are considered a transformational threat — and why counter-swarm and cheap area defeat are among the hottest areas in defense R&amp;D.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+swarm+saturation+attack+resilience+counter+swarm+defense"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: drone swarm saturation &amp; defense</a>
+        <div class="terms"><span class="term">decentralized resilience</span><span class="term">saturation attack</span><span class="term">graceful degradation</span><span class="term">cost-exchange</span><span class="term">counter-swarm</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ FRONTIER & USES ============ -->
+  <section class="track" data-track="adv">
+    <div class="track-head">
+      <div class="tno">Track 07 — Limits, rules &amp; the edge</div>
+      <h2>Frontier &amp; real-world uses</h2>
+      <p>What actually caps a drone (energy), what the law lets it do (BVLOS &amp; Remote ID), and where the technology is heading — the same autonomy driving crop-scouting and package delivery is driving the hardest questions in warfare.</p>
+    </div>
+
+    <article class="scenario" data-cat="adv">
+      <div class="s-top"><span class="s-no">22</span><span class="s-tag">Frontier</span></div>
+      <h3>Why flight time is so short (endurance &amp; the energy problem)</h3>
+      <p class="gist"><b>Analogy:</b> like sprinting with a heavy backpack — the more you carry (payload) and the harder you push (hover), the sooner you're exhausted.</p>
+      <div class="answer">
+        <p>The single biggest limit on most drones is <b>energy</b>. Batteries store far less energy per kilogram than fuel (low <b>energy density</b>), and hovering is expensive — you're constantly spending power just to not fall. So there's a brutal three-way tradeoff: <b>payload vs. endurance vs. range</b>. Add a heavier camera or weapon and you must spend more power to lift it <em>and</em> carry a bigger battery to feed that power — which is itself more weight, a vicious circle. That's why a typical multirotor flies 20–40 minutes, not hours. The escapes all attack energy density: fixed wings (lift for free), <b>hydrogen fuel cells</b> and combustion engines (far more energy per kg), <b>tethered</b> drones (power up a cable — unlimited time, zero range), and solar for high-altitude endurance craft.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · battery &amp; payload → flight time tradeoff</div>
+        <canvas class="sim" data-sim="endurance" data-c="#4C63B6" aria-label="Endurance tradeoff simulation"></canvas>
+        <div class="ctrls" data-sim="endurance"></div>
+      </div>
+      <p class="simnote">Add payload and watch flight time collapse; add battery and it helps — but with diminishing returns, because the battery is itself weight to lift. The curve shows the tradeoff; the gauge drains in real time.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: endurance limits delivery radius, survey area, and inspection time — the whole business case. Military: endurance defines loiter time over a target and strike range; it's why long-endurance ISR uses fixed-wing/fuel and why tethered drones guard fixed sites — and why battery breakthroughs are strategically significant.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+flight+time+battery+energy+density+payload+endurance"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: drone endurance &amp; the energy problem</a>
+        <div class="terms"><span class="term">energy density</span><span class="term">payload vs endurance vs range</span><span class="term">hover cost</span><span class="term">hydrogen / tethered / solar</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="adv">
+      <div class="s-top"><span class="s-no">23</span><span class="s-tag">Frontier</span></div>
+      <h3>Flying past the horizon, legally (BVLOS, Remote ID &amp; airspace)</h3>
+      <p class="gist"><b>Analogy:</b> letting a self-driving car onto public roads — the hard part isn't the driving, it's proving it's safe enough to share the space, and giving it a licence plate.</p>
+      <div class="answer">
+        <p>Today most civilian drones must stay within <b>visual line of sight</b> of the pilot. The prize — delivery, long infrastructure inspection, real autonomy — needs <b>BVLOS</b> (beyond visual line of sight), and unlocking it is mostly a safety-and-rules problem, not a flying one. It requires <b>detect-and-avoid</b> (the drone must sense and dodge other aircraft on its own), reliable comms, and <b>UTM</b> (UAS Traffic Management) — an air-traffic-control layer for low-altitude drones that deconflicts routes. Underpinning it is <b>Remote ID</b> — a "digital licence plate" every drone broadcasts (its ID and location) so authorities and other aircraft know who's flying where. Frameworks like the FAA's Part 107 (and equivalents worldwide) set the civilian rules; the trend is steadily toward routine, regulated BVLOS.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian is governed by aviation regulators (Part 107, Remote ID, BVLOS waivers, UTM) with public safety as the goal. Military operates under Rules of Engagement and airspace control instead — no Remote ID for a combat drone — but both worlds converge on the same technical need: reliable detect-and-avoid and traffic deconfliction so many autonomous aircraft can share the sky.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=BVLOS+drone+remote+ID+UTM+detect+and+avoid+regulation+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: BVLOS, Remote ID &amp; UTM</a>
+        <div class="terms"><span class="term">BVLOS</span><span class="term">detect-and-avoid</span><span class="term">UTM (drone traffic mgmt)</span><span class="term">Remote ID</span><span class="term">Part 107 / ROE</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="adv">
+      <div class="s-top"><span class="s-no">24</span><span class="s-tag">Frontier</span></div>
+      <h3>The dual-use edge: delivery drones and loitering munitions are the same machine</h3>
+      <p class="gist"><b>Analogy:</b> the same self-driving delivery van, with a different cargo and a different order, becomes something entirely else — the technology is neutral; the payload and the decision are not.</p>
+      <div class="answer">
+        <p>Everything in this guide is <b>dual-use</b>: the drone that inspects a pipeline, sprays a field, or delivers medicine is mechanically the same as the one that scouts or strikes a target — GPS, IMU, PID, avoidance, onboard AI, swarming. The civilian frontier is BVLOS delivery, precision agriculture, infrastructure and disaster-response inspection, and autonomous logistics. The military frontier is FPV attack drones and <b>loitering munitions</b> ("kamikaze" drones that circle, find a target, and dive), GPS-denied autonomous navigation, AI target recognition, and swarms — pushed by cheap hardware and the electronic-warfare arms race. The sharpest question is autonomy in the <b>lethal decision</b>: as detection-and-tracking (card 13) gets good enough to engage without a human, the debate over Lethal Autonomous Weapons and "meaningful human control" becomes the defining issue — a policy and ethics problem the technology has already made possible.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>This is the whole point of the pairing: you cannot cleanly separate the two, because the enabling technologies are identical. Export controls, Remote ID, counter-UAS, and the LAWS debate all exist precisely because the line between a delivery drone and a weapon is a matter of payload and software — which is why understanding the internals (this guide) is what lets you reason about both.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=loitering+munition+FPV+drone+vs+delivery+drone+dual+use+autonomous+weapons"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: loitering munitions &amp; autonomous weapons debate</a>
+        <div class="terms"><span class="term">dual-use technology</span><span class="term">loitering munition</span><span class="term">GPS-denied autonomy</span><span class="term">LAWS / meaningful human control</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ DEEPER MACHINE ============ -->
+  <section class="track" data-track="deep">
+    <div class="track-head">
+      <div class="tno">Track 08 — Under the hood</div>
+      <h2>Deeper into the machine</h2>
+      <p>Below the flight controller sit the parts that actually turn intent into motion and clean data: the motor driver, the stabilized camera, the map it builds of the world, and the network that ties many drones together.</p>
+    </div>
+
+    <article class="scenario" data-cat="deep">
+      <div class="s-top"><span class="s-no">25</span><span class="s-tag">Deeper</span></div>
+      <h3>The ESC drives the brushless motor</h3>
+      <p class="gist"><b>Analogy:</b> a brushless motor has no "gas pedal" of its own — the ESC is the driver that rapidly switches its electromagnets in sequence to yank the rotor around, like a hand-off relay race.</p>
+      <div class="answer">
+        <p>Drone motors are <b>brushless</b>: instead of physical brushes flipping the current, an <b>ESC</b> (Electronic Speed Controller) does it electronically. It energizes the motor's three phases in a rotating pattern — <b>commutation</b> — so the magnetic field always pulls the rotor forward; speed up the switching and the motor spins faster. The flight controller doesn't set voltage directly; it sends a <b>throttle command</b> (via protocols like PWM or the faster digital DShot), and the ESC translates that into the precise, high-frequency phase switching, often sensing the rotor's position (or inferring it "sensorlessly" from the back-EMF the spinning motor generates). Crucially the motor can't change speed instantly — there's inertia — so there's a small lag between command and actual RPM, which is exactly what the PID loop has to account for.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · throttle → commutation → motor RPM (with lag)</div>
+        <canvas class="sim" data-sim="esc" data-c="#B5642E" aria-label="ESC motor simulation"></canvas>
+        <div class="ctrls" data-sim="esc"></div>
+      </div>
+      <p class="simnote">Move the throttle and watch commanded vs actual RPM: the motor <em>chases</em> the command with a lag set by responsiveness. The lit coils show the commutation sequence spinning the rotor.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Identical technology everywhere — but the twist matters: cheap high-power brushless motors and ESCs are what made both the consumer drone boom and the cheap-FPV-attack-drone boom possible. The same $10 motor spins a toy and a loitering munition.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+brushless+motor+ESC+works+drone+commutation"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how an ESC &amp; brushless motor work</a>
+        <div class="terms"><span class="term">brushless motor</span><span class="term">ESC (speed controller)</span><span class="term">commutation (3 phases)</span><span class="term">PWM / DShot</span><span class="term">back-EMF (sensorless)</span><span class="term">RPM lag → inertia</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="deep">
+      <div class="s-top"><span class="s-no">26</span><span class="s-tag">Deeper</span></div>
+      <h3>The camera gimbal keeps the shot steady</h3>
+      <p class="gist"><b>Analogy:</b> like a waiter carrying a tray through a rocking ship — as the body pitches and rolls, the tray (camera) is actively kept dead level.</p>
+      <div class="answer">
+        <p>A drone in flight is constantly tilting to move (recall motor mixing), which would make its camera footage lurch. A <b>gimbal</b> fixes this: the camera hangs on 2 or 3 motorized axes (pitch, roll, and yaw), each with its own tiny IMU and control loop. When the drone body tilts one way, the gimbal motors rotate the camera the <em>opposite</em> way by exactly as much, so the camera stays pointed where you want regardless of the airframe's motion — <b>active stabilization</b>. It's the same sense-error-and-correct idea as the flight PID loop, just applied to the camera instead of the whole aircraft. The result is that buttery-smooth footage, and — just as importantly for sensors — a steady image is far easier for onboard AI to detect and track from.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · turbulence rocks the body · gimbal holds the horizon</div>
+        <canvas class="sim" data-sim="gimbal" data-c="#B5642E" aria-label="Gimbal stabilization simulation"></canvas>
+        <div class="ctrls" data-sim="gimbal"></div>
+      </div>
+      <p class="simnote">Add turbulence and the drone body rocks. Slide stabilization up and the gimbal counter-rotates to hold the camera level — the little "view" on the right stays steady while the body pitches.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: cinematic footage, stable inspection imagery. Military: a stabilized sensor turret is the heart of an ISR/targeting drone — you can't identify or track a target from a shaking picture, and long-range zoom magnifies every wobble, so gimbal stabilization is mission-critical, not cosmetic.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+drone+camera+gimbal+stabilization+3+axis+works"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: 3-axis gimbal stabilization</a>
+        <div class="terms"><span class="term">2/3-axis gimbal</span><span class="term">counter-rotation</span><span class="term">per-axis IMU + loop</span><span class="term">active stabilization</span><span class="term">steady image → better AI tracking</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="deep">
+      <div class="s-top"><span class="s-no">27</span><span class="s-tag">Deeper</span></div>
+      <h3>The drone builds a map while finding itself (SLAM)</h3>
+      <p class="gist"><b>Analogy:</b> like waking in a dark, unknown room and feeling your way around — you build a mental map <em>and</em> figure out where you are in it, both at once, each helping the other.</p>
+      <div class="answer">
+        <p>Position hold (optical flow) tells a drone how it's moving; <b>SLAM</b> — Simultaneous Localization And Mapping — is the bigger feat: build a map of an <em>unknown</em> environment while simultaneously tracking your own position within that map. It's a chicken-and-egg problem (you need a map to localize, and a position to map), solved by continuously matching what the sensors see now against features seen before. As the drone moves, small errors accumulate and the map drifts — until it revisits a known place and recognizes it: a <b>loop closure</b>, which snaps the whole map back into consistency, like realizing "I've been here before" and correcting your mental map. SLAM can be visual (cameras), lidar-based, or fused with the IMU (VIO), and it's what lets a drone navigate and map a building, tunnel, or GPS-denied area with no prior knowledge.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: indoor inspection, warehouse and mine mapping, 3D-modelling from the air. Military: mapping and navigating GPS-denied interiors, tunnels, and contested areas autonomously — and it's a cross-domain workhorse, running on ground robots and underwater vehicles too, which is exactly the theme of the next track.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=SLAM+simultaneous+localization+and+mapping+drone+loop+closure+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: SLAM &amp; loop closure explained</a>
+        <div class="terms"><span class="term">simultaneous localize + map</span><span class="term">feature matching</span><span class="term">drift accumulation</span><span class="term">loop closure</span><span class="term">visual / lidar / VIO SLAM</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="deep">
+      <div class="s-top"><span class="s-no">28</span><span class="s-tag">Deeper</span></div>
+      <h3>Drones extend range by relaying (mesh networking)</h3>
+      <p class="gist"><b>Analogy:</b> a chain of people passing a bucket down a line — no single person can reach the fire, but together they cover the whole distance, and if one steps out the line closes up.</p>
+      <div class="answer">
+        <p>A single radio link reaches only so far (path loss). A <b>mesh network</b> beats that limit by letting drones <b>relay</b> for each other: each node forwards data for its neighbors, so a message hops drone-to-drone from the operator out to a distant unit far beyond any one radio's range. Because there's no single required path, the mesh is <b>self-healing</b> — if a relay drops out or is jammed, the network automatically reroutes through other nodes. This is how you cover a large area, fly around obstructions, or keep a swarm connected: intermediate drones become flying repeaters. The trade-offs are added latency per hop and shared bandwidth, so meshes are great for command/telemetry and coordination, less so for many simultaneous high-def video feeds.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · multi-hop relay extends reach · reroutes if a node is lost</div>
+        <canvas class="sim" data-sim="mesh" data-c="#B5642E" aria-label="Mesh network simulation"></canvas>
+        <div class="ctrls" data-sim="mesh"></div>
+      </div>
+      <p class="simnote">The packet hops node-to-node from the ground station to the far drone — but only between nodes within radio range. Shrink the range and the chain breaks (no route); add nodes to bridge the gap.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: extending coverage for large surveys, search-and-rescue over terrain, and keeping light-show/inspection fleets linked. Military: resilient mesh comms are core to swarms and contested environments — no single link to jam, and the network heals around losses, which pairs directly with the swarm-resilience story.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=drone+mesh+network+relay+MANET+self+healing+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: drone mesh networks &amp; relays</a>
+        <div class="terms"><span class="term">multi-hop relay</span><span class="term">MANET (mobile ad-hoc net)</span><span class="term">self-healing reroute</span><span class="term">flying repeater</span><span class="term">per-hop latency / bandwidth</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ CROSS-DOMAIN ============ -->
+  <section class="track" data-track="xdom">
+    <div class="track-head">
+      <div class="tno">Track 09 — One playbook, three worlds</div>
+      <h2>Air, land &amp; sea (cross-domain)</h2>
+      <p>Strip away rotors, wheels, and thrusters and an aerial drone, a ground rover, and an underwater vehicle are the same machine running the same loop. What changes is the medium — and the medium quietly dictates the sensors, the comms, and how you even know where you are.</p>
+    </div>
+
+    <article class="scenario" data-cat="xdom">
+      <div class="s-top"><span class="s-no">29</span><span class="s-tag">Cross-domain</span></div>
+      <h3>The universal autonomy pipeline (air, land &amp; sea)</h3>
+      <p class="gist"><b>Analogy:</b> every autonomous robot runs the same "OODA loop" — observe, orient, decide, act — whether it flies, drives, or dives; only the eyes and legs are swapped.</p>
+      <div class="answer">
+        <p>Under the hood, a UAV (air), a UGV (ground), and a UUV/AUV (underwater) share one architecture: <b>sense → perceive → localize &amp; map → plan → control → act</b>, looping many times a second. Sensors gather raw data; perception turns it into "what's out there"; localization answers "where am I"; planning chooses "what to do next"; control turns that into actuator commands. Everything you've seen — sensor fusion, SLAM, path planning, PID control — are stages of this same pipeline. What differs across domains is only the <em>ends</em>: the sensors that feed it (camera vs. sonar) and the actuators that execute it (rotors vs. wheels vs. thrusters). This is why robotics skills and code transfer across air, ground, and sea, and why the same autonomy frameworks (ROS, PX4/ArduPilot-style stacks) run boats, cars, and drones alike.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>This shared pipeline is why a defense program can field air, ground, and sea robots on common autonomy software, and why a civilian self-driving-car advance (perception, planning) flows straight into aerial and underwater autonomy. The hard problems — perception, localization, decision-making — are domain-independent; that's the whole point of understanding the internals.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=robot+autonomy+stack+perception+localization+planning+control+ROS"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: the robot autonomy stack</a>
+        <div class="terms"><span class="term">sense → perceive → localize → plan → control → act</span><span class="term">OODA loop</span><span class="term">domain-independent stages</span><span class="term">ROS / common autonomy stack</span><span class="term">UAV / UGV / UUV</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="xdom">
+      <div class="s-top"><span class="s-no">30</span><span class="s-tag">Cross-domain</span></div>
+      <h3>Knowing where you are without GPS — in the air, on the ground, and under the sea</h3>
+      <p class="gist"><b>Analogy:</b> walking blindfolded, you can count your steps and turns (dead reckoning) — accurate at first, but you drift, until you touch a familiar landmark and reset.</p>
+      <div class="answer">
+        <p>Every robot faces the same core problem — GPS isn't always there. Underwater it's <em>never</em> there (water blocks the satellite signals entirely); on the ground it fails in tunnels, indoors, and urban canyons; in the air it can be jammed. The shared answer is <b>dead reckoning</b>: track your own motion from inertial sensors (and wheel encoders on the ground, or a <b>Doppler Velocity Log</b> that bounces sound off the seabed underwater) to estimate position by accumulation — but this <b>drifts</b>, errors compounding over distance. So each domain adds periodic <b>fixes</b> to reset the drift: air/ground use visual/lidar SLAM loop closures or known landmarks; underwater vehicles surface for a GPS fix or use <b>acoustic positioning</b> (USBL/LBL beacons — trilateration with sound instead of radio). Same disease (drift), same cure (a fix), different fix mechanism per medium.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · dead-reckoned estimate drifts, then a fix snaps it back</div>
+        <canvas class="sim" data-sim="deadreckon" data-c="#1E8AA8" aria-label="Dead reckoning simulation"></canvas>
+        <div class="ctrls" data-sim="deadreckon"></div>
+      </div>
+      <p class="simnote">The solid path is where the robot truly is; the faded path is where it <em>thinks</em> it is, drifting as errors pile up — until a periodic fix (loop closure / acoustic beacon / GPS) snaps the estimate back. More drift or rarer fixes = bigger error.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>This is the single biggest shared navigation problem across all three domains. Civilian: indoor/underground/subsea autonomy. Military: operating through GPS jamming and denial — which is why serious platforms in every domain carry good inertial navigation plus a domain-appropriate fix (vision, terrain matching, or acoustic), never trusting GPS alone.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=dead+reckoning+inertial+navigation+drift+underwater+DVL+acoustic+positioning"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: dead reckoning &amp; underwater positioning</a>
+        <div class="terms"><span class="term">dead reckoning</span><span class="term">inertial drift</span><span class="term">Doppler Velocity Log (subsea)</span><span class="term">acoustic positioning (USBL/LBL)</span><span class="term">loop closure / GPS fix</span><span class="term">GPS-denied everywhere</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="xdom">
+      <div class="s-top"><span class="s-no">31</span><span class="s-tag">Cross-domain</span></div>
+      <h3>Talking through the medium — radio, sound &amp; light</h3>
+      <p class="gist"><b>Analogy:</b> radio is like shouting across an open field (fast, far), but underwater it's like shouting into a pillow — so subsea robots switch to sonar "clicks," which travel like whale song: far, but slow.</p>
+      <div class="answer">
+        <p>Communication is where the three domains diverge most, because the medium decides what waves survive. In <b>air</b>, radio (RF) is king — fast (megabits), far, low latency. On the <b>ground</b> RF still works but fights obstacles, buildings, and multipath. <b>Underwater</b>, RF dies within a few metres — water absorbs it — so vehicles fall back to <b>acoustic modems</b>: sound travels far in water, but it's painfully slow (data rates in kilobits, and sound moves ~1500 m/s vs. light's 300,000 km/s, so a message to a deep vehicle has <em>seconds</em> of latency), plus echo and Doppler distortion. Short-range/high-rate underwater links use <b>blue-green laser</b> (optical, only tens of metres in clear water) or a physical <b>tether</b> (fibre — unlimited data, but you're leashed). This comms gap is why underwater vehicles must be far more autonomous: you often <em>can't</em> teleoperate them in real time.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · a message crossing air (RF), ground (RF), and water (acoustic)</div>
+        <canvas class="sim" data-sim="medium" data-c="#1E8AA8" aria-label="Comms medium simulation"></canvas>
+        <div class="ctrls" data-sim="medium"></div>
+      </div>
+      <p class="simnote">Watch the pulse race across each medium. Air/ground RF arrives almost instantly and reaches far; the underwater acoustic pulse crawls and fades — that latency and short reach is why subsea robots can't be flown like a UAV.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: subsea inspection ROVs are tethered precisely because acoustic comms are too slow for live video. Military: submarine and UUV communications are a hard, strategic problem (you can barely talk to a submerged vehicle), which is a major reason underwater drones are built to run whole missions autonomously and only "phone home" on surfacing.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=underwater+acoustic+communication+why+radio+doesnt+work+underwater"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: why radio fails underwater (acoustic comms)</a>
+        <div class="terms"><span class="term">RF in air (fast, far)</span><span class="term">RF dies underwater</span><span class="term">acoustic modem (slow, high latency)</span><span class="term">sound ~1500 m/s</span><span class="term">optical / tether subsea</span><span class="term">comms gap → more autonomy</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="xdom">
+      <div class="s-top"><span class="s-no">32</span><span class="s-tag">Cross-domain</span></div>
+      <h3>Staying put costs differently — lift, buoyancy &amp; traction</h3>
+      <p class="gist"><b>Analogy:</b> a helicopter must beat its wings to hover (exhausting), a fish just floats (effortless), and a parked car simply sits — three worlds, three costs of doing nothing.</p>
+      <div class="answer">
+        <p>How a robot supports itself against gravity — and what "holding position" costs — is the deepest medium difference. In the <b>air</b>, there's nothing to rest on, so a multirotor must burn power <em>continuously</em> just to hover (which is why flight times are minutes). <b>Underwater</b>, the trick is <b>buoyancy</b>: tune the vehicle to be near <b>neutrally buoyant</b> (weight ≈ the water it displaces) and it hovers essentially for free, spending energy only to move or fight currents — which is why underwater vehicles can operate for hours to days. Ballast tanks or buoyancy engines let it rise and sink like a submarine. On the <b>ground</b>, gravity is simply handled by the surface; the robot's challenge is <b>traction</b> and terrain — wheels, tracks, or legs gripping and climbing — and holding position costs nothing at all. Same goal (control your pose against gravity), radically different energy economics.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · tune ballast → an underwater vehicle rises, sinks, or hovers free</div>
+        <canvas class="sim" data-sim="buoyancy" data-c="#1E8AA8" aria-label="Buoyancy simulation"></canvas>
+        <div class="ctrls" data-sim="buoyancy"></div>
+      </div>
+      <p class="simnote">Set ballast to neutral (0) and the vehicle just hangs there — no power needed, unlike the air drone beside it that must keep thrusting to hover. Positive/negative ballast makes it rise or sink like a submarine.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>This is why endurance ranks so differently by domain: aerial drones are measured in minutes, ground robots in hours (they can just stop), and underwater gliders in <em>weeks to months</em> (they sip energy, using buoyancy changes to glide). Both civilian ocean science and military persistent subsea surveillance exploit that near-free buoyant hovering for extraordinarily long missions.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=neutral+buoyancy+underwater+vehicle+ballast+vs+drone+hover"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: neutral buoyancy vs. drone hover</a>
+        <div class="terms"><span class="term">lift (constant power to hover)</span><span class="term">neutral buoyancy (free hover)</span><span class="term">ballast / buoyancy engine</span><span class="term">traction &amp; terrain (ground)</span><span class="term">endurance: minutes vs hours vs months</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="xdom">
+      <div class="s-top"><span class="s-no">33</span><span class="s-tag">Cross-domain</span></div>
+      <h3>Sensing the world — why the medium picks the sensor (sonar, lidar &amp; radar)</h3>
+      <p class="gist"><b>Analogy:</b> all three are the same trick — send out a wave, time the echo — but you pick the wave that travels in your world: light on land, sound in water, radio through weather.</p>
+      <div class="answer">
+        <p>Ranging works the same everywhere: emit a wave, measure how long the echo takes, and you know the distance — <b>time-of-flight</b>. But which wave you can use depends on the medium. In <b>air/on the ground</b>, light works beautifully, so cameras and <b>lidar</b> (laser pulses) give crisp, high-resolution 3D — and <b>radar</b> (radio) is used when you need to see through fog, dust, or rain. <b>Underwater</b>, light and radio barely travel (a few metres in murky water), but <em>sound</em> travels for kilometres — so subsea robots rely on <b>sonar</b>, painting the world with acoustic echoes (side-scan sonar for seabed imaging, multibeam for 3D). The catch: sound is much slower and lower-resolution than light, so an underwater map is blurrier and updates more slowly than an aerial lidar scan — another reason subsea autonomy is harder. Same physics (echo-ranging), different wave for the medium.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · a sweeping beam pings the surroundings and paints the returns</div>
+        <canvas class="sim" data-sim="sonar" data-c="#1E8AA8" aria-label="Echo ranging simulation"></canvas>
+        <div class="ctrls" data-sim="sonar"></div>
+      </div>
+      <p class="simnote">The beam sweeps and each ping returns an echo where it hits something, building a picture of the surroundings — the same principle whether it's a sonar (sound), a lidar (light), or a radar (radio). Adjust range and sweep speed.</p>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: lidar maps for inspection and self-driving; sonar for hydrographic survey, pipeline and hull inspection. Military: radar and EO/IR for air and ground ISR; sonar for mine-hunting and submarine detection. The sensor choice is dictated by physics of the medium first, mission second — which is why you can't just bolt a drone's camera onto an underwater vehicle and expect it to see.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=sonar+vs+lidar+vs+radar+time+of+flight+ranging+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: sonar vs lidar vs radar</a>
+        <div class="terms"><span class="term">time-of-flight ranging</span><span class="term">lidar (light) — air/ground</span><span class="term">radar (radio) — through weather</span><span class="term">sonar (sound) — underwater</span><span class="term">medium dictates the wave</span><span class="term">sound: far but slow/blurry</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="xdom">
+      <div class="s-top"><span class="s-no">34</span><span class="s-tag">Cross-domain</span></div>
+      <h3>Teaming across domains — air, ground &amp; sea together</h3>
+      <p class="gist"><b>Analogy:</b> a relay team where each runner is built for their leg — the swimmer, the sprinter, the climber — handing off so the team does what no single member could.</p>
+      <div class="answer">
+        <p>The frontier isn't one robot but <b>heterogeneous teams</b> across domains, each covering the others' weaknesses. Because an underwater vehicle can't communicate through water in real time (card 31), a UAV or surface vessel acts as a <b>comms relay</b> and GPS reference, loitering overhead to pass messages and position fixes down. A ground robot or ship can <b>carry, launch, and recover</b> smaller air and sea drones, extending their tiny endurance. Air drones scout ahead and hand targets or maps to slower ground/sea units. This works precisely <em>because</em> of the shared autonomy pipeline (card 29) and interoperable comms — the same coordination and swarm principles (consensus, mesh networking, formation) generalize from one domain to many. The result is capabilities no single platform has: persistent, multi-layer coverage of the surface, subsurface, land, and sky at once.</p>
+      </div>
+      <div class="milciv"><b>Military ↔ Civilian</b>Civilian: coordinated environmental monitoring (a buoy relaying for a subsea glider while a drone maps the coast), disaster response across terrain and water. Military: multi-domain operations are a central modern doctrine — air, ground, sea, and undersea unmanned systems networked into one sensing-and-strike fabric — which is exactly why understanding the shared internals across all three domains is the real skill, not memorizing any single platform.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=multi+domain+unmanned+systems+air+ground+sea+teaming+drones"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: multi-domain unmanned teaming</a>
+        <div class="terms"><span class="term">heterogeneous teams</span><span class="term">UAV comms relay for UUV</span><span class="term">carry / launch / recover</span><span class="term">shared pipeline + interoperable comms</span><span class="term">multi-domain operations</span></div>
+      </div>
+    </article>
+  </section>
+
+  <p class="noresult" id="noresult">No scenarios match that. Clear the search or pick another track.</p>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>How to use this:</b> read the analogy, then <b>play with the sliders</b> until the mechanism feels obvious — that's the point of the sims. Every card has a "Watch" button that opens a curated YouTube search so you can see the real thing in action.<br>
+    Interactive field guide · basics → flight → sensing → comms → autonomy → counter-UAS → swarms → frontier · principles shared by military and civilian drones. Sims are teaching models, not flight-accurate simulators.
+  </div>
+</footer>
+
+<script>
+(function(){
+  /* ---------- theme ---------- */
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  /* ---------- palette from CSS ---------- */
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#151b1f';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#63717a';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#8a97a0';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#d3dbdf';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f1f4f5';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8';
+  }
+  refreshPalette();
+
+  /* ---------- helpers ---------- */
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+  /* ---------- SIM registry ----------
+     each: { controls:[{k,label,min,max,step,val,unit,fmt,regen,btn}], init(s,w,h), step(s,dt), draw(ctx,w,h,s) }
+     s = { p:{}, t, accent, ...state }  */
+  var SIMS={};
+
+  /* 01 HOVER */
+  SIMS.hover={
+    controls:[{k:'thr',label:'Throttle',min:0,max:100,step:1,val:50,unit:'%'},{k:'load',label:'Payload',min:0,max:80,step:1,val:20,unit:'%'}],
+    init:function(s,w,h){s.alt=h*0.5; s.v=0;},
+    step:function(s,dt){
+      var hoverThr=50+s.p.load*0.3;              // heavier => need more throttle to hover
+      var net=(s.p.thr-hoverThr)*0.5;            // px/s^2-ish
+      s.v += net*dt*10; s.v*=0.96;               // drag
+      s.alt -= s.v*dt*6;                          // canvas y inverted
+    },
+    draw:function(ctx,w,h,s){
+      var ground=h-16;
+      s.alt=clamp(s.alt,28,ground-6);
+      // ground
+      ctx.strokeStyle=PAL.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,ground);ctx.lineTo(w,ground);ctx.stroke();
+      for(var gx=0;gx<w;gx+=26){ctx.strokeStyle=PAL.line;ctx.beginPath();ctx.moveTo(gx,ground);ctx.lineTo(gx-6,ground+7);ctx.stroke();}
+      var cx=w*0.5,cy=s.alt, arm=34, rpm=s.p.thr;
+      // arms
+      ctx.strokeStyle=PAL.faint;ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(cx-arm,cy);ctx.lineTo(cx+arm,cy);ctx.stroke();
+      ctx.fillStyle=s.accent; rr(ctx,cx-10,cy-5,20,10,3);ctx.fill();
+      // rotors (spin)
+      var spin=s.t*(4+rpm*0.25);
+      [[-arm,cy],[arm,cy]].forEach(function(P){
+        var x=cx+(P[0]<0?-arm:arm), y=cy;
+        ctx.strokeStyle=s.accent;ctx.lineWidth=2;
+        for(var b=0;b<2;b++){var a=spin+b*Math.PI;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*13,y+Math.sin(a)*4);ctx.stroke();}
+        // thrust arrow
+        arrow(ctx,x,y-6,x,y-6-rpm*0.5-8,PAL.good,2);
+      });
+      // weight arrow
+      var wt=20+s.p.load*0.6;
+      arrow(ctx,cx,cy+8,cx,cy+8+wt,PAL.bad,2);
+      // bars
+      var bx=w-118, bw=100;
+      txt(ctx,'THRUST',bx,20,PAL.muted,10);
+      ctx.fillStyle=PAL.surf;rr(ctx,bx,24,bw,9,4);ctx.fill();
+      ctx.fillStyle=PAL.good;rr(ctx,bx,24,bw*clamp(s.p.thr/100,0,1),9,4);ctx.fill();
+      txt(ctx,'WEIGHT',bx,48,PAL.muted,10);
+      ctx.fillStyle=PAL.surf;rr(ctx,bx,52,bw,9,4);ctx.fill();
+      var hoverThr=50+s.p.load*0.3;
+      ctx.fillStyle=PAL.bad;rr(ctx,bx,52,bw*clamp(hoverThr/100,0,1),9,4);ctx.fill();
+      var st = s.p.thr>hoverThr+1?'CLIMBING':s.p.thr<hoverThr-1?'DESCENDING':'HOVER';
+      txt(ctx,st, bx, 74, st==='HOVER'?PAL.good:PAL.warn,12);
+    }
+  };
+
+  /* 02 MIXING */
+  SIMS.mixing={
+    controls:[{k:'pitch',label:'Pitch (fwd)',min:-100,max:100,step:1,val:0},{k:'roll',label:'Roll (side)',min:-100,max:100,step:1,val:0},{k:'yaw',label:'Yaw (spin)',min:-100,max:100,step:1,val:0}],
+    init:function(s){s.rot=[0,0,0,0];},
+    draw:function(ctx,w,h,s){
+      var cx=w*0.5,cy=h*0.5,R=Math.min(w,h)*0.28;
+      // motor positions FR,FL,BL,BR (x pattern). front = up
+      var pos=[[1,-1],[-1,-1],[-1,1],[1,1]]; // FR,FL,BL,BR (screen y down)
+      // mixing: base + pitch(front vs back) + roll(right vs left) + yaw(diagonal pairs)
+      var base=55;
+      var p=s.p.pitch/100,r=s.p.roll/100,y=s.p.yaw/100;
+      // front motors (y<0) slower to pitch forward(nose down->move fwd): to go forward, back motors faster
+      var m=[0,0,0,0];
+      var sign=[[1,1,1],[1,-1,-1],[-1,-1,1],[-1,1,-1]]; // per motor: [pitchBackFaster, roll, yaw]
+      // define: forward => rear up => rear faster. rear motors are index2,3 (y>0)
+      for(var i=0;i<4;i++){
+        var front = pos[i][1]<0;
+        var right = pos[i][0]>0;
+        var diagA = (i===0||i===2); // FR,BL one spin dir
+        var v=base;
+        v += (front? -p: p)*35;   // forward: rear faster
+        v += (right? -r: r)*35;   // roll right: left faster
+        v += (diagA? y: -y)*35;   // yaw
+        m[i]=clamp(v,5,100);
+      }
+      // frame
+      ctx.strokeStyle=PAL.faint;ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(cx+pos[0][0]*R,cy+pos[0][1]*R);ctx.lineTo(cx+pos[2][0]*R,cy+pos[2][1]*R);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx+pos[1][0]*R,cy+pos[1][1]*R);ctx.lineTo(cx+pos[3][0]*R,cy+pos[3][1]*R);ctx.stroke();
+      // nose marker
+      txt(ctx,'NOSE',cx,cy-R-14,PAL.muted,10,'center');
+      // rotors
+      for(var i2=0;i2<4;i2++){
+        s.rot[i2]=(s.rot[i2]||0)+m[i2]*0.02;
+        var x=cx+pos[i2][0]*R,yy=cy+pos[i2][1]*R;
+        var frac=m[i2]/100;
+        ctx.fillStyle=PAL.surf;ctx.beginPath();ctx.arc(x,yy,15,0,7);ctx.fill();
+        // speed shading ring
+        ctx.strokeStyle=s.accent;ctx.globalAlpha=0.3+frac*0.7;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,yy,15,0,7);ctx.stroke();ctx.globalAlpha=1;
+        var dir=(i2===0||i2===2)?1:-1;
+        for(var b=0;b<3;b++){var a=s.rot[i2]*dir+b*2.09;ctx.strokeStyle=s.accent;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+Math.cos(a)*13,yy+Math.sin(a)*13);ctx.stroke();}
+      }
+      // motion arrow (pitch/roll translation)
+      if(Math.abs(p)>0.05||Math.abs(r)>0.05){ arrow(ctx,cx,cy,cx+r*46,cy+ -p*46,PAL.good,3); }
+      // yaw indicator
+      if(Math.abs(y)>0.05){ ctx.strokeStyle=PAL.warn;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(cx,cy,R*0.5,0.4, 0.4+ y*2.2, y<0);ctx.stroke();
+        txt(ctx, y>0?'YAW →':'← YAW', cx, cy+R+22, PAL.warn,11,'center'); }
+    }
+  };
+
+  /* 03 PID */
+  SIMS.pid={
+    controls:[{k:'kp',label:'P (stiffness)',min:0,max:100,step:1,val:42},{k:'ki',label:'I (bias trim)',min:0,max:60,step:1,val:6},{k:'kd',label:'D (damping)',min:0,max:100,step:1,val:34},{k:'wind',label:'Wind bias',min:0,max:100,step:1,val:15},{k:'kick',label:'Kick it',btn:true}],
+    init:function(s){s.ang=0.6;s.vel=0;s.integ=0;s.prev=0;s.buf=[];},
+    onbtn:function(s){s.vel += (Math.random()<0.5?-1:1)*5;},
+    step:function(s,dt){
+      dt=Math.min(dt,0.03);
+      var kp=s.p.kp*0.08, ki=s.p.ki*0.03, kd=s.p.kd*0.05;
+      var err=0-s.ang;
+      s.integ=clamp(s.integ+err*dt,-8,8);
+      var der=(err-s.prev)/dt; s.prev=err;
+      var u=kp*err+ki*s.integ+kd*der;
+      u=clamp(u,-14,14);
+      var windTorque=s.p.wind*0.012; // constant disturbance
+      s.vel += (u - windTorque - 0.6*s.vel)*dt*10;
+      s.ang += s.vel*dt;
+      s.ang=clamp(s.ang,-1.4,1.4);
+      s.buf.push(s.ang); if(s.buf.length>160)s.buf.shift();
+    },
+    draw:function(ctx,w,h,s){
+      var cx=w*0.32,cy=h*0.42,arm=42;
+      // level reference
+      ctx.strokeStyle=PAL.line;ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(cx-60,cy);ctx.lineTo(cx+60,cy);ctx.stroke();ctx.setLineDash([]);
+      // tilted drone
+      var a=s.ang;
+      var lx=cx-Math.cos(a)*arm,ly=cy-Math.sin(a)*arm,rx=cx+Math.cos(a)*arm,ry=cy+Math.sin(a)*arm;
+      ctx.strokeStyle=s.accent;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(rx,ry);ctx.stroke();
+      var sp=s.t*30;
+      [[lx,ly],[rx,ry]].forEach(function(P){for(var b=0;b<2;b++){var an=sp+b*Math.PI;ctx.beginPath();ctx.moveTo(P[0],P[1]);ctx.lineTo(P[0]+Math.cos(an)*11,P[1]+Math.sin(an)*4);ctx.stroke();}});
+      ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(cx,cy,5,0,7);ctx.fill();
+      var deg=Math.round(s.ang*57.3);
+      txt(ctx,'tilt '+deg+'°',cx,cy+44,Math.abs(deg)<3?PAL.good:PAL.warn,12,'center');
+      // plot
+      var px=w*0.5,py=14,pw=w*0.5-16,ph=h-30;
+      ctx.strokeStyle=PAL.line;ctx.strokeRect(px,py,pw,ph);
+      ctx.strokeStyle=PAL.faint;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(px,py+ph/2);ctx.lineTo(px+pw,py+ph/2);ctx.stroke();ctx.setLineDash([]);
+      txt(ctx,'0° (level)',px+4,py+ph/2-3,PAL.faint,9);
+      txt(ctx,'tilt over time',px+4,py+11,PAL.muted,10);
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();
+      for(var i=0;i<s.buf.length;i++){var xx=px+pw*i/159;var yy=py+ph/2 - s.buf[i]/1.4*(ph/2-4);if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}
+      ctx.stroke();
+    }
+  };
+
+  /* 05 GPS */
+  SIMS.gps={
+    controls:[{k:'sats',label:'Satellites',min:3,max:9,step:1,val:5},{k:'noise',label:'Signal noise',min:0,max:100,step:1,val:20}],
+    init:function(s,w,h){s.sat=[];for(var i=0;i<9;i++){var a=-Math.PI+ (i+0.5)/9*Math.PI;s.sat.push([w*0.5+Math.cos(a)*w*0.42, 24+ (i%2)*10 ]);} s.true=[w*0.5,h*0.72];},
+    draw:function(ctx,w,h,s){
+      var tp=s.true, err=s.p.noise*0.35/Math.sqrt(s.p.sats);
+      // ground
+      ctx.strokeStyle=PAL.line;ctx.beginPath();ctx.moveTo(0,h-14);ctx.lineTo(w,h-14);ctx.stroke();
+      for(var i=0;i<s.p.sats;i++){
+        var sx=s.sat[i][0],sy=s.sat[i][1];
+        var d=Math.hypot(tp[0]-sx,tp[1]-sy);
+        // sat
+        ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(sx,sy,4,0,7);ctx.fill();
+        ctx.strokeStyle=PAL.faint;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx-6,sy-5);ctx.lineTo(sx+6,sy-5);ctx.stroke();
+        // range ring (with noise jitter)
+        var jitter=(Math.sin(s.t*2+i)*0.5)*err;
+        ctx.strokeStyle=s.accent;ctx.globalAlpha=0.35;ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.arc(sx,sy,d+jitter,0,7);ctx.stroke();ctx.globalAlpha=1;
+      }
+      // uncertainty disk
+      ctx.fillStyle=PAL.warn;ctx.globalAlpha=0.25;ctx.beginPath();ctx.arc(tp[0],tp[1],4+err,0,7);ctx.fill();ctx.globalAlpha=1;
+      // true drone
+      ctx.strokeStyle=PAL.faint;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(tp[0]-9,tp[1]);ctx.lineTo(tp[0]+9,tp[1]);ctx.stroke();
+      ctx.fillStyle=PAL.ink;ctx.beginPath();ctx.arc(tp[0],tp[1],3,0,7);ctx.fill();
+      txt(ctx,s.p.sats+' sats · fix ±'+ (2+err).toFixed(1)+' m', 12, h-24, err<6?PAL.good:err<14?PAL.warn:PAL.bad,12);
+      txt(ctx, err<6?'STRONG FIX':err<14?'USABLE':'POOR / DRIFTING', w-12, 20, err<6?PAL.good:err<14?PAL.warn:PAL.bad,11,'right');
+    }
+  };
+
+  /* 06 FUSION */
+  SIMS.fusion={
+    controls:[{k:'drift',label:'Gyro drift',min:0,max:100,step:1,val:35},{k:'noise',label:'Accel noise',min:0,max:100,step:1,val:40},{k:'alpha',label:'Gyro trust',min:50,max:99,step:1,val:96,unit:'%'}],
+    init:function(s){s.gyro=0;s.fused=0;s.bufT=[];s.bufA=[];s.bufF=[];s.bufG=[];s.acc=0;},
+    step:function(s,dt){
+      dt=Math.min(dt,0.03);
+      var trueA=Math.sin(s.t*0.9)*0.8;
+      var trueRate=Math.cos(s.t*0.9)*0.9*0.72;
+      // gyro integrates true rate + a small constant drift (accumulates)
+      s.gyro += (trueRate + s.p.drift*0.0016)*dt;
+      // accel = true + noise
+      s.acc = trueA + (Math.random()-0.5)*s.p.noise*0.012;
+      // complementary fuse: mostly gyro rate, gently corrected toward accel
+      var al=s.p.alpha/100;
+      s.fused = al*(s.fused + trueRate*dt) + (1-al)*s.acc;
+      s.bufT.push(trueA);s.bufA.push(s.acc);s.bufF.push(s.fused);s.bufG.push(s.gyro);
+      [s.bufT,s.bufA,s.bufF,s.bufG].forEach(function(b){if(b.length>180)b.shift();});
+    },
+    draw:function(ctx,w,h,s){
+      var px=10,py=12,pw=w-20,ph=h-24, mid=py+ph/2, sc=ph/2/1.3;
+      ctx.strokeStyle=PAL.line;ctx.strokeRect(px,py,pw,ph);
+      ctx.strokeStyle=PAL.faint;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(px,mid);ctx.lineTo(px+pw,mid);ctx.stroke();ctx.setLineDash([]);
+      ctx.save();ctx.beginPath();ctx.rect(px,py,pw,ph);ctx.clip();  // keep traces inside the box
+      function plot(buf,col,wid,dots){ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=wid;ctx.beginPath();
+        for(var i=0;i<buf.length;i++){var xx=px+pw*i/179;var yy=mid-buf[i]*sc; if(dots){ctx.fillRect(xx-0.6,yy-0.6,1.4,1.4);} else {if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}}
+        if(!dots)ctx.stroke();}
+      plot(s.bufA,PAL.faint,1,true);        // accel: noisy dots
+      plot(s.bufG,PAL.bad,1.5,false);       // gyro: drifts off
+      plot(s.bufT,PAL.muted,1.5,false);     // true angle
+      plot(s.bufF,s.accent,2.5,false);      // fused (bold)
+      ctx.restore();
+      txt(ctx,'· accel (noisy)   — gyro (drifts)   — true',px+6,py+12,PAL.muted,9.5);
+      txt(ctx,'— fused estimate', px+6, py+24, s.accent,10);
+    }
+  };
+
+  /* 08 AVOID */
+  SIMS.avoid={
+    controls:[{k:'range',label:'Sensor range',min:20,max:130,step:1,val:80},{k:'dens',label:'Obstacle density',min:1,max:14,step:1,val:6,regen:true},{k:'spd',label:'Speed',min:20,max:120,step:1,val:60}],
+    init:function(s,w,h){s.obs=[];for(var i=0;i<s.p.dens;i++){s.obs.push([lerp(w*0.15,w*0.95,Math.random()), lerp(20,h-20,Math.random()), 8+Math.random()*12]);} s.x=10;s.y=h*0.5;s.hd=0;},
+    step:function(s,dt){
+      dt=Math.min(dt,0.03);
+      // desired heading toward right-center
+      var goalY=s.canvasH*0.5;
+      var steer=0;
+      // sense obstacles in front within range
+      for(var i=0;i<s.obs.length;i++){var o=s.obs[i];var dx=o[0]-s.x,dy=o[1]-s.y;var d=Math.hypot(dx,dy);
+        if(d< s.p.range+o[2] && dx>-10){var away=Math.atan2(s.y-o[1],s.x-o[0]); steer += Math.sin(away-0)* (1-clamp(d/(s.p.range+o[2]),0,1)) *2.2/ (1);
+          // push vertical
+          s.vy=(s.vy||0)+ (s.y-o[1])/(d+1)* (1-clamp(d/(s.p.range+o[2]),0,1))*160*dt;
+        }
+      }
+      s.vy=(s.vy||0)*0.9 + (goalY-s.y)*0.02;
+      s.x += s.p.spd*dt;
+      s.y += s.vy*dt;
+      s.y=clamp(s.y,14,s.canvasH-14);
+      if(s.x>s.canvasW+12){s.x=-8;s.y=s.canvasH*0.5;s.vy=0;}
+    },
+    draw:function(ctx,w,h,s){
+      s.canvasW=w;s.canvasH=h;
+      // obstacles
+      for(var i=0;i<s.obs.length;i++){var o=s.obs[i];ctx.fillStyle=PAL.surf;ctx.strokeStyle=PAL.faint;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(o[0],o[1],o[2],0,7);ctx.fill();ctx.stroke();}
+      // sensor fan
+      ctx.strokeStyle=s.accent;ctx.globalAlpha=0.5;ctx.lineWidth=1;
+      for(var a=-0.7;a<=0.7;a+=0.35){ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x+Math.cos(a)*s.p.range,s.y+Math.sin(a)*s.p.range);ctx.stroke();}
+      ctx.globalAlpha=1;
+      ctx.strokeStyle=s.accent;ctx.globalAlpha=0.15;ctx.beginPath();ctx.arc(s.x,s.y,s.p.range,-0.7,0.7);ctx.stroke();ctx.globalAlpha=1;
+      // drone
+      ctx.strokeStyle=s.accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(s.x-8,s.y);ctx.lineTo(s.x+8,s.y);ctx.stroke();
+      ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(s.x,s.y,3,0,7);ctx.fill();
+      txt(ctx,'reactive avoidance',12,h-10,PAL.muted,10);
+    }
+  };
+
+  /* 09 LINK latency */
+  SIMS.link={
+    controls:[{k:'lat',label:'Latency',min:0,max:600,step:10,val:120,unit:'ms'}],
+    init:function(s){s.hist=[];},
+    step:function(s,dt){
+      s.cmd=Math.sin(s.t*1.3); // commanded position -1..1
+      s.hist.push([s.t,s.cmd]); if(s.hist.length>400)s.hist.shift();
+    },
+    draw:function(ctx,w,h,s){
+      var cx0=40,cx1=w-40,y=h*0.42, latS=s.p.lat/1000;
+      // rail
+      ctx.strokeStyle=PAL.line;ctx.beginPath();ctx.moveTo(cx0,y);ctx.lineTo(cx1,y);ctx.stroke();
+      txt(ctx,'GROUND / STICK',cx0,y-40,PAL.muted,10);
+      // commanded marker
+      var cxp=lerp(cx0,cx1,(s.cmd+1)/2);
+      ctx.strokeStyle=PAL.faint;ctx.lineWidth=2;ctx.beginPath();ctx.arc(cxp,y-24,7,0,7);ctx.stroke();
+      txt(ctx,'command',cxp,y-36,PAL.faint,9,'center');
+      // drone delayed
+      var want=s.t-latS, val=s.cmd;
+      for(var i=s.hist.length-1;i>=0;i--){if(s.hist[i][0]<=want){val=s.hist[i][1];break;}}
+      var dxp=lerp(cx0,cx1,(val+1)/2);
+      ctx.strokeStyle=s.accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(dxp-9,y+20);ctx.lineTo(dxp+9,y+20);ctx.stroke();
+      ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(dxp,y+20,3,0,7);ctx.fill();
+      txt(ctx,'drone (delayed)',dxp,y+46,s.accent,9,'center');
+      // lag connector
+      ctx.strokeStyle=PAL.warn;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(cxp,y-24);ctx.lineTo(dxp,y+20);ctx.stroke();ctx.setLineDash([]);
+      txt(ctx, s.p.lat+' ms lag  →  drone follows your PAST command', 12, h-12, s.p.lat<150?PAL.good:s.p.lat<350?PAL.warn:PAL.bad, 11);
+    }
+  };
+
+  /* 10 PATHLOSS */
+  SIMS.pathloss={
+    controls:[{k:'pwr',label:'TX power / gain',min:0,max:100,step:1,val:55},{k:'dist',label:'Drone distance',min:5,max:100,step:1,val:40},{k:'obs',label:'Obstacles',min:0,max:100,step:1,val:10}],
+    draw:function(ctx,w,h,s){
+      // signal model: margin = pwr - 20log10(dist) - obs, threshold 0
+      function margin(d){ return 30 + s.p.pwr*0.5 - 20*Math.log10(Math.max(d,1))*1.6 - s.p.obs*0.25; }
+      // curve
+      var px=10,py=12,pw=w-20,ph=h-46;
+      ctx.strokeStyle=PAL.line;ctx.strokeRect(px,py,pw,ph);
+      // threshold line
+      var thY=py+ph*0.78;
+      ctx.strokeStyle=PAL.bad;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(px,thY);ctx.lineTo(px+pw,thY);ctx.stroke();ctx.setLineDash([]);
+      txt(ctx,'link lost below',px+4,thY-3,PAL.bad,9);
+      // plot margin vs distance
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();
+      var maxM=60;
+      for(var i=0;i<=100;i++){var d=i;var m=margin(d);var xx=px+pw*i/100;var yy=thY - m*(ph*0.78/maxM);yy=clamp(yy,py,py+ph);if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}
+      ctx.stroke();
+      // current point
+      var m=margin(s.p.dist), xx=px+pw*s.p.dist/100, yy=clamp(thY-m*(ph*0.78/maxM),py,py+ph);
+      ctx.fillStyle=m>0?PAL.good:PAL.bad;ctx.beginPath();ctx.arc(xx,yy,5,0,7);ctx.fill();
+      ctx.strokeStyle=PAL.faint;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(xx,yy);ctx.lineTo(xx,py+ph);ctx.stroke();ctx.setLineDash([]);
+      txt(ctx,'distance →',px+pw-6,py+ph-4,PAL.faint,9,'right');
+      txt(ctx,'signal margin', px+4, py+11, PAL.muted,10);
+      txt(ctx, (m>0? 'LINK OK · margin '+m.toFixed(0):'LINK LOST'), 12, h-10, m>10?PAL.good:m>0?PAL.warn:PAL.bad, 12);
+    }
+  };
+
+  /* 12 PLAN (A*) */
+  SIMS.plan={
+    controls:[{k:'dens',label:'Wall density',min:5,max:45,step:1,val:24,regen:true},{k:'diag',label:'New map',btn:true}],
+    init:function(s,w,h){
+      s.cols=Math.max(12,Math.floor(w/26)); s.rows=Math.max(7,Math.floor(h/26));
+      s.cw=w/s.cols; s.ch=h/s.rows;
+      var g=new Array(s.cols*s.rows).fill(0);
+      s.start={x:0,y:(s.rows>>1)}; s.goal={x:s.cols-1,y:(s.rows>>1)};
+      for(var k=0;k<s.cols*s.rows;k++){ if(Math.random()*100 < s.p.dens) g[k]=1; }
+      g[s.start.y*s.cols+s.start.x]=0; g[s.goal.y*s.cols+s.goal.x]=0;
+      s.grid=g;
+      s.res=astar(g,s.cols,s.rows,s.start,s.goal);
+      s.reveal=0;
+    },
+    onbtn:function(s){ SIMS.plan.init(s,s.canvasW,s.canvasH); },
+    step:function(s,dt){ s.reveal += dt*90; },
+    draw:function(ctx,w,h,s){
+      s.canvasW=w;s.canvasH=h;
+      if(!s.grid||s.cols*s.ch<1){SIMS.plan.init(s,w,h);}
+      var cw=w/s.cols, ch=h/s.rows;
+      // walls
+      for(var y=0;y<s.rows;y++)for(var x=0;x<s.cols;x++){ if(s.grid[y*s.cols+x]){ctx.fillStyle=PAL.faint;ctx.globalAlpha=0.5;rr(ctx,x*cw+1,y*ch+1,cw-2,ch-2,2);ctx.fill();ctx.globalAlpha=1;} }
+      // expansion
+      var n=Math.min(s.res.order.length, Math.floor(s.reveal));
+      ctx.fillStyle=s.accent;ctx.globalAlpha=0.16;
+      for(var i=0;i<n;i++){var c=s.res.order[i];rr(ctx,c.x*cw+2,c.y*ch+2,cw-4,ch-4,2);ctx.fill();}
+      ctx.globalAlpha=1;
+      // path
+      if(s.res.path && s.reveal>s.res.order.length*0.5){
+        ctx.strokeStyle=s.accent;ctx.lineWidth=3;ctx.beginPath();
+        for(var p=0;p<s.res.path.length;p++){var c2=s.res.path[p];var xx=c2.x*cw+cw/2,yy=c2.y*ch+ch/2;if(p===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}
+        ctx.stroke();
+      }
+      // start/goal
+      ctx.fillStyle=PAL.good;ctx.beginPath();ctx.arc(s.start.x*cw+cw/2,s.start.y*ch+ch/2,5,0,7);ctx.fill();
+      ctx.fillStyle=PAL.bad;ctx.beginPath();ctx.arc(s.goal.x*cw+cw/2,s.goal.y*ch+ch/2,5,0,7);ctx.fill();
+      txt(ctx, s.res.path? 'shortest path found':'no path — too many walls', 8, h-6, s.res.path?PAL.good:PAL.bad,10);
+    }
+  };
+  function astar(grid,cols,rows,start,goal){
+    var idx=function(x,y){return y*cols+x;};
+    var h=function(a){return Math.hypot(a.x-goal.x,a.y-goal.y);};
+    var open=[{x:start.x,y:start.y}], g={}, f={}, came={}, closed={}, order=[];
+    g[idx(start.x,start.y)]=0; f[idx(start.x,start.y)]=h(start);
+    var NB=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    var guard=0;
+    while(open.length && guard++<20000){
+      var bi=0; for(var i=1;i<open.length;i++){ if(f[idx(open[i].x,open[i].y)]<f[idx(open[bi].x,open[bi].y)])bi=i; }
+      var cur=open.splice(bi,1)[0]; var ci=idx(cur.x,cur.y);
+      if(closed[ci])continue; closed[ci]=1; order.push(cur);
+      if(cur.x===goal.x&&cur.y===goal.y){ var path=[],c=cur; while(c){path.push(c); c=came[idx(c.x,c.y)];} return {order:order,path:path.reverse()}; }
+      for(var k=0;k<NB.length;k++){ var nx=cur.x+NB[k][0], ny=cur.y+NB[k][1];
+        if(nx<0||ny<0||nx>=cols||ny>=rows)continue; if(grid[idx(nx,ny)])continue; var ni=idx(nx,ny); if(closed[ni])continue;
+        var step=(NB[k][0]&&NB[k][1])?1.414:1; var ng=g[ci]+step;
+        if(g[ni]===undefined||ng<g[ni]){ g[ni]=ng; f[ni]=ng+h({x:nx,y:ny}); came[ni]={x:cur.x,y:cur.y}; open.push({x:nx,y:ny}); }
+      }
+    }
+    return {order:order,path:null};
+  }
+
+  /* 16 JAM */
+  SIMS.jam={
+    controls:[{k:'jpwr',label:'Jammer power',min:0,max:100,step:1,val:30},{k:'jdist',label:'Jammer distance',min:5,max:100,step:1,val:70},{k:'spwr',label:'Signal power',min:0,max:100,step:1,val:60}],
+    draw:function(ctx,w,h,s){
+      var noise = s.p.jpwr*1.1 - (s.p.jdist*0.35);
+      var sig = s.p.spwr;
+      var snr = sig - Math.max(noise,4);
+      var up = snr>10;
+      // bars
+      var bx=20,bw=w*0.4-30, base=h-30, bh=h-60;
+      txt(ctx,'SIGNAL',bx,base+18,PAL.muted,10);
+      ctx.fillStyle=PAL.surf;rr(ctx,bx,base-bh,bw,bh,4);ctx.fill();
+      ctx.fillStyle=s.accent;var sh=bh*clamp(sig/100,0,1);rr(ctx,bx,base-sh,bw,sh,4);ctx.fill();
+      var nx=bx+bw+24;
+      txt(ctx,'NOISE FLOOR',nx,base+18,PAL.muted,10);
+      ctx.fillStyle=PAL.surf;rr(ctx,nx,base-bh,bw,bh,4);ctx.fill();
+      ctx.fillStyle=PAL.bad;var nh=bh*clamp(Math.max(noise,4)/100,0,1);rr(ctx,nx,base-nh,bw,nh,4);ctx.fill();
+      // threshold marker across
+      var thh=bh*clamp((Math.max(noise,4)+10)/100,0,1);
+      ctx.strokeStyle=PAL.warn;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(bx,base-thh);ctx.lineTo(nx+bw,base-thh);ctx.stroke();ctx.setLineDash([]);
+      // status
+      var rx=w-16;
+      txt(ctx, up?'● LINK UP':'● LINK LOST', rx, 24, up?PAL.good:PAL.bad, 14,'right');
+      txt(ctx, 'SNR '+snr.toFixed(0)+' dB', rx, 42, up?PAL.good:PAL.bad, 11,'right');
+      txt(ctx, up?'drone flying normally': 'failsafe → hover / RTL / land', rx, 60, PAL.muted,10,'right');
+      // little drone icon
+      var dy=up?70:70; ctx.strokeStyle=up?s.accent:PAL.faint;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(rx-70,80);ctx.lineTo(rx-52,80);ctx.stroke();
+    }
+  };
+
+  /* 17 SPOOF */
+  SIMS.spoof={
+    controls:[{k:'str',label:'Spoof strength',min:0,max:100,step:1,val:0},{k:'dir',label:'Spoof direction',min:0,max:360,step:5,val:60}],
+    init:function(s,w,h){s.tx=w*0.5;s.ty=h*0.5;s.bx=w*0.5;s.by=h*0.5;},
+    step:function(s,dt){
+      dt=Math.min(dt,0.03);
+      var w=s.canvasW||300,h=s.canvasH||230;
+      var tgtx=w*0.5, tgty=h*0.5; // drone wants to hold center (believed frame)
+      var ang=s.p.dir*Math.PI/180, off=s.p.str*0.9;
+      // believed = true + spoofOffset  (attacker adds offset to reported pos)
+      // drone corrects so believed -> target: true = target - offset
+      var falseOffX=Math.cos(ang)*off, falseOffY=Math.sin(ang)*off;
+      // ease true toward (target - offset)
+      s.tx += ((tgtx-falseOffX)-s.tx)*Math.min(1,dt*1.5);
+      s.ty += ((tgty-falseOffY)-s.ty)*Math.min(1,dt*1.5);
+      s.bx = s.tx+falseOffX; s.by=s.ty+falseOffY; // believed
+    },
+    draw:function(ctx,w,h,s){
+      s.canvasW=w;s.canvasH=h;
+      // target/home
+      ctx.strokeStyle=PAL.faint;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(w*0.5,h*0.5,10,0,7);ctx.stroke();ctx.setLineDash([]);
+      txt(ctx,'intended hold point',w*0.5,h*0.5-16,PAL.faint,9,'center');
+      // believed (ghost)
+      ctx.fillStyle=PAL.bad;ctx.globalAlpha=0.5;ctx.beginPath();ctx.arc(s.bx,s.by,6,0,7);ctx.fill();ctx.globalAlpha=1;
+      txt(ctx,'thinks it is here',s.bx,s.by+20,PAL.bad,9,'center');
+      // true drone
+      ctx.strokeStyle=s.accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(s.tx-9,s.ty);ctx.lineTo(s.tx+9,s.ty);ctx.stroke();
+      ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(s.tx,s.ty,3,0,7);ctx.fill();
+      txt(ctx,'actually here',s.tx,s.ty-14,s.accent,9,'center');
+      // connector
+      ctx.strokeStyle=PAL.warn;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(s.tx,s.ty);ctx.lineTo(s.bx,s.by);ctx.stroke();ctx.setLineDash([]);
+      var drift=Math.hypot(s.tx-w*0.5,s.ty-h*0.5);
+      txt(ctx, s.p.str<3?'no spoof — on target':'spoofed: drifting '+drift.toFixed(0)+' px off, unaware', 12, h-10, s.p.str<3?PAL.good:PAL.bad,11);
+    }
+  };
+
+  /* 19 BOIDS */
+  SIMS.boids={
+    controls:[{k:'sep',label:'Separation',min:0,max:100,step:1,val:55},{k:'ali',label:'Alignment',min:0,max:100,step:1,val:45},{k:'coh',label:'Cohesion',min:0,max:100,step:1,val:40},{k:'rad',label:'Neighbor radius',min:20,max:120,step:1,val:60}],
+    init:function(s,w,h){s.b=[];for(var i=0;i<45;i++){s.b.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*40,vy:(Math.random()-0.5)*40});}},
+    step:function(s,dt){
+      dt=Math.min(dt,0.03); var w=s.canvasW||300,h=s.canvasH||230,R=s.p.rad,R2=R*R;
+      var b=s.b;
+      for(var i=0;i<b.length;i++){
+        var sx=0,sy=0,ax=0,ay=0,cx=0,cy=0,n=0;
+        for(var j=0;j<b.length;j++){ if(i===j)continue; var dx=b[j].x-b[i].x,dy=b[j].y-b[i].y,d2=dx*dx+dy*dy;
+          if(d2<R2 && d2>0){ n++; ax+=b[j].vx; ay+=b[j].vy; cx+=b[j].x; cy+=b[j].y;
+            var d=Math.sqrt(d2); sx-=dx/d*(1-d/R); sy-=dy/d*(1-d/R); } }
+        if(n>0){ ax/=n;ay/=n; cx=cx/n-b[i].x; cy=cy/n-b[i].y;
+          b[i].vx += sx*s.p.sep*0.06 + (ax-b[i].vx)*s.p.ali*0.0016 + cx*s.p.coh*0.0006;
+          b[i].vy += sy*s.p.sep*0.06 + (ay-b[i].vy)*s.p.ali*0.0016 + cy*s.p.coh*0.0006;
+        }
+        // limit speed
+        var sp=Math.hypot(b[i].vx,b[i].vy),mx=70; if(sp>mx){b[i].vx=b[i].vx/sp*mx;b[i].vy=b[i].vy/sp*mx;} if(sp<20&&sp>0){b[i].vx=b[i].vx/sp*20;b[i].vy=b[i].vy/sp*20;}
+        b[i].x+=b[i].vx*dt; b[i].y+=b[i].vy*dt;
+        if(b[i].x<0)b[i].x+=w; if(b[i].x>w)b[i].x-=w; if(b[i].y<0)b[i].y+=h; if(b[i].y>h)b[i].y-=h;
+      }
+    },
+    draw:function(ctx,w,h,s){
+      s.canvasW=w;s.canvasH=h;
+      for(var i=0;i<s.b.length;i++){var p=s.b[i];var a=Math.atan2(p.vy,p.vx);
+        ctx.fillStyle=s.accent;ctx.beginPath();
+        ctx.moveTo(p.x+Math.cos(a)*6,p.y+Math.sin(a)*6);
+        ctx.lineTo(p.x+Math.cos(a+2.5)*5,p.y+Math.sin(a+2.5)*5);
+        ctx.lineTo(p.x+Math.cos(a-2.5)*5,p.y+Math.sin(a-2.5)*5);
+        ctx.closePath();ctx.fill();
+      }
+      txt(ctx,s.b.length+' agents · local rules only',10,h-8,PAL.muted,10);
+    }
+  };
+
+  /* 20 FORMATION */
+  SIMS.formation={
+    controls:[{k:'range',label:'Comms range',min:20,max:200,step:1,val:120},{k:'coh',label:'Assembly force',min:5,max:100,step:1,val:45},{k:'scatter',label:'Scatter',btn:true}],
+    init:function(s,w,h){s.a=[];var N=16;for(var i=0;i<N;i++){s.a.push({x:Math.random()*w,y:Math.random()*h,vx:0,vy:0});}
+      // ring target
+      s.tgt=[];for(var i=0;i<N;i++){var an=i/N*6.283;s.tgt.push([w*0.5+Math.cos(an)*Math.min(w,h)*0.3, h*0.5+Math.sin(an)*Math.min(w,h)*0.3]);}},
+    onbtn:function(s){for(var i=0;i<s.a.length;i++){s.a[i].vx=(Math.random()-0.5)*300;s.a[i].vy=(Math.random()-0.5)*300;}},
+    step:function(s,dt){dt=Math.min(dt,0.03);var w=s.canvasW,h=s.canvasH;
+      for(var i=0;i<s.a.length;i++){var p=s.a[i],t=s.tgt[i];
+        p.vx += ((t[0]-p.x)*s.p.coh*0.02); p.vy += ((t[1]-p.y)*s.p.coh*0.02);
+        // separation from close neighbors
+        for(var j=0;j<s.a.length;j++){if(i===j)continue;var dx=p.x-s.a[j].x,dy=p.y-s.a[j].y,d=Math.hypot(dx,dy);if(d<24&&d>0){p.vx+=dx/d*40;p.vy+=dy/d*40;}}
+        p.vx*=0.86;p.vy*=0.86; p.x+=p.vx*dt;p.y+=p.vy*dt;
+      }
+    },
+    draw:function(ctx,w,h,s){s.canvasW=w;s.canvasH=h;
+      // comms links
+      ctx.strokeStyle=s.accent;ctx.globalAlpha=0.18;ctx.lineWidth=1;
+      for(var i=0;i<s.a.length;i++)for(var j=i+1;j<s.a.length;j++){var dx=s.a[i].x-s.a[j].x,dy=s.a[i].y-s.a[j].y;if(dx*dx+dy*dy<s.p.range*s.p.range){ctx.beginPath();ctx.moveTo(s.a[i].x,s.a[i].y);ctx.lineTo(s.a[j].x,s.a[j].y);ctx.stroke();}}
+      ctx.globalAlpha=1;
+      for(var i2=0;i2<s.a.length;i2++){var p=s.a[i2];ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();}
+      txt(ctx,'self-assembling formation · lines = comms links',10,h-8,PAL.muted,10);
+    }
+  };
+
+  /* 22 ENDURANCE */
+  SIMS.endurance={
+    controls:[{k:'batt',label:'Battery capacity',min:20,max:100,step:1,val:60},{k:'load',label:'Payload',min:0,max:100,step:1,val:20}],
+    init:function(s){s.soc=1;},
+    step:function(s,dt){var power=1+s.p.load*0.03; var time=s.p.batt*0.9/power; s.soc-=dt/(time*1.2); if(s.soc<0)s.soc=1;},
+    draw:function(ctx,w,h,s){
+      function flightTime(load){var power=1+load*0.03; return s.p.batt*0.9/power;} // arbitrary minutes-ish
+      // curve time vs payload
+      var px=10,py=12,pw=w*0.58,ph=h-40;
+      ctx.strokeStyle=PAL.line;ctx.strokeRect(px,py,pw,ph);
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();
+      var maxT=flightTime(0);
+      for(var i=0;i<=100;i++){var t=flightTime(i);var xx=px+pw*i/100;var yy=py+ph-(t/maxT)*(ph-6)-3;if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}
+      ctx.stroke();
+      var t=flightTime(s.p.load),xx=px+pw*s.p.load/100,yy=py+ph-(t/maxT)*(ph-6)-3;
+      ctx.fillStyle=PAL.warn;ctx.beginPath();ctx.arc(xx,yy,5,0,7);ctx.fill();
+      txt(ctx,'flight time',px+4,py+11,PAL.muted,10);
+      txt(ctx,'payload →',px+pw-4,py+ph-3,PAL.faint,9,'right');
+      // battery gauge + drone
+      var gx=w*0.66,gy=h*0.3,gw=w*0.28,gh=20;
+      ctx.strokeStyle=PAL.faint;ctx.lineWidth=2;rr(ctx,gx,gy,gw,gh,4);ctx.stroke();
+      ctx.fillStyle=s.soc>0.3?PAL.good:PAL.bad;rr(ctx,gx+2,gy+2,(gw-4)*s.soc,gh-4,3);ctx.fill();
+      txt(ctx,'battery',gx,gy-6,PAL.muted,10);
+      txt(ctx, '~'+ (t).toFixed(0)+' min flight', gx, gy+gh+20, PAL.ink,13);
+      txt(ctx, s.p.load>60?'heavy payload → short flight':'', gx, gy+gh+38, PAL.warn,10);
+    }
+  };
+
+  /* 25 ESC / brushless motor */
+  SIMS.esc={
+    controls:[{k:'thr',label:'Throttle',min:0,max:100,step:1,val:35},{k:'resp',label:'Responsiveness',min:10,max:100,step:1,val:45}],
+    init:function(s){s.rpm=35;s.ph=0;},
+    step:function(s,dt){ s.rpm += (s.p.thr-s.rpm)*Math.min(1,s.p.resp*0.02*dt*18); s.ph += s.rpm*0.02; },
+    draw:function(ctx,w,h,s){
+      var cx=w*0.3,cy=h*0.5,R=Math.min(w,h)*0.3;
+      var lit=Math.floor(s.ph/1.5)%3;
+      for(var i=0;i<6;i++){var a=i/6*6.283,x=cx+Math.cos(a)*R,y=cy+Math.sin(a)*R,on=(i%3)===lit;
+        ctx.fillStyle=on?s.accent:PAL.surf;ctx.strokeStyle=PAL.faint;ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();ctx.stroke();}
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(s.ph);ctx.fillStyle=PAL.faint;rr(ctx,-R*0.55,-6,R*1.1,12,4);ctx.fill();ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(0,0,8,0,7);ctx.fill();ctx.restore();
+      var bx=w*0.6,bw=w*0.34;
+      txt(ctx,'commanded',bx,24,PAL.muted,10);ctx.fillStyle=PAL.surf;rr(ctx,bx,28,bw,8,3);ctx.fill();ctx.fillStyle=PAL.faint;rr(ctx,bx,28,bw*clamp(s.p.thr/100,0,1),8,3);ctx.fill();
+      txt(ctx,'actual RPM',bx,52,PAL.muted,10);ctx.fillStyle=PAL.surf;rr(ctx,bx,56,bw,8,3);ctx.fill();ctx.fillStyle=s.accent;rr(ctx,bx,56,bw*clamp(s.rpm/100,0,1),8,3);ctx.fill();
+      txt(ctx,'coils fire in sequence (commutation)',bx,80,PAL.faint,9.5);
+      txt(ctx, Math.abs(s.rpm-s.p.thr)>4?'motor chasing command…':'at speed',bx,h-12,Math.abs(s.rpm-s.p.thr)>4?PAL.warn:PAL.good,11);
+    }
+  };
+
+  /* 26 GIMBAL */
+  SIMS.gimbal={
+    controls:[{k:'turb',label:'Turbulence',min:0,max:100,step:1,val:45},{k:'stab',label:'Stabilization',min:0,max:100,step:1,val:80,unit:'%'}],
+    init:function(s){s.body=0;s.gim=0;},
+    step:function(s,dt){ s.body=Math.sin(s.t*2.2)*s.p.turb*0.006 + Math.sin(s.t*3.9)*s.p.turb*0.003;
+      var target=-s.body*(s.p.stab/100); s.gim += (target-s.gim)*Math.min(1,dt*14); },
+    draw:function(ctx,w,h,s){
+      var cx=w*0.3,cy=h*0.42;
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(s.body);
+      ctx.strokeStyle=PAL.faint;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-40,0);ctx.lineTo(40,0);ctx.stroke();
+      ctx.fillStyle=PAL.faint;rr(ctx,-12,-6,24,12,3);ctx.fill();ctx.restore();
+      ctx.strokeStyle=PAL.line;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy+16);ctx.stroke();
+      var camAng=s.body+s.gim;
+      ctx.save();ctx.translate(cx,cy+26);ctx.rotate(camAng);ctx.fillStyle=s.accent;rr(ctx,-15,-9,30,18,3);ctx.fill();ctx.fillStyle=PAL.surf;ctx.beginPath();ctx.arc(11,0,4,0,7);ctx.fill();ctx.restore();
+      txt(ctx,'airframe rocks',cx,cy-30,PAL.muted,10,'center');
+      var vx=w*0.6,vy=20,vw=w*0.34,vh=h-52;
+      ctx.strokeStyle=PAL.line;ctx.strokeRect(vx,vy,vw,vh);
+      ctx.save();ctx.beginPath();ctx.rect(vx,vy,vw,vh);ctx.clip();ctx.translate(vx+vw/2,vy+vh/2);ctx.rotate(camAng);
+      ctx.fillStyle=s.accent;ctx.globalAlpha=0.16;ctx.fillRect(-vw,0,vw*2,vh*2);ctx.globalAlpha=1;
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-vw,0);ctx.lineTo(vw,0);ctx.stroke();ctx.restore();
+      txt(ctx,'camera view',vx+4,vy+12,PAL.muted,10);
+      txt(ctx, Math.abs(camAng)<0.04?'horizon steady ✓':'footage tilting',vx+vw/2,vy+vh+16,Math.abs(camAng)<0.04?PAL.good:PAL.warn,11,'center');
+    }
+  };
+
+  /* 28 MESH */
+  SIMS.mesh={
+    controls:[{k:'range',label:'Radio range',min:40,max:280,step:1,val:150},{k:'nodes',label:'Relay drones',min:0,max:5,step:1,val:3,regen:true}],
+    init:function(s,w,h){ s.gs=[24,h*0.5]; s.dst=[w-24,h*0.5]; s.relays=[]; var n=s.p.nodes;
+      for(var i=0;i<n;i++){var f=(i+1)/(n+1); s.relays.push([lerp(s.gs[0],s.dst[0],f), h*0.5+Math.sin(i*1.9+1)*h*0.24]);} s.pk=0; },
+    step:function(s,dt){ s.pk=(s.pk+dt*0.5)%1; },
+    draw:function(ctx,w,h,s){
+      var pts=[s.gs].concat(s.relays,[s.dst]), R=s.p.range;
+      var route=[0],used={0:1},cur=0,ok=true,guard=0;
+      while(cur!==pts.length-1 && guard++<25){ var best=-1,bd=1e9;
+        for(var j=0;j<pts.length;j++){ if(used[j])continue; var d=Math.hypot(pts[j][0]-pts[cur][0],pts[j][1]-pts[cur][1]);
+          if(d<=R){ var td=Math.hypot(pts[j][0]-s.dst[0],pts[j][1]-s.dst[1]); if(td<bd){bd=td;best=j;} } }
+        if(best<0){ok=false;break;} route.push(best);used[best]=1;cur=best; }
+      if(cur!==pts.length-1)ok=false;
+      ctx.strokeStyle=s.accent;ctx.globalAlpha=0.13;ctx.lineWidth=1;
+      for(var a=0;a<pts.length;a++)for(var b=a+1;b<pts.length;b++){ if(Math.hypot(pts[a][0]-pts[b][0],pts[a][1]-pts[b][1])<=R){ctx.beginPath();ctx.moveTo(pts[a][0],pts[a][1]);ctx.lineTo(pts[b][0],pts[b][1]);ctx.stroke();} }
+      ctx.globalAlpha=1;
+      if(ok){ ctx.strokeStyle=s.accent;ctx.lineWidth=2.5;ctx.beginPath();
+        for(var r=0;r<route.length;r++){var p=pts[route[r]];if(r===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);}ctx.stroke();
+        var seg=s.pk*(route.length-1),si=clamp(Math.floor(seg),0,route.length-2),f=seg-si;
+        var pa=pts[route[si]],pb=pts[route[si+1]];
+        ctx.fillStyle=PAL.good;ctx.beginPath();ctx.arc(lerp(pa[0],pb[0],f),lerp(pa[1],pb[1],f),4,0,7);ctx.fill(); }
+      for(var i=0;i<s.relays.length;i++){ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(s.relays[i][0],s.relays[i][1],5,0,7);ctx.fill();}
+      ctx.fillStyle=PAL.good;ctx.beginPath();ctx.arc(s.gs[0],s.gs[1],7,0,7);ctx.fill();txt(ctx,'base',s.gs[0],s.gs[1]-12,PAL.muted,9,'center');
+      ctx.strokeStyle=PAL.ink;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(s.dst[0]-9,s.dst[1]);ctx.lineTo(s.dst[0]+9,s.dst[1]);ctx.stroke();txt(ctx,'drone',s.dst[0],s.dst[1]-12,PAL.muted,9,'center');
+      txt(ctx, ok?(route.length-1)+' hops · connected':'NO ROUTE — out of range',12,h-10,ok?PAL.good:PAL.bad,11);
+    }
+  };
+
+  /* 30 DEAD RECKONING */
+  SIMS.deadreckon={
+    controls:[{k:'drift',label:'Drift rate',min:0,max:100,step:1,val:40},{k:'fixt',label:'Fix interval',min:1,max:12,step:1,val:5,unit:'s'}],
+    init:function(s){s.ph=0;s.ex=0;s.ey=0;s.lastFix=0;s.trail=[];s.etrail=[];s.fixFlash=0;},
+    step:function(s,dt){ dt=Math.min(dt,0.03); var w=s.canvasW,h=s.canvasH,cx=w*0.5,cy=h*0.5,R=Math.min(w,h)*0.3;
+      s.ph+=dt*0.6; var tx=cx+Math.cos(s.ph)*R, ty=cy+Math.sin(s.ph)*R; s.tx=tx;s.ty=ty;
+      if(s.ex===0&&s.ey===0){s.ex=tx;s.ey=ty;}
+      var vx=-Math.sin(s.ph)*R*0.6*dt, vy=Math.cos(s.ph)*R*0.6*dt;
+      s.ex += vx + (Math.random()-0.5)*s.p.drift*0.09; s.ey += vy + (Math.random()-0.5)*s.p.drift*0.09;
+      if(s.t-s.lastFix > s.p.fixt){ s.lastFix=s.t; s.ex=tx;s.ey=ty; s.fixFlash=1; }
+      s.fixFlash*=0.93;
+      s.trail.push([tx,ty]); s.etrail.push([s.ex,s.ey]); if(s.trail.length>120){s.trail.shift();s.etrail.shift();}
+    },
+    draw:function(ctx,w,h,s){
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();for(var i=0;i<s.trail.length;i++){var p=s.trail[i];if(i===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);}ctx.stroke();
+      ctx.strokeStyle=PAL.bad;ctx.globalAlpha=0.6;ctx.lineWidth=1.5;ctx.beginPath();for(var j=0;j<s.etrail.length;j++){var q=s.etrail[j];if(j===0)ctx.moveTo(q[0],q[1]);else ctx.lineTo(q[0],q[1]);}ctx.stroke();ctx.globalAlpha=1;
+      if(s.fixFlash>0.1){ctx.strokeStyle=PAL.good;ctx.globalAlpha=s.fixFlash;ctx.lineWidth=2;ctx.beginPath();ctx.arc(s.tx,s.ty,15,0,7);ctx.stroke();ctx.globalAlpha=1;}
+      ctx.fillStyle=s.accent;ctx.beginPath();ctx.arc(s.tx,s.ty,4,0,7);ctx.fill();
+      ctx.fillStyle=PAL.bad;ctx.globalAlpha=0.75;ctx.beginPath();ctx.arc(s.ex,s.ey,4,0,7);ctx.fill();ctx.globalAlpha=1;
+      var err=Math.hypot(s.tx-s.ex,s.ty-s.ey);
+      txt(ctx,'— true   — estimate (dead reckoning)',10,16,PAL.muted,10);
+      txt(ctx,'drift error '+err.toFixed(0)+' px · fix every '+s.p.fixt+'s',10,h-10,err<20?PAL.good:err<55?PAL.warn:PAL.bad,11);
+      txt(ctx,'green ring = fix (loop-closure / beacon / GPS)',w-10,h-10,PAL.faint,9,'right');
+    }
+  };
+
+  /* 31 COMMS MEDIUM */
+  SIMS.medium={
+    controls:[{k:'dist',label:'Target distance',min:10,max:100,step:1,val:65}],
+    init:function(s){s.p1=0;s.p2=0.2;s.p3=0.1;},
+    step:function(s,dt){ s.p1=(s.p1+dt*0.9)%1.35; s.p2=(s.p2+dt*0.75)%1.35; s.p3=(s.p3+dt*0.16)%1.35; },
+    draw:function(ctx,w,h,s){
+      var lanes=[['AIR · radio (RF)',PAL.sky,0.99,'fast · far · ~instant'],['GROUND · radio (RF)',PAL.good,0.82,'fast · blocked by terrain'],['WATER · acoustic',s.accent,0.42,'slow · seconds of lag']];
+      var x0=96,x1=w-20,y0=26,dy=(h-46)/3,frac=s.p.dist/100,ph=[s.p1,s.p2,s.p3];
+      for(var i=0;i<3;i++){ var y=y0+i*dy+dy*0.5;
+        txt(ctx,lanes[i][0],10,y-5,PAL.ink,10.5); txt(ctx,lanes[i][3],10,y+10,PAL.faint,8.5);
+        ctx.strokeStyle=PAL.line;ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();
+        var maxx=lerp(x0,x1,lanes[i][2]), tgtx=lerp(x0,x1,frac), reaches=frac<=lanes[i][2]+0.001;
+        ctx.strokeStyle=lanes[i][1];ctx.globalAlpha=0.5;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(maxx,y-8);ctx.lineTo(maxx,y+8);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+        if(ph[i]<=1){ var px=lerp(x0,maxx,ph[i]); ctx.fillStyle=lanes[i][1];ctx.beginPath();ctx.arc(px,y,4,0,7);ctx.fill(); }
+        ctx.strokeStyle=reaches?PAL.good:PAL.bad;ctx.lineWidth=2;ctx.beginPath();ctx.arc(tgtx,y,6,0,7);ctx.stroke();
+        if(!reaches)txt(ctx,'✗',tgtx,y+3.5,PAL.bad,10,'center');
+      }
+      txt(ctx,'○ target · dashed = each medium’s reach · pulse speed = signal speed',10,h-8,PAL.muted,9);
+    }
+  };
+
+  /* 32 BUOYANCY */
+  SIMS.buoyancy={
+    controls:[{k:'ballast',label:'Ballast  (− sink / + rise)',min:-100,max:100,step:1,val:0}],
+    init:function(s,w,h){s.depth=h*0.5;s.v=0;},
+    step:function(s,dt){ dt=Math.min(dt,0.03); s.v += (-s.p.ballast*0.5)*dt*0.5; s.v*=0.9; s.depth += s.v*dt; },
+    draw:function(ctx,w,h,s){
+      var wc=w*0.6;
+      ctx.fillStyle=s.accent;ctx.globalAlpha=0.08;ctx.fillRect(0,18,wc,h-18);ctx.globalAlpha=1;
+      ctx.strokeStyle=PAL.line;ctx.beginPath();ctx.moveTo(0,18);ctx.lineTo(wc,18);ctx.stroke();
+      txt(ctx,'water surface',6,14,PAL.faint,9);
+      s.depth=clamp(s.depth,28,h-14); var cx=wc*0.5,b=s.p.ballast;
+      arrow(ctx,cx-26,s.depth,cx-26,s.depth-14-(b>0?b*0.12:0),PAL.good,2);
+      arrow(ctx,cx+26,s.depth,cx+26,s.depth+14+(b<0?-b*0.12:0),PAL.bad,2);
+      ctx.fillStyle=s.accent;rr(ctx,cx-19,s.depth-8,38,16,6);ctx.fill();
+      var st=Math.abs(b)<3?'NEUTRAL · hovers free (no power)':b>0?'positive · rising':'negative · sinking';
+      txt(ctx,st,cx,h-8,Math.abs(b)<3?PAL.good:PAL.warn,11,'center');
+      ctx.strokeStyle=PAL.line;ctx.beginPath();ctx.moveTo(wc,18);ctx.lineTo(wc,h);ctx.stroke();
+      var ax=w*0.81,ay=h*0.4;
+      ctx.strokeStyle=PAL.faint;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ax-15,ay);ctx.lineTo(ax+15,ay);ctx.stroke();
+      var jl=8+Math.abs(Math.sin(s.t*18))*8;
+      arrow(ctx,ax-11,ay+4,ax-11,ay+4+jl,PAL.warn,2);arrow(ctx,ax+11,ay+4,ax+11,ay+4+jl,PAL.warn,2);
+      txt(ctx,'air drone',ax,ay-20,PAL.muted,9.5,'center');txt(ctx,'must thrust',ax,ay-8,PAL.warn,9.5,'center');txt(ctx,'nonstop to hover',ax,ay+48,PAL.faint,9,'center');
+    }
+  };
+
+  /* 33 SONAR / ECHO RANGING */
+  SIMS.sonar={
+    controls:[{k:'range',label:'Range',min:40,max:150,step:1,val:105},{k:'speed',label:'Sweep speed',min:10,max:100,step:1,val:45}],
+    init:function(s){s.ang=0;s.obs=[];for(var i=0;i<9;i++){s.obs.push([Math.random()*6.283,40+Math.random()*75]);}s.hits=[];},
+    step:function(s,dt){ s.ang=(s.ang+dt*s.p.speed*0.05)%6.283;
+      for(var i=0;i<s.obs.length;i++){ var da=Math.abs(((s.obs[i][0]-s.ang+Math.PI)%6.283)-Math.PI);
+        if(da<0.09 && s.obs[i][1]<=s.p.range){ s.hits.push([s.obs[i][0],s.obs[i][1],1]); } }
+      for(var j=0;j<s.hits.length;j++)s.hits[j][2]*=0.986; s.hits=s.hits.filter(function(x){return x[2]>0.06;});
+    },
+    draw:function(ctx,w,h,s){ var cx=w*0.5,cy=h*0.5;
+      ctx.strokeStyle=PAL.line;ctx.lineWidth=1;for(var r=0.33;r<=1.001;r+=0.333){ctx.beginPath();ctx.arc(cx,cy,s.p.range*r,0,7);ctx.stroke();}
+      ctx.save();ctx.translate(cx,cy);ctx.globalAlpha=0.12;ctx.fillStyle=s.accent;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,s.p.range,s.ang-0.3,s.ang);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(s.ang)*s.p.range,Math.sin(s.ang)*s.p.range);ctx.stroke();ctx.restore();
+      for(var i=0;i<s.hits.length;i++){var hh=s.hits[i],x=cx+Math.cos(hh[0])*hh[1],y=cy+Math.sin(hh[0])*hh[1];ctx.fillStyle=PAL.good;ctx.globalAlpha=hh[2];ctx.beginPath();ctx.arc(x,y,4,0,7);ctx.fill();ctx.globalAlpha=1;}
+      ctx.fillStyle=PAL.ink;ctx.beginPath();ctx.arc(cx,cy,4,0,7);ctx.fill();
+      txt(ctx,'echo-ranging: ping → time the return',10,16,PAL.muted,10);
+      txt(ctx,'same trick as lidar (light) & radar (radio)',10,h-10,PAL.faint,9.5);
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    // controls
+    var host=document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=ct.val+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=inp.value+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    // visibility
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||230;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  /* ---------- filter / search ---------- */
+  var q=document.getElementById('q');
+  var chips=[].slice.call(document.querySelectorAll('.chip'));
+  var scenarios=[].slice.call(document.querySelectorAll('.scenario'));
+  var sections=[].slice.call(document.querySelectorAll('section.track'));
+  var countEl=document.getElementById('count');
+  var activeCat='all';
+  scenarios.forEach(function(s){ s._text=(s.textContent||'').toLowerCase(); });
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase(); var shown=0;
+    scenarios.forEach(function(s){ var okC=activeCat==='all'||s.getAttribute('data-cat')===activeCat; var okT=!term||s._text.indexOf(term)!==-1; var vis=okC&&okT; s.hidden=!vis; if(vis)shown++; });
+    sections.forEach(function(sec){ var any=[].some.call(sec.querySelectorAll('.scenario'),function(s){return !s.hidden;}); sec.hidden=!any; });
+    countEl.innerHTML='<b>'+shown+'</b> shown';
+    document.body.classList.toggle('empty',shown===0);
+  }
+  chips.forEach(function(c){ c.addEventListener('click',function(){ activeCat=c.getAttribute('data-cat'); chips.forEach(function(x){x.setAttribute('aria-pressed',x===c?'true':'false');}); apply(); }); });
+  q.addEventListener('input',apply);
+})();
+</script>
+
+</body>
+</html>

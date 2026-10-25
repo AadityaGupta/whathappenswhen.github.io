@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>What Happens When · Python</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E7ECEE; --surface:#FCFDFD; --surface-2:#F1F4F5;
+    --ink:#151B1F; --ink-soft:#3A454B; --muted:#63717A; --faint:#8A97A0;
+    --line:#D3DBDF; --line-soft:#E2E8EB;
+    --accent:#0E7C86; --accent-ink:#FFFFFF; --accent-wash:#DCEDEE;
+
+    --run:#3A6EA5;   /* Execution & runtime — blue */
+    --conc:#B23A48;  /* GIL & concurrency — crimson */
+    --async:#7A4F9E; /* Async — violet */
+    --mem:#2F8055;   /* Memory & object model — green */
+    --type:#A9721A;  /* Typing — amber */
+    --pkg:#B0517E;   /* Packaging & imports — rose */
+    --ai:#4C63B6;    /* Python for AI — indigo */
+
+    --shadow:0 1px 2px rgba(20,30,36,.05), 0 8px 24px -14px rgba(20,30,36,.18);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+      --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+      --line:#273035; --line-soft:#20282D;
+      --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+      --run:#7AA7DA; --conc:#E28088; --async:#B98BD6; --mem:#5FB98C; --type:#D6A24A; --pkg:#D983AE; --ai:#8493E0;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+    --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+    --line:#273035; --line-soft:#20282D;
+    --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+    --run:#7AA7DA; --conc:#E28088; --async:#B98BD6; --mem:#5FB98C; --type:#D6A24A; --pkg:#D983AE; --ai:#8493E0;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:820px;margin:0 auto;padding-inline:20px;padding-block:0}
+
+  header.top{padding-block:56px 20px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  .vol{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 9px}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(2.1rem,6vw,3.15rem);line-height:1.02;letter-spacing:-.02em;margin:.32em 0 .1em;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.16rem;color:var(--ink-soft);max-width:64ch;margin:.6em 0 0}
+  .metaline{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .metaline b{color:var(--ink);font-weight:600}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  .controls{position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(9px);border-bottom:1px solid var(--line-soft);margin-top:12px}
+  .controls .wrap{padding-block:12px;display:flex;flex-direction:column;gap:11px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .search input{width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--ink)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);padding:5px 12px 5px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:border-color .12s,color .12s,background .12s}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,var(--faint))}
+  .chip[data-cat="all"]{--dot:var(--accent)}
+  .chip[data-cat="run"]{--dot:var(--run)}
+  .chip[data-cat="conc"]{--dot:var(--conc)}
+  .chip[data-cat="async"]{--dot:var(--async)}
+  .chip[data-cat="mem"]{--dot:var(--mem)}
+  .chip[data-cat="type"]{--dot:var(--type)}
+  .chip[data-cat="pkg"]{--dot:var(--pkg)}
+  .chip[data-cat="ai"]{--dot:var(--ai)}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--ink)}
+
+  section.track{padding-top:40px}
+  .track-head{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:6px}
+  .track-head .tno{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--track,var(--accent));font-weight:600}
+  .track-head h2{font-family:var(--sans);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:.15em 0 .1em}
+  .track-head p{font-family:var(--serif);color:var(--muted);margin:.2em 0 0;font-size:1rem;max-width:62ch}
+  section[data-track="run"]{--track:var(--run)}
+  section[data-track="conc"]{--track:var(--conc)}
+  section[data-track="async"]{--track:var(--async)}
+  section[data-track="mem"]{--track:var(--mem)}
+  section[data-track="type"]{--track:var(--type)}
+  section[data-track="pkg"]{--track:var(--pkg)}
+  section[data-track="ai"]{--track:var(--ai)}
+
+  .scenario{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--cat,var(--accent));border-radius:12px;padding:22px 24px 20px;margin-top:16px;box-shadow:var(--shadow)}
+  .scenario[data-cat="run"]{--cat:var(--run)}
+  .scenario[data-cat="conc"]{--cat:var(--conc)}
+  .scenario[data-cat="async"]{--cat:var(--async)}
+  .scenario[data-cat="mem"]{--cat:var(--mem)}
+  .scenario[data-cat="type"]{--cat:var(--type)}
+  .scenario[data-cat="pkg"]{--cat:var(--pkg)}
+  .scenario[data-cat="ai"]{--cat:var(--ai)}
+
+  .s-top{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .s-no{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--cat,var(--accent));flex:none}
+  .s-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:500;margin-left:auto;flex:none}
+  .scenario h3{font-family:var(--sans);font-weight:600;font-size:1.24rem;line-height:1.22;letter-spacing:-.01em;margin:.1em 0 .5em;text-wrap:balance}
+  .why{font-family:var(--sans);font-size:12.5px;color:var(--muted);margin:0 0 14px;padding-left:11px;border-left:2px solid var(--line)}
+  .why b{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;display:block;margin-bottom:2px}
+  .answer{font-family:var(--serif);font-size:1.075rem;line-height:1.62;color:var(--ink-soft)}
+  .answer p{margin:0 0 .85em}
+  .answer p:last-child{margin-bottom:0}
+  .answer .arch{color:var(--ink)}
+  .answer .arch::before{content:"Architect lens";font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;display:inline-block;margin-right:9px;padding:2px 7px;border-radius:5px;background:var(--surface-2);vertical-align:1px}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);color:var(--ink);padding:1px 5px;border-radius:5px;border:1px solid var(--line-soft)}
+  .terms{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .terms .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:8px;display:block}
+  .termlist{display:flex;flex-wrap:wrap;gap:6px}
+  .term{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;line-height:1.3}
+
+  .noresult{display:none;text-align:center;font-family:var(--serif);color:var(--muted);padding:48px 0 12px;font-size:1.05rem}
+  body.empty .noresult{display:block}
+
+  footer.foot{margin-top:52px;padding:26px 0 60px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.7}
+  footer.foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:520px){
+    .scenario{padding:18px 16px 16px}
+    header.top{padding-block:40px 16px}
+    .s-tag{display:none}
+  }
+  @media print{
+    .toggle,.controls{display:none}
+    body{background:#fff;color:#000}
+    .scenario{box-shadow:none;border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid}
+    .answer .arch::before{border:1px solid #999;background:#fff;color:#000}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html" title="Back to all volumes" aria-label="Back to all volumes">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker"><span class="vol">Python 3.12+ · Basic → Advanced</span> Engineering Rehearsal</div>
+    <h1>What Happens <em>When…</em></h1>
+    <p class="lede">The Python an architect is expected to explain cold — the runtime and bytecode, the GIL and its escape hatches (now including free-threading), asyncio, the memory and object model, modern typing, packaging, and why Python runs the AI world despite being "slow." Same format as the rest of the series — mechanism, architect lens, terms to land — walked basic to advanced, current to Python 3.14.</p>
+    <div class="metaline">
+      <span><b>31</b> scenarios</span>
+      <span><b>7</b> tracks</span>
+      <span><b>basic → advanced</b>, spoken</span>
+      <span>Current to <b>Python 3.14</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Search — e.g. GIL, free-threading, asyncio, refcount, PEP 695, uv, wheel" aria-label="Search scenarios">
+      </label>
+      <span class="count" id="count"><b>31</b> shown</span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by track">
+      <button class="chip" data-cat="all" aria-pressed="true"><span class="dot"></span>All</button>
+      <button class="chip" data-cat="run" aria-pressed="false"><span class="dot"></span>Runtime</button>
+      <button class="chip" data-cat="conc" aria-pressed="false"><span class="dot"></span>GIL &amp; concurrency</button>
+      <button class="chip" data-cat="async" aria-pressed="false"><span class="dot"></span>Async</button>
+      <button class="chip" data-cat="mem" aria-pressed="false"><span class="dot"></span>Memory &amp; objects</button>
+      <button class="chip" data-cat="type" aria-pressed="false"><span class="dot"></span>Typing</button>
+      <button class="chip" data-cat="pkg" aria-pressed="false"><span class="dot"></span>Packaging</button>
+      <button class="chip" data-cat="ai" aria-pressed="false"><span class="dot"></span>Python for AI</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="list">
+
+  <!-- ===== RUNTIME ===== -->
+  <section class="track" data-track="run">
+    <div class="track-head">
+      <div class="tno">Track 01 — How it runs</div>
+      <h2>Execution &amp; runtime</h2>
+      <p>CPython compiles to bytecode and interprets it — which explains both Python's portability and its baseline slowness, and why the recent "Faster CPython" work (the specializing interpreter, the JIT) is all about that eval loop.</p>
+    </div>
+
+    <article class="scenario" data-cat="run">
+      <div class="s-top"><span class="s-no">01</span><span class="s-tag">Runtime · core</span></div>
+      <h3>You run a <code>.py</code> file</h3>
+      <p class="why"><b>Why it matters</b>"Compiled to bytecode, then interpreted" is the fact under every Python performance conversation.</p>
+      <div class="answer">
+        <p>When you run <code>python app.py</code>, CPython first <b>compiles</b> your source to <b>bytecode</b> — a lower-level, platform-independent instruction set — caching it in <code>__pycache__</code> as <code>.pyc</code> so unchanged modules aren't recompiled. Then the CPython <b>virtual machine</b> executes that bytecode in its evaluation loop: a big loop reading one instruction at a time and operating on a value stack. So Python is compiled to bytecode, then <b>interpreted</b> — there's no machine-code compilation by default, and that per-instruction interpretation is why pure-Python number-crunching is slow relative to C.</p>
+        <p class="arch">The model to state is "CPython compiles to bytecode, then interprets it on a stack machine" — which explains both Python's portability (bytecode runs anywhere CPython runs) and its baseline slowness (interpreting instruction-by-instruction is far slower than native code). It's also why the recent performance story — the specializing interpreter and the JIT — is all about making that eval loop faster without changing your code. And it frames the eternal Python performance answer: don't optimize the Python loop, push hot work into C (NumPy) or a faster interpreter. CPython is the reference implementation; PyPy and others trade compatibility for speed.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">source → bytecode (.pyc / __pycache__)</span><span class="term">CPython VM eval loop</span><span class="term">stack machine</span><span class="term">interpreted not native</span><span class="term">portability vs baseline slowness</span><span class="term">reference implementation</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="run">
+      <div class="s-top"><span class="s-no">02</span><span class="s-tag">Runtime · advanced</span></div>
+      <h3>Hot code gets specialized (Faster CPython)</h3>
+      <p class="why"><b>Why it matters</b>"Just upgrade your Python" is a real, free performance win — this is why.</p>
+      <div class="answer">
+        <p>Since 3.11, CPython has a <b>specializing adaptive interpreter</b> (the "Faster CPython" project). As code runs, the interpreter watches which bytecodes are hot and rewrites them in place into <b>specialized</b> versions tuned to the types it's actually seeing — a generic <code>BINARY_OP</code> becomes a fast int-add when it observes it's always adding ints, backed by <b>inline caches</b> that remember the resolved operation. If the assumption breaks, it de-specializes to the general form. This "quickening" happens transparently at runtime and made 3.11 roughly 25% faster than 3.10 on average, with more since.</p>
+        <p class="arch">The point is that recent CPython gets meaningfully faster with zero code changes — the interpreter learns your program's runtime types and specializes the hot path, which is why "just upgrade the Python version" is a real, free performance win I recommend first. It's adaptive (per-call-site specialization with inline caches, de-optimizing when types vary), so <b>monomorphic</b> code — consistent types at a site — benefits most, a subtle nudge toward type-stable code. It's also the groundwork for the JIT: the specializing interpreter produces the type information and hot-path detection the JIT builds on.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">specializing adaptive interpreter (3.11+)</span><span class="term">Faster CPython</span><span class="term">bytecode specialization / quickening</span><span class="term">inline caches</span><span class="term">monomorphic vs polymorphic sites</span><span class="term">de-optimization</span><span class="term">~25% free speedup</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="run">
+      <div class="s-top"><span class="s-no">03</span><span class="s-tag">Runtime · advanced</span></div>
+      <h3>The JIT compiles hot code (3.13+)</h3>
+      <p class="why"><b>Why it matters</b>Free-threading and the JIT are CPython's two big bets to close the performance gap without breaking compatibility.</p>
+      <div class="answer">
+        <p>Python 3.13 added an <b>experimental JIT</b> (still experimental through 3.14), built on the specializing interpreter. When code is hot, CPython translates its specialized bytecode into a <b>tier-2 sequence of micro-ops</b>, then uses <b>copy-and-patch</b> compilation — stitching together pre-compiled machine-code templates at runtime, cheaply, without embedding a heavy compiler like LLVM — to produce native code for that path. It's designed to be a small, fast-to-build JIT; early speedups are modest, and the real payoff is expected to grow over releases. Contrast with <b>PyPy</b>, a separate implementation whose tracing JIT gives big speedups but with C-extension compatibility tradeoffs.</p>
+        <p class="arch">The honest framing is that CPython's JIT is early — experimental, modest gains today, promising trajectory — so I don't oversell it, but I track it, because it plus free-threading are CPython's two big bets to close the performance gap without abandoning compatibility. Copy-and-patch is the clever choice: a JIT that builds native code fast and ships in the standard interpreter, rather than PyPy's heavier approach. The directional takeaway for an architect: Python's performance ceiling is rising release over release, which shifts some "we must rewrite the hot service in Go" decisions — but today, for CPU-bound work, native extensions still win.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">experimental JIT (3.13 / 3.14)</span><span class="term">built on specializing interpreter</span><span class="term">tier-2 micro-ops</span><span class="term">copy-and-patch (no LLVM)</span><span class="term">modest-now-growing</span><span class="term">vs PyPy tracing JIT</span><span class="term">rising performance ceiling</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="run">
+      <div class="s-top"><span class="s-no">04</span><span class="s-tag">Runtime · core</span></div>
+      <h3>An exception propagates</h3>
+      <p class="why"><b>Why it matters</b>Exceptions are control flow in Python, and exception groups are the backbone of structured concurrency.</p>
+      <div class="answer">
+        <p>When code raises, Python creates an exception object and unwinds the call stack looking for a matching <code>except</code>; unhandled, it prints a <b>traceback</b> (the chain of frames) and exits. Modern Python made this richer: 3.11 added <b>fine-grained error locations</b> (the traceback underlines the exact expression that failed, not just the line), and <b>exception groups</b> with <code>except*</code> (PEP 654) let you raise and selectively handle multiple exceptions at once — essential for concurrency, where several tasks can fail together. Exceptions also <b>chain</b> (<code>raise ... from</code>, and implicit "during handling of the above"), preserving causal history.</p>
+        <p class="arch">Exceptions in Python are control flow, not just errors — it's idiomatic (<b>EAFP</b>, "easier to ask forgiveness than permission" — try it, catch if it fails, versus checking first), and that shapes clean Python. The additions that matter: exception groups + <code>except*</code> are the backbone of structured concurrency (a TaskGroup where three tasks fail surfaces all three as a group, not just the first), and fine-grained tracebacks plus chaining make production debugging far faster. I design error handling around specific exception types, preserve chains (<code>raise from</code>), and use exception groups when fanning out concurrent work. Exceptions-as-flow is a Python idiom people from other languages fight unnecessarily.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">exception object + stack unwind</span><span class="term">traceback (frames)</span><span class="term">fine-grained error locations (3.11)</span><span class="term">exception groups + except* (PEP 654)</span><span class="term">chaining (raise from)</span><span class="term">EAFP idiom</span><span class="term">structured-concurrency errors</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== GIL & CONCURRENCY ===== -->
+  <section class="track" data-track="conc">
+    <div class="track-head">
+      <div class="tno">Track 02 — The GIL and its escapes</div>
+      <h2>Concurrency &amp; the GIL</h2>
+      <p>The single most important thing to understand about Python concurrency. One lock explains why threads don't parallelize CPU work — and why multiprocessing, sub-interpreters, and now free-threading all exist to get around it.</p>
+    </div>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">05</span><span class="s-tag">GIL · core</span></div>
+      <h3>Two threads run Python (the GIL)</h3>
+      <p class="why"><b>Why it matters</b>This one fact drives every Python scaling decision you'll ever make.</p>
+      <div class="answer">
+        <p>CPython has a <b>Global Interpreter Lock</b> — a single mutex you must hold to execute Python bytecode, so even with many threads, only one runs Python code at a time. Threads take turns: a thread holds the GIL, runs for an interval (~5&nbsp;ms), then releases it so another can run. The GIL exists because CPython's memory management — <b>reference counting</b> — isn't thread-safe without it; the GIL makes refcount updates safe cheaply. The consequence: Python threads give you <b>concurrency</b> (interleaving) but not <b>CPU parallelism</b> — threads can't run Python bytecode on multiple cores simultaneously.</p>
+        <p class="arch">The GIL is the most important thing to understand about Python concurrency, and the crisp statement is "only one thread executes Python bytecode at a time, because refcounting needs it to be safe." It's not that threads are useless — they're great for I/O — it's that they don't parallelize CPU-bound Python. This one fact drives every Python scaling decision: multiprocessing for CPU parallelism, async for I/O concurrency, multiple worker processes to use all cores in a web app. And it's exactly what free-threading removes. Knowing <em>why</em> it exists (refcounting safety — and it made single-threaded Python fast and C-extensions simple) is what separates understanding from cargo-culting.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Global Interpreter Lock (one bytecode thread)</span><span class="term">GIL switch interval (~5ms)</span><span class="term">refcounting-not-thread-safe → GIL</span><span class="term">concurrency not CPU parallelism</span><span class="term">drives all Python scaling</span><span class="term">why-it-exists</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">06</span><span class="s-tag">GIL · core</span></div>
+      <h3>CPU-bound vs I/O-bound with threads</h3>
+      <p class="why"><b>Why it matters</b>It's the decision rule — and the classic "I added threads and got no speedup" mistake.</p>
+      <div class="answer">
+        <p>The GIL's effect depends entirely on the workload. For <b>I/O-bound</b> work — waiting on network, disk, a database — threads help a lot, because a thread <b>releases the GIL while it waits on I/O</b> (and inside blocking C calls), letting other threads run; so you get real concurrency overlapping many waits. For <b>CPU-bound</b> work — a tight Python computation — threads don't help and can even hurt (GIL contention plus switching overhead), because the threads just fight over the one GIL and still run one at a time. So: threads for I/O concurrency, not for CPU parallelism.</p>
+        <p class="arch">This is the decision rule I actually apply — "is this workload I/O-bound or CPU-bound?" I/O-bound (most web/service work, calling other services, DB): threads or async are fine, the GIL is released during the waits. CPU-bound (image processing, pure-Python numeric loops, parsing): threads won't parallelize it — reach for multiprocessing, native extensions that release the GIL, or now free-threading. The classic mistake is adding threads to a CPU-bound Python task and seeing no speedup (or a slowdown) — a dead giveaway someone doesn't understand the GIL. Naming the workload type first is the senior move.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">I/O-bound → threads help (GIL released on I/O)</span><span class="term">CPU-bound → threads don't parallelize</span><span class="term">GIL contention</span><span class="term">the decision rule</span><span class="term">classic no-speedup mistake</span><span class="term">multiprocessing / native / free-threading for CPU</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">07</span><span class="s-tag">GIL · core</span></div>
+      <h3>You use multiprocessing</h3>
+      <p class="why"><b>Why it matters</b>It's the classic answer to CPU-bound Python — with a real serialization cost.</p>
+      <div class="answer">
+        <p>To get true CPU parallelism despite the GIL, you use <b>multiprocessing</b>: spawn separate Python processes, each with its own interpreter and its own GIL, so they genuinely run on multiple cores in parallel. The cost is that processes don't share memory — data passed between them is <b>pickled</b> and sent over IPC (pipes/queues), expensive for large objects, and each process has its own memory footprint. Process creation is via <b>fork</b> (fast, copies memory, POSIX, but pitfalls with threads/locks) or <b>spawn</b> (clean, starts fresh, the safer default, now default on macOS). Pools and <code>multiprocessing.shared_memory</code> reduce the overhead.</p>
+        <p class="arch">Multiprocessing is the classic answer to "parallelize CPU-bound Python," and the tradeoff is real parallelism at the cost of memory isolation and serialization overhead — so it shines when the work per task is large relative to the data you must ship (send a little, compute a lot), and it's poor when you'd pickle huge objects back and forth. I prefer spawn for predictability (fork-with-threads is a subtle deadlock/duplication source), use process pools to amortize startup, and reach for shared memory or memory-mapped arrays when moving big numeric data. It's also why Python web servers use multiple worker processes. Free-threading may eventually reduce the need, but today it's the go-to for CPU parallelism.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">separate processes = separate GILs = real parallelism</span><span class="term">no shared memory (pickle + IPC)</span><span class="term">serialization overhead</span><span class="term">fork vs spawn (spawn safer)</span><span class="term">process pools</span><span class="term">shared_memory</span><span class="term">"send little, compute lot"</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">08</span><span class="s-tag">GIL · advanced</span></div>
+      <h3>Sub-interpreters &amp; the per-interpreter GIL</h3>
+      <p class="why"><b>Why it matters</b>The 3.12 middle ground between threads and processes — and a signal you track the platform.</p>
+      <div class="answer">
+        <p>Python 3.12 (PEP 684) gave each <b>sub-interpreter</b> its own GIL, and 3.13 (PEP 734) added a stdlib API to use them. Sub-interpreters are multiple isolated Python interpreters within one process, each with its own state and now its own GIL — so they can run Python bytecode <b>in parallel on multiple cores, inside a single process</b>, without the full cost of separate OS processes. They're isolated (no shared objects by default; you pass data through channels), which sidesteps the thread-safety problems of shared-memory threading. It's a middle ground between threads (shared memory, one GIL) and multiprocessing (separate processes, heavy).</p>
+        <p class="arch">Sub-interpreters are the "in-process parallelism with isolation" option — lighter than multiprocessing (cheaper to spin up) but isolated like processes (per-interpreter GIL, no accidental shared mutable state). I'd frame them as an emerging tool for parallel, isolated units of work in one process, still maturing in ecosystem support. They and free-threading are two different answers to the same GIL problem — sub-interpreters keep isolation (safer, message-passing), free-threading keeps shared memory (more powerful, but you own thread-safety). Knowing both exist, and that the per-interpreter GIL landed in 3.12, signals you track the platform, not just use it.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">sub-interpreters (isolated, in one process)</span><span class="term">per-interpreter GIL (PEP 684, 3.12)</span><span class="term">stdlib API (PEP 734, 3.13)</span><span class="term">in-process parallelism</span><span class="term">isolation + channels (no shared objects)</span><span class="term">middle ground threads↔processes</span><span class="term">isolation vs shared-memory (vs free-threading)</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="conc">
+      <div class="s-top"><span class="s-no">09</span><span class="s-tag">GIL · advanced</span></div>
+      <h3>Free-threaded Python removes the GIL</h3>
+      <p class="why"><b>Why it matters</b>The biggest change to Python in a decade — and the tradeoff is that the GIL was also a giant convenience lock.</p>
+      <div class="answer">
+        <p><b>PEP 703 free-threading</b> — a build of CPython with the GIL removed — was introduced <b>experimentally in 3.13</b> and became <b>officially supported in 3.14</b> (still opt-in: you install the free-threaded build, it's not the default). With no GIL, Python threads can finally run bytecode on multiple cores simultaneously — <b>true multi-threaded CPU parallelism with shared memory</b>, no processes needed. The costs: some single-threaded performance overhead (refcounting now needs thread-safe atomics — being optimized down), and the big one — <b>thread-safety becomes your problem</b>: code and C-extensions that silently relied on the GIL as a lock can now race, so the whole ecosystem is being audited and updated.</p>
+        <p class="arch">I frame this as Python finally getting real threads, with the tradeoff that the GIL was also a giant convenience lock — it made single-threaded code fast and C-extensions and app code accidentally thread-safe, and removing it shifts that burden to us. So my stance: it's supported, but I adopt it deliberately — validate that critical C-extensions (NumPy, etc.) support free-threading, expect and test for races the GIL used to hide, weigh the single-thread overhead. Directionally it's huge: it removes the reason multiprocessing exists for CPU parallelism and could reshape how we scale Python (threads instead of process-per-core), especially for ML and data work. But it's a multi-year ecosystem transition, not a flip-the-switch. (Verified current: supported, not experimental, as of 3.14.)</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">PEP 703 free-threading (no-GIL build)</span><span class="term">experimental 3.13 → supported/opt-in 3.14</span><span class="term">true multi-core threads + shared memory</span><span class="term">single-thread overhead (atomic refcounts)</span><span class="term">thread-safety now the app's/extension's problem</span><span class="term">ecosystem transition</span><span class="term">may obsolete multiprocessing-for-CPU</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== ASYNC ===== -->
+  <section class="track" data-track="async">
+    <div class="track-head">
+      <div class="tno">Track 03 — Cooperative concurrency</div>
+      <h2>Async &amp; asyncio</h2>
+      <p>A single thread juggling thousands of I/O waits by cooperative yielding — the same event-loop model as reactive systems, with the same one fatal mistake: blocking the loop.</p>
+    </div>
+
+    <article class="scenario" data-cat="async">
+      <div class="s-top"><span class="s-no">10</span><span class="s-tag">Async · core</span></div>
+      <h3>An async function runs (the event loop)</h3>
+      <p class="why"><b>Why it matters</b>Cooperative single-threaded concurrency is a different model from threads — and it's viral.</p>
+      <div class="answer">
+        <p>Calling an <code>async def</code> function doesn't run it — it returns a <b>coroutine</b> object, a suspendable computation. You run coroutines on an <b>event loop</b> (<code>asyncio.run</code> starts one), a single-threaded scheduler. <code>await</code> marks a <b>suspension point</b>: when a coroutine awaits something not ready, it yields control back to the loop, which runs other ready coroutines, and resumes the first when its result is ready. So async is <b>cooperative, single-threaded concurrency</b> — many coroutines interleave on one thread, each voluntarily yielding at <code>await</code>, with no preemption and no GIL contention (it's one thread).</p>
+        <p class="arch">The model to state is "async is cooperative multitasking on a single thread — coroutines yield at <code>await</code>, the event loop juggles thousands of them." It's not parallelism (one thread, one core) — it's concurrency for I/O-bound work, letting one thread manage huge numbers of simultaneous waits (10k open connections) cheaply, without a thread per connection. That's why async shines for high-concurrency I/O servers — the same event-loop model as the reactive/WebFlux story from the Java volume. "Cooperative" is the key word: a coroutine that never yields hogs the loop. And async is <b>viral</b> — <code>await</code> propagates up the call chain ("colored functions"), a real design consideration.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">async def → coroutine object</span><span class="term">event loop (single-threaded scheduler)</span><span class="term">await = suspension / yield</span><span class="term">cooperative (no preemption)</span><span class="term">I/O concurrency not parallelism</span><span class="term">thousands of connections, one thread</span><span class="term">"colored functions" (viral) · like WebFlux</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="async">
+      <div class="s-top"><span class="s-no">11</span><span class="s-tag">Async · advanced</span></div>
+      <h3>You block the event loop</h3>
+      <p class="why"><b>Why it matters</b>The number-one async production disaster — and the exact mirror of the WebFlux lesson.</p>
+      <div class="answer">
+        <p>Because the event loop is a single thread running cooperatively, a coroutine that does something <b>blocking or CPU-heavy without awaiting</b> — a synchronous DB driver call, <code>requests.get</code> instead of an async client, <code>time.sleep</code>, a big computation — freezes the entire loop: no other coroutine runs until it returns. Under load this is catastrophic — one blocking call stalls all concurrent requests, and it's non-obvious because it works fine at low traffic. The fixes: use <b>async-native libraries end to end</b> so I/O actually yields; offload unavoidable blocking/CPU work to a thread or process pool via <code>asyncio.to_thread</code> or <code>loop.run_in_executor</code> so the loop stays free.</p>
+        <p class="arch">This is the exact same failure as blocking the WebFlux event loop from the Java volume — the async model only holds if the whole path is non-blocking, and one careless synchronous call poisons it. So "is every library in this async path actually async?" is a gating question, I never call sync I/O or heavy CPU directly in a coroutine, and I offload the unavoidable to executors. It's the number-one async production incident, and the mirror image of the GIL lesson: threads are for when you must block, async is for when you can avoid blocking. Recognizing a blocking call in async code on sight is a senior tell.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">single-thread loop</span><span class="term">blocking/CPU call freezes all coroutines</span><span class="term">works-at-low-load, collapses under load</span><span class="term">async-native libraries end-to-end</span><span class="term">asyncio.to_thread / run_in_executor</span><span class="term">same as WebFlux</span><span class="term">top async incident</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="async">
+      <div class="s-top"><span class="s-no">12</span><span class="s-tag">Async · advanced</span></div>
+      <h3>Concurrent tasks with TaskGroup</h3>
+      <p class="why"><b>Why it matters</b>Structured concurrency — the same idea as Java's StructuredTaskScope — fixes the classic async bugs.</p>
+      <div class="answer">
+        <p>To run coroutines concurrently you create <b>tasks</b> (schedule them on the loop). The modern, structured way (3.11) is <code>asyncio.TaskGroup</code>: an <code>async with</code> block where you spawn several tasks, and the block doesn't exit until all complete — and if one raises, the rest are <b>cancelled</b> and the errors surface together as an <b>exception group</b> (handled with <code>except*</code>). This is <b>structured concurrency</b>: the tasks' lifetime is bounded by the block, so no orphaned tasks, clean cancellation, and aggregated errors. <code>asyncio.timeout</code> gives scoped deadlines. (The older <code>asyncio.gather</code> is the unstructured predecessor.)</p>
+        <p class="arch"><code>TaskGroup</code> is Python's structured concurrency — the same principle as Java's <code>StructuredTaskScope</code> from the Java volume — and I use it over raw <code>gather</code>/<code>create_task</code> because it fixes the classic async bugs: leaked tasks that outlive their scope, one failure lost while awaiting another, and cancellation that doesn't propagate. Concurrent code reads like a bounded block, errors come back as a group I handle with <code>except*</code>, and timeouts are scoped. For fan-out I/O (call five services concurrently, fail or cancel together), this is the pattern. It ties the async and exception-group stories: structured concurrency and exception groups were designed together.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">task = scheduled coroutine</span><span class="term">asyncio.TaskGroup (3.11, structured concurrency)</span><span class="term">scope-bounded lifetime</span><span class="term">cancel-siblings-on-failure</span><span class="term">exception groups + except*</span><span class="term">asyncio.timeout</span><span class="term">vs gather · like StructuredTaskScope</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="async">
+      <div class="s-top"><span class="s-no">13</span><span class="s-tag">Async · advanced</span></div>
+      <h3>Which concurrency model? (async vs threads vs processes)</h3>
+      <p class="why"><b>Why it matters</b>The synthesis question — name the workload and the right model falls out.</p>
+      <div class="answer">
+        <p>Python gives three concurrency tools and the GIL forces you to choose by workload. <b>Async</b> (single thread, cooperative): best for high-concurrency I/O — thousands of network waits cheaply, if your libraries are async. <b>Threads</b> (multiple threads, one GIL): good for I/O concurrency too, simpler to retrofit onto blocking libraries (the GIL releases during I/O), but no CPU parallelism and thread-safety concerns. <b>Multiprocessing</b> (separate processes, separate GILs): the way to get CPU parallelism, at the cost of memory isolation and IPC. And now <b>free-threading</b> blurs this by letting threads do CPU parallelism.</p>
+        <p class="arch">My decision tree: I/O-bound and high-scale with async libraries → asyncio; I/O-bound but stuck with blocking libraries or modest scale → threads; CPU-bound → multiprocessing (or native extensions, or free-threading). The mistake I watch for is the wrong tool: async for CPU work (blocks the loop), threads for CPU work (GIL, no speedup), processes for lightweight I/O (needless overhead). And I combine them — an async web server with a process/thread pool for the occasional CPU task. This is the synthesis of the whole track: name the workload (I/O vs CPU) and the library constraints, and the model falls out. Getting the mapping right is the architect signal.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">async (I/O, cooperative, needs async libs)</span><span class="term">threads (I/O, GIL, retrofit blocking)</span><span class="term">multiprocessing (CPU parallelism, IPC cost)</span><span class="term">free-threading (threads for CPU, emerging)</span><span class="term">decide by workload + library constraints</span><span class="term">wrong-tool mistakes</span><span class="term">combine models</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== MEMORY & OBJECTS ===== -->
+  <section class="track" data-track="mem">
+    <div class="track-head">
+      <div class="tno">Track 04 — Objects all the way down</div>
+      <h2>Memory &amp; the object model</h2>
+      <p>Refcounting plus a cyclic collector, names bound to objects, and a data model where syntax is sugar over dunder methods. Get these precise and a whole class of Python bugs — and the shape of the AI stack — falls out.</p>
+    </div>
+
+    <article class="scenario" data-cat="mem">
+      <div class="s-top"><span class="s-no">14</span><span class="s-tag">Memory · core</span></div>
+      <h3>An object's memory is managed (refcounting + GC)</h3>
+      <p class="why"><b>Why it matters</b>The two-part model explains Python's cleanup behavior, its "leaks," and even the GIL.</p>
+      <div class="answer">
+        <p>CPython manages memory primarily by <b>reference counting</b>: every object has a count of references, incremented when you bind a new name and decremented when one goes away, and the moment the count hits zero the object is freed <b>immediately</b> (deterministic, prompt cleanup). But refcounting can't free <b>reference cycles</b> (A references B references A — counts never reach zero), so CPython also runs a <b>generational cyclic garbage collector</b> that periodically finds and collects unreachable cycles (young objects collected often, old rarely, on the theory that most objects die young).</p>
+        <p class="arch">The two-part model — immediate refcounting plus a backup cyclic GC — explains Python's memory behavior: cleanup is mostly deterministic (a file handle closes when its last reference drops, which is why context managers matter and <code>__del__</code> timing is usually prompt), but cycles need the collector. It also explains the GIL (refcount updates must be atomic — the GIL made that cheap; free-threading makes it expensive). Practically: I avoid holding references longer than needed (a lingering reference in a cache or global is the classic Python "leak" — not truly leaked, just never dropped), use <code>weakref</code> where cycles are natural, and know the cyclic GC can be tuned or paused in latency-sensitive sections.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">reference counting (free at 0, deterministic)</span><span class="term">refcount inc/dec on binding</span><span class="term">cyclic GC (generational)</span><span class="term">cycles need GC</span><span class="term">"leak" = lingering reference</span><span class="term">weakref · context managers</span><span class="term">refcount ↔ GIL link</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="mem">
+      <div class="s-top"><span class="s-no">15</span><span class="s-tag">Memory · core</span></div>
+      <h3>Names are references; mutability bites</h3>
+      <p class="why"><b>Why it matters</b>"Names bind to objects" dissolves a whole class of bugs — and the gotchas are perennial interview bait.</p>
+      <div class="answer">
+        <p>In Python, variables are <b>names bound to objects</b>, not boxes holding values — assignment binds a name to an object, and multiple names can reference the same object. This makes <b>mutable vs immutable</b> critical: mutating a shared mutable object (list, dict) is visible through every name bound to it, while "changing" an immutable (int, str, tuple) actually rebinds the name to a new object. Hence <b>identity</b> (<code>is</code>, same object) versus <b>equality</b> (<code>==</code>, same value), and the notorious gotchas: a <b>mutable default argument</b> (<code>def f(x, acc=[])</code>) is created once and shared across all calls; late-binding closures capture the variable, not its value; nested mutables need <code>copy</code>/<code>deepcopy</code>.</p>
+        <p class="arch">"Names bind to objects; some objects are mutable" is the model that dissolves a whole class of Python bugs. I state the top footguns because they're perennial senior-interview bait: the mutable default argument (the most famous Python gotcha — use <code>None</code> and create inside), aliasing (two names, one list, surprise mutation), and <code>is</code>-vs-<code>==</code> confusion (never use <code>is</code> for value comparison; it's for identity / <code>None</code>). Understanding that assignment is binding, not copying, also explains why passing a list into a function lets it mutate the caller's list ("pass by object reference"). Fundamentals — but getting them precisely right, and knowing the gotchas cold, is exactly what marks a real Python engineer.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">names bind to objects (not value boxes)</span><span class="term">aliasing</span><span class="term">mutable vs immutable (rebind vs mutate)</span><span class="term">is (identity) vs == (equality)</span><span class="term">mutable-default-argument gotcha</span><span class="term">late-binding closures</span><span class="term">copy/deepcopy · pass-by-object-reference</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="mem">
+      <div class="s-top"><span class="s-no">16</span><span class="s-tag">Memory · core</span></div>
+      <h3>You call a method (the data model)</h3>
+      <p class="why"><b>Why it matters</b>Python's syntax is sugar over dunder methods — knowing that is the difference between using Python and understanding it.</p>
+      <div class="answer">
+        <p>Python's power comes from the <b>data model</b>: the special "dunder" methods that hook into syntax. <code>len(x)</code> calls <code>x.__len__()</code>; <code>x[i]</code> calls <code>__getitem__</code>; <code>a + b</code> calls <code>__add__</code>; <code>with</code> calls <code>__enter__</code>/<code>__exit__</code>; <code>for</code> calls <code>__iter__</code>/<code>__next__</code>; <code>x()</code> calls <code>__call__</code>. So the language's operators and built-ins are defined in terms of methods your objects can implement — which is <b>duck typing</b>: something is iterable if it has <code>__iter__</code>, not because it inherits an "Iterable" class. Attribute access itself is hookable via <code>__getattr__</code>/<code>__getattribute__</code>.</p>
+        <p class="arch">The framing is "Python's syntax is sugar over dunder methods, and behavior is defined by protocols you implement, not types you inherit" — that's duck typing, and it's why Python is so composable (make anything iterable, context-managed, or callable by implementing the right dunder). As an architect I lean on this for clean APIs: a class implementing the mapping protocol behaves like a dict everywhere; a context manager makes resource handling safe. It also underlies the ecosystem — NumPy overloads arithmetic dunders so arrays feel native, ORMs hook attribute access. Knowing that <code>len</code>/iteration/<code>with</code>/indexing are dunder calls connects to typing's Protocols, which formalize duck typing statically.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">data model / dunder methods</span><span class="term">len→__len__, []→__getitem__, +→__add__</span><span class="term">with→__enter__/__exit__ · iteration protocol</span><span class="term">__call__ · __getattr__ hooks</span><span class="term">duck typing (protocol not inheritance)</span><span class="term">composability</span><span class="term">powers NumPy / ORMs</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="mem">
+      <div class="s-top"><span class="s-no">17</span><span class="s-tag">Memory · advanced</span></div>
+      <h3>Attribute access, descriptors &amp; the MRO</h3>
+      <p class="why"><b>Why it matters</b>It's how Python actually works under the classes — property, methods, and super() all live here.</p>
+      <div class="answer">
+        <p>Accessing <code>obj.attr</code> follows a defined lookup: data descriptors on the type, then the instance <code>__dict__</code>, then the class and its bases along the <b>MRO</b> (method resolution order). The MRO is computed by <b>C3 linearization</b>, giving a consistent order for multiple inheritance (so <code>super()</code> calls the right next class in diamond hierarchies). <b>Descriptors</b> are the deep magic: an object defining <code>__get__</code>/<code>__set__</code> controls what happens on attribute access — which is how <code>@property</code>, methods (functions are descriptors that bind <code>self</code>), <code>classmethod</code>, and <code>staticmethod</code> all actually work. <code>__slots__</code> replaces the per-instance <code>__dict__</code> with a fixed layout, saving significant memory for many small objects.</p>
+        <p class="arch">Descriptors and the MRO are "how Python actually works under the classes." I don't write raw descriptors often, but knowing <code>property</code>/methods/ORM-fields are descriptors demystifies attribute behavior and metaclass/inheritance surprises. The MRO and C3 matter the moment there's multiple inheritance or mixins — <code>super()</code> isn't "call the parent," it's "call the next in the MRO," which is what makes cooperative multiple inheritance work. And <code>__slots__</code> is a concrete lever when memory matters (millions of small objects — recall the object-overhead problem), trading dynamic attributes for a compact layout. Advanced, but it separates someone who can only use frameworks from someone who can understand and extend them.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">lookup order (data descriptor → instance dict → MRO)</span><span class="term">MRO / C3 linearization</span><span class="term">super() = next in MRO</span><span class="term">descriptors (__get__/__set__)</span><span class="term">property/method/classmethod are descriptors</span><span class="term">__slots__ (compact, no __dict__)</span><span class="term">cooperative multiple inheritance</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="mem">
+      <div class="s-top"><span class="s-no">18</span><span class="s-tag">Memory · advanced</span></div>
+      <h3>A large data structure's memory footprint</h3>
+      <p class="why"><b>Why it matters</b>Object overhead is the bridge from language internals to why the whole AI stack is shaped the way it is.</p>
+      <div class="answer">
+        <p>Every Python object carries overhead — a header with the refcount and a type pointer — so even a small int or one-character string is far bigger than the raw value (an int is ~28 bytes, not 4 or 8), and a Python <code>list</code> is an array of <b>pointers</b> to separate boxed objects scattered in memory, not a compact block of numbers. So a list of a million ints uses a lot of memory and is cache-unfriendly. This is exactly why <b>NumPy</b> exists: a NumPy array stores raw C values <b>contiguously</b> in one block with one thin Python wrapper — orders of magnitude less memory, far faster to iterate, and it releases the GIL for vectorized ops. <b>Generators</b> avoid materializing large sequences at all (lazy, one item at a time).</p>
+        <p class="arch">The point is "Python objects are expensive and scattered; bulk numeric/data work must live in contiguous native memory (NumPy/arrays/Arrow), not Python lists." This is the memory face of why Python is a glue language for data/AI — you don't loop over Python objects, you hand a contiguous buffer to vectorized C. Practical levers: NumPy/pandas/Arrow for large numeric or columnar data (contiguous, vectorized, GIL-releasing), generators for streaming large sequences lazily (constant memory), <code>__slots__</code> for many small custom objects, and <code>sys.getsizeof</code>/memory profilers when it matters. Understanding object overhead turns "why is my Python using 10× the RAM I expected" from a mystery into a design decision — and it's the bridge to why the AI stack looks the way it does.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">per-object overhead (refcount + type ptr)</span><span class="term">int ~28 bytes</span><span class="term">list = array of pointers (scattered)</span><span class="term">NumPy = contiguous C block + thin wrapper</span><span class="term">vectorization releases the GIL</span><span class="term">generators (lazy, constant memory)</span><span class="term">__slots__ · glue-language rationale</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== TYPING ===== -->
+  <section class="track" data-track="type">
+    <div class="track-head">
+      <div class="tno">Track 05 — Optional, static, load-bearing</div>
+      <h2>Typing</h2>
+      <p>Hints are for tools and humans, not the runtime — yet they're the load-bearing metadata behind Pydantic, FastAPI, and dataclasses. Modern syntax (PEP 695), Protocols, and deferred annotations make gradual typing genuinely useful at scale.</p>
+    </div>
+
+    <article class="scenario" data-cat="type">
+      <div class="s-top"><span class="s-no">19</span><span class="s-tag">Typing · core</span></div>
+      <h3>You add type hints (gradual typing)</h3>
+      <p class="why"><b>Why it matters</b>Hints aren't enforced at runtime — knowing what they actually are is the whole foundation.</p>
+      <div class="answer">
+        <p>Python is dynamically typed but supports optional <b>type hints</b> on variables, parameters, and returns. Crucially they're <b>not enforced at runtime</b> — CPython largely ignores them for execution (a wrong type doesn't raise because of the hint); they're checked <b>statically</b> by external tools like mypy or pyright, and read at runtime only by libraries that choose to. This is <b>gradual typing</b>: type as much or as little as you want, mixing typed and untyped code, with <code>Any</code> as the escape hatch that opts out of checking. So types are a separate, opt-in layer over dynamic Python.</p>
+        <p class="arch">The framing is "hints are for tools and humans, not the runtime — Python stays dynamically typed, and typing is a gradual, static overlay." I push types hard on anything that lives — public APIs, shared libraries, large codebases — because they catch bugs before runtime, document intent, and power IDE autocomplete and refactoring, a force multiplier on a team. For throwaway scripts, less so. The senior nuance: types are a design and communication tool, not a runtime guarantee — so I don't assume a hint prevents a bad value at runtime (validate at boundaries with Pydantic), and I treat mypy/pyright in CI as the actual enforcement. Gradual typing lets a codebase adopt this incrementally — exactly how I'd roll it into a legacy service.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">dynamic typing + optional hints</span><span class="term">not runtime-enforced</span><span class="term">static check (mypy/pyright)</span><span class="term">gradual typing (mix typed/untyped)</span><span class="term">Any escape hatch</span><span class="term">types for tools + humans + refactoring</span><span class="term">validate at boundaries · CI enforcement</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="type">
+      <div class="s-top"><span class="s-no">20</span><span class="s-tag">Typing · advanced</span></div>
+      <h3>PEP 695 generics — the 3.12 syntax</h3>
+      <p class="why"><b>Why it matters</b>It makes generic, type-safe Python actually pleasant — a "you're current with 3.12+" signal.</p>
+      <div class="answer">
+        <p>Python 3.12 (PEP 695) added clean built-in syntax for <b>generics</b>. You can now write <code>def first[T](items: list[T]) -> T</code> and <code>class Stack[T]:</code> directly, declaring the type parameter inline, instead of the old ceremony of a module-level <code>TypeVar</code>. It also added the <code>type</code> statement for <b>type aliases</b> (<code>type Vector = list[float]</code>), which are lazily evaluated. Type parameters can carry bounds and constraints, and the new syntax handles variance more cleanly. It's the same generics concept as other languages — a function or class parameterized by a type — finally with first-class, readable syntax.</p>
+        <p class="arch">This matters because it makes generic, type-safe Python pleasant — before 3.12, generics needed boilerplate (explicit <code>TypeVar</code> declarations) that discouraged their use; the inline <code>[T]</code> syntax lowers the friction, so I lean on generics for reusable, well-typed containers, functions, and APIs. I'd point to it as a marker of Python's steady type-system maturation (alongside Protocols, TypedDict, ParamSpec) toward something genuinely useful for large systems. For an architect, richer typing means safer refactoring and clearer contracts across module and team boundaries — the same reason strong typing helps in Java. Knowing the modern syntax signals you're current with 3.12+.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">PEP 695 (3.12) inline generics (def f[T], class C[T])</span><span class="term">replaces module-level TypeVar boilerplate</span><span class="term">type statement for aliases (lazy)</span><span class="term">bounds / constraints / variance</span><span class="term">generics = parameterized by type</span><span class="term">type-system maturation</span><span class="term">safer refactoring</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="type">
+      <div class="s-top"><span class="s-no">21</span><span class="s-tag">Typing · advanced</span></div>
+      <h3>Annotations at runtime &amp; deferred evaluation</h3>
+      <p class="why"><b>Why it matters</b>It's how Pydantic, FastAPI, and dataclasses work — the type layer is load-bearing at runtime.</p>
+      <div class="answer">
+        <p>Although CPython ignores hints for execution, annotations are <b>stored</b> (on <code>__annotations__</code>) and some libraries read them at runtime — this is how <b>Pydantic</b> validates, <b>FastAPI</b> derives request models, <b>dataclasses</b> generate <code>__init__</code>, and ORMs map fields, all by introspecting annotations. There's a long-running tension about <b>when</b> annotations are evaluated: originally eagerly (real expressions at definition time, which breaks forward references and costs startup), then optionally as strings (<code>from __future__ import annotations</code>, PEP 563). Python 3.14 (PEP 649) makes annotations <b>lazily/deferred-evaluated by default</b> — computed on demand — fixing forward references and startup cost while keeping them introspectable via <code>get_type_hints</code>.</p>
+        <p class="arch">This is the subtle-but-important bit for anyone on the modern Python framework stack, because those frameworks are built on reading annotations at runtime — so "hints are erased for execution but preserved for introspection" explains how Pydantic/FastAPI/dataclasses work their magic. The deferred-evaluation change (PEP 649 default in 3.14) is a real behavior shift I'd flag: it resolves the old forward-reference and import-cost pain and supersedes the <code>__future__</code> annotations import. For an architect, the takeaway is that Python's "types are runtime-inspectable metadata" is the foundation of its best modern libraries (validation, serialization, DI, ORMs) — the type layer isn't just for static checkers, it's load-bearing runtime infrastructure.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">__annotations__ stored</span><span class="term">read at runtime by Pydantic/FastAPI/dataclasses</span><span class="term">eager vs stringized (PEP 563 __future__)</span><span class="term">deferred/lazy default (PEP 649, 3.14)</span><span class="term">forward refs + startup cost fixed</span><span class="term">get_type_hints</span><span class="term">"erased for execution, preserved for introspection"</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="type">
+      <div class="s-top"><span class="s-no">22</span><span class="s-tag">Typing · advanced</span></div>
+      <h3>Protocols &amp; when typing pays off</h3>
+      <p class="why"><b>Why it matters</b>Structural typing matches Python's duck-typed spirit — and the architect view is where typing is worth it.</p>
+      <div class="answer">
+        <p><code>typing.Protocol</code> brings <b>structural typing</b> to the static checker: a Protocol defines a set of methods/attributes, and any class that has them matches — no explicit inheritance. That's <b>static duck typing</b>: a function typed to accept a <code>SupportsRead</code> protocol accepts anything with a <code>read()</code> method, checked by mypy/pyright. It formalizes what Python always did dynamically, alongside other tools — <b>TypedDict</b> (typed dict shapes), <code>Literal</code>, <code>Union</code>/<code>|</code>, <code>ParamSpec</code>, and <code>@overload</code>.</p>
+        <p class="arch">Protocols are how I get static typing's benefits without rigid inheritance hierarchies — they match Python's duck-typed spirit while giving the checker teeth, so I can type "anything file-like" precisely. The architect view of typing overall: types pay off most on <b>large, long-lived, multi-developer</b> codebases and public APIs — documentation that can't go stale, safe refactoring (the checker finds every break), and tooling — and least on small scripts and churning research code. So my stance is deliberate: type the boundaries and the shared core hard (Protocols for flexible contracts), stay lighter in the exploratory edges, enforce with mypy/pyright in CI, treat the type layer as a design tool — the same judgment as the Java typing story, applied to a gradually-typed language.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">typing.Protocol (structural / static duck typing)</span><span class="term">TypedDict / Literal / Union / ParamSpec / overload</span><span class="term">pays off on large/long-lived/shared code + APIs</span><span class="term">docs-that-can't-go-stale</span><span class="term">safe refactoring</span><span class="term">type-the-boundaries stance</span><span class="term">deliberate not dogmatic</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== PACKAGING ===== -->
+  <section class="track" data-track="pkg">
+    <div class="track-head">
+      <div class="tno">Track 06 — Imports, envs &amp; deploy</div>
+      <h2>Packaging &amp; imports</h2>
+      <p>How imports resolve, why every project needs an isolated environment, how pip resolves wheels-vs-source, and the modern (uv, pyproject, lockfiles) and deployment (containers, platform wheels) story that ends at the image your platform runs.</p>
+    </div>
+
+    <article class="scenario" data-cat="pkg">
+      <div class="s-top"><span class="s-no">23</span><span class="s-tag">Packaging · core</span></div>
+      <h3>An import runs (the import system)</h3>
+      <p class="why"><b>Why it matters</b>"Find on path, execute once, cache" explains circular imports, side effects, and shadowing.</p>
+      <div class="answer">
+        <p>When you import a module, Python first checks <code>sys.modules</code> (the cache of already-imported modules) — if it's there, you get the cached one (<b>modules are singletons</b>, imported once). On a miss, <b>finders and loaders</b> locate it along <code>sys.path</code> (current dir, stdlib, site-packages), load and execute the module top-to-bottom (running its code once), bind the module object, and cache it. Packages are directories (with <code>__init__.py</code>, run on first import); imports can be absolute or relative. Because a module's top-level code runs on first import, <b>import has side effects</b> and order can matter.</p>
+        <p class="arch">The model — "import = find on <code>sys.path</code>, execute once, cache in <code>sys.modules</code>" — explains the common pitfalls: <b>circular imports</b> (A imports B while B imports A, before either finishes — solved by restructuring, deferring the import inside a function, or importing the module not the name), <b>import-time side effects</b> (heavy work at module top level slows startup and couples things — I keep imports cheap), and <b>shadowing</b> (a local file named like a stdlib module hijacks the import). For a large codebase I care about import-graph hygiene (acyclic, cheap imports) the same way I care about any dependency structure. Module singletons are also how Python does simple module-level config/singletons.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">sys.modules cache (singletons, run once)</span><span class="term">finders / loaders · sys.path</span><span class="term">packages + __init__.py</span><span class="term">absolute vs relative import</span><span class="term">top-level code runs on import (side effects)</span><span class="term">circular imports (defer/restructure)</span><span class="term">shadowing · import-graph hygiene</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pkg">
+      <div class="s-top"><span class="s-no">24</span><span class="s-tag">Packaging · core</span></div>
+      <h3>A virtual environment isolates dependencies</h3>
+      <p class="why"><b>Why it matters</b>The most basic Python hygiene — and the local analogue of a container.</p>
+      <div class="answer">
+        <p>A <b>virtual environment</b> (venv) is an isolated Python environment: its own <code>site-packages</code> and a link to a Python interpreter, so packages you install go there instead of the global/system Python. Activating it puts its <code>bin</code> on your <code>PATH</code> so <code>python</code> and <code>pip</code> resolve to the venv. The reason is <b>dependency isolation</b>: different projects need different, often conflicting versions of libraries, and a global install would collide (project A needs Django 4, B needs Django 5). Each project gets its own venv with exactly its dependencies, and you never pollute or depend on the system Python (which the OS itself may rely on).</p>
+        <p class="arch">The principle is "one isolated environment per project — never install into the system Python." It's the most basic Python hygiene, and the failure it prevents is dependency hell (version conflicts, "works on my machine," breaking the OS's Python). For an architect the venv is the local analogue of what a container gives you in production — reproducible, isolated dependencies — and the two compose. Modern tools (uv, Poetry, PDM) manage venvs plus lockfiles together. Simple but non-negotiable, and the modern move is letting a tool like uv create and manage the venv automatically rather than by hand.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">venv (isolated site-packages + interpreter link)</span><span class="term">activation (PATH)</span><span class="term">per-project isolation</span><span class="term">never touch system Python</span><span class="term">dependency hell prevented</span><span class="term">local analogue of a container</span><span class="term">managed by uv/Poetry/PDM</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pkg">
+      <div class="s-top"><span class="s-no">25</span><span class="s-tag">Packaging · advanced</span></div>
+      <h3>pip resolves and installs dependencies</h3>
+      <p class="why"><b>Why it matters</b>Wheels-vs-source and resolution conflicts are the source of real install incidents, especially in the AI stack.</p>
+      <div class="answer">
+        <p><code>pip install</code> fetches from PyPI. A package ships as a <b>wheel</b> (a prebuilt binary distribution — fast, no build step) or, failing that, an <b>sdist</b> (source that must be built locally, which for C-extension packages needs a compiler and the right platform). pip must also <b>resolve dependencies</b>: your package needs libs, which need other libs, and the resolver tries to find one set of versions satisfying every constraint — <b>backtracking</b> when versions conflict (the <b>diamond dependency</b> problem, where A needs C≥2 and B needs C&lt;2, which is unsatisfiable). Wheels are platform- and Python-version-specific (a manylinux wheel, a macOS arm64 wheel), which is why the right binary must exist for your platform.</p>
+        <p class="arch">The things I care about: prefer wheels (fast, reproducible, no build toolchain — a missing wheel forcing a source build is the classic "pip install fails: no compiler / no matching wheel" incident, huge in the C-extension-heavy AI stack); <b>pin and lock</b> dependencies (a lockfile with exact versions and hashes for reproducible, secure builds — the same versioned-artifact discipline as everywhere); and understand that dependency resolution can genuinely be unsolvable (conflicts need a human decision, not a tool). For AI especially, the native-wheel/platform/CUDA matrix (torch built for a specific CUDA) is a real pain, which is why reproducible, pinned, platform-correct dependency management is an architecture concern.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">PyPI</span><span class="term">wheel (prebuilt binary) vs sdist (source build)</span><span class="term">platform/Python-specific wheels (manylinux/arm64)</span><span class="term">dependency resolution + backtracking</span><span class="term">diamond conflict (unsatisfiable)</span><span class="term">pin + lockfile (versions + hashes)</span><span class="term">C-extension / CUDA wheel pain</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pkg">
+      <div class="s-top"><span class="s-no">26</span><span class="s-tag">Packaging · advanced</span></div>
+      <h3>Modern tooling — uv and pyproject.toml</h3>
+      <p class="why"><b>Why it matters</b>A real, recent shift — naming it signals you're current with 2024–2025 Python practice.</p>
+      <div class="answer">
+        <p>The packaging story has consolidated. <b>pyproject.toml</b> is now the standard, unified project/metadata/build-config file (replacing the <code>setup.py</code>/<code>setup.cfg</code> sprawl). And a new generation of tools — most notably <b>uv</b> (written in Rust, 2024) — has dramatically sped up and unified the workflow: uv is a single fast tool that creates venvs, resolves and installs dependencies (10–100× faster than pip via a smarter resolver and caching), manages lockfiles, and can even install Python versions — consolidating what used to be pip + venv + pip-tools + pyenv. <b>Poetry</b> and <b>PDM</b> are peers in the "manage the whole project + lockfile" space.</p>
+        <p class="arch">I'd flag this as a real, recent shift worth being current on — the ecosystem moved from "pip + venv + a pile of helper tools" toward integrated, fast, lockfile-first managers, and uv in particular has become a default for many teams because speed and a single tool remove friction and CI time. For an architect the value is reproducibility and speed: a committed lockfile (exact versions + hashes) gives deterministic, auditable environments across dev, CI, and prod — the packaging analogue of infrastructure-as-code — and faster installs cut CI cost. The through-line is the same as containers and IaC: <b>pin, lock, reproduce</b>.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">pyproject.toml (unified standard)</span><span class="term">uv (Rust, all-in-one: venv+resolve+install+lock)</span><span class="term">10–100× faster than pip</span><span class="term">Poetry / PDM peers</span><span class="term">lockfile-first (versions + hashes)</span><span class="term">reproducible / auditable envs</span><span class="term">"pin, lock, reproduce"</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="pkg">
+      <div class="s-top"><span class="s-no">27</span><span class="s-tag">Packaging · advanced</span></div>
+      <h3>Python is deployed (containers &amp; the C-extension trap)</h3>
+      <p class="why"><b>Why it matters</b>Python's native-dependency nature makes "it ran in dev" a weak guarantee — the platform-wheel mismatch is a classic incident.</p>
+      <div class="answer">
+        <p>Getting Python from laptop to production reliably means controlling the environment. The standard is a <b>container</b>: a Dockerfile from a Python base image that installs pinned dependencies (ideally from a lockfile) and copies the app — a reproducible artifact that runs the same everywhere, killing "works on my machine." <b>Multi-stage builds</b> keep the runtime image slim (build C-extensions in a stage with a compiler, copy only the result). The sharp edge is native/C-extension dependencies: they must match the target <b>platform and architecture</b> (a wheel built for your Mac won't run on a linux/amd64 container; an ARM laptop building for an x86 cluster), and for GPU/AI the CUDA/driver versions must line up — so the base image, platform, and wheels have to agree.</p>
+        <p class="arch">I treat the deployment environment as part of the artifact — pinned dependencies from a lockfile, a specific base image, built for the target platform/architecture — because Python's dynamic, native-dependency-heavy nature makes "it ran in dev" a weak guarantee. The C-extension/platform-wheel mismatch is the classic incident (build on a Mac, deploy to linux/amd64, native wheels are wrong — fixed by building in the target platform, the right base image, and <code>--platform</code> in Docker). For AI the CUDA/torch/driver alignment is a whole discipline. This ties straight to the Docker and EKS volumes: a slim, multi-stage, platform-correct, pinned image is what actually deploys cleanly onto the cluster — Python's packaging story ends at the container the platform runs.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">container as reproducible artifact</span><span class="term">Dockerfile + pinned deps (lockfile)</span><span class="term">multi-stage (build extensions, slim runtime)</span><span class="term">platform/arch-specific native wheels</span><span class="term">Docker --platform</span><span class="term">CUDA/torch/driver alignment</span><span class="term">"works on my machine" killed · ties to Docker/EKS</span></div></div>
+    </article>
+  </section>
+
+  <!-- ===== PYTHON FOR AI ===== -->
+  <section class="track" data-track="ai">
+    <div class="track-head">
+      <div class="tno">Track 07 — The glue language of AI</div>
+      <h2>Python for AI &amp; production</h2>
+      <p>Why the "slow" language runs the AI world: it's the orchestration layer over native compute. Where the GIL does and doesn't hurt, how you serve Python at scale, and the footguns a senior catches in review.</p>
+    </div>
+
+    <article class="scenario" data-cat="ai">
+      <div class="s-top"><span class="s-no">28</span><span class="s-tag">AI · core</span></div>
+      <h3>Why Python dominates AI (the C boundary)</h3>
+      <p class="why"><b>Why it matters</b>It dissolves the naive "isn't Python too slow for AI?" objection with the exact reason it isn't.</p>
+      <div class="answer">
+        <p>Python is slow at raw computation, yet it runs the AI world — because Python is the <b>orchestration layer, not the compute layer</b>. The heavy math lives in native code: NumPy, PyTorch, TensorFlow, and the BLAS/CUDA libraries under them are C/C++/CUDA, and Python just calls into them. You write readable Python describing what to do; the actual matrix multiply or GPU kernel runs in optimized native code — and, key detail, those native calls <b>release the GIL</b> while they run, so Python's slowness and the GIL don't bottleneck the numerical work. Python's readability, huge ecosystem, and REPL/notebook workflow make it the ideal glue, while the performance-critical 5% is native.</p>
+        <p class="arch">The framing that lands is "Python is the glue/orchestration language for AI; the compute is native code Python drives." That explains the whole shape of the stack and dissolves the "isn't Python too slow for AI?" objection — the interpreter isn't in the hot loop, the vectorized C/CUDA is, and it releases the GIL. So I keep the hot path in native/vectorized calls (hand NumPy/torch a big array, don't loop in Python) and accept Python for everything around it (data prep, orchestration, serving, experimentation) where developer velocity matters more than microseconds. It's also why free-threading and the JIT are exciting-but-not-existential for AI: the compute was never the GIL's prisoner. Understanding the C boundary is the difference between "Python is slow" and knowing exactly where and why it isn't.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">Python = orchestration / glue</span><span class="term">compute = native (NumPy/PyTorch/BLAS/CUDA)</span><span class="term">native calls release the GIL</span><span class="term">hot path is vectorized C not the interpreter</span><span class="term">readability + ecosystem + notebooks</span><span class="term">keep hot work native</span><span class="term">"isn't Python too slow?" answered</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="ai">
+      <div class="s-top"><span class="s-no">29</span><span class="s-tag">AI · advanced</span></div>
+      <h3>The GIL meets ML / data workloads</h3>
+      <p class="why"><b>Why it matters</b>The nuanced take that separates a real AI-platform architect from "Python has a GIL so it's slow."</p>
+      <div class="answer">
+        <p>Given the GIL, you'd think Python is terrible for heavy compute — but it mostly isn't for numerical work, precisely because the libraries <b>release the GIL</b> during native operations. When NumPy does a big array op or PyTorch runs on the GPU, that work happens in C/CUDA with the GIL released, so other Python threads run and multiple cores/GPU are fully used — the GIL isn't holding back the math. Where the GIL <b>does</b> hurt: pure-Python loops over data (no native call to release it), Python-level parallelism of CPU work, and serving many concurrent requests through Python code. That's why pipelines that stay "in NumPy/pandas/Arrow" fly while ones that loop element-by-element in Python crawl.</p>
+        <p class="arch">The nuanced take — "the GIL rarely bottlenecks numerical AI work because the native libraries release it; it bottlenecks pure-Python CPU loops and request-serving." So my optimization instinct for data/ML is "stay vectorized, stay native" (a Python for-loop over a DataFrame is the smell; a vectorized operation is the fix) rather than reaching for multiprocessing first. And free-threading is genuinely interesting for the cases the GIL does hurt — pure-Python parallel preprocessing, or serving — but the core tensor math was already free. This is the sharp distinction that shows I understand where Python's performance actually lives, exactly the kind of thing that separates a real AI-platform architect from someone repeating "Python has a GIL."</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">native ops release the GIL (NumPy/torch/GPU parallel)</span><span class="term">GIL hurts pure-Python loops + serving</span><span class="term">"stay vectorized / stay native"</span><span class="term">Python-loop-over-DataFrame smell</span><span class="term">free-threading helps the pure-Python cases</span><span class="term">tensor math was never GIL-bound</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="ai">
+      <div class="s-top"><span class="s-no">30</span><span class="s-tag">AI · advanced</span></div>
+      <h3>Serving Python in production (workers)</h3>
+      <p class="why"><b>Why it matters</b>The production consequence of the GIL — and it drives real capacity and memory math.</p>
+      <div class="answer">
+        <p>Because one Python process can only run bytecode on one core at a time (the GIL), you don't serve a high-traffic Python web app with a single process and threads — you run <b>multiple worker processes</b>, typically one (or a few) per CPU core, behind a process manager (gunicorn/uvicorn workers). Each worker is a full Python process with its own GIL, so together they use all cores. For I/O-bound services you combine this with <b>async workers</b> (uvicorn/ASGI) so each worker handles many concurrent connections on its event loop; for CPU-bound endpoints you lean on process count. The cost is <b>memory</b> — each worker duplicates the interpreter and loaded code/model, which matters a lot when each loads a large ML model.</p>
+        <p class="arch">The rule is "scale Python services with processes (workers), not just threads, because of the GIL — process-per-core, plus async within each worker for I/O." This is the production consequence of the whole GIL story, and it drives real capacity math: N workers × M memory each (a big model loaded per worker can blow up memory, so size workers against RAM, not just cores — or share the model via shared memory / a separate inference service). It connects to the platform volumes — this is why a Python pod's resource requests and worker count must be tuned together, and why horizontal pod autoscaling (more pods) complements process-level scaling. Free-threading could eventually let one process use all cores with threads (less memory duplication) — a genuine future win for model-serving.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">GIL → multiple worker processes (process-per-core)</span><span class="term">gunicorn / uvicorn workers</span><span class="term">async workers (ASGI) for I/O per worker</span><span class="term">memory cost (each duplicates interpreter + model)</span><span class="term">N×M capacity math · size against RAM</span><span class="term">shared model / inference service</span><span class="term">ties to pod requests + HPA · free-threading future</span></div></div>
+    </article>
+
+    <article class="scenario" data-cat="ai">
+      <div class="s-top"><span class="s-no">31</span><span class="s-tag">AI · synthesis</span></div>
+      <h3>A Python gotcha bites in production (greatest hits)</h3>
+      <p class="why"><b>Why it matters</b>Knowing the footguns cold — and the guardrails against them — is the "shipped Python in prod" signal.</p>
+      <div class="answer">
+        <p>The senior differentiator is knowing Python's footguns cold, because they cause real incidents. The greatest hits: the <b>mutable default argument</b> (shared across calls — data bleeds between requests); <b>late-binding closures</b> (a loop building lambdas that all capture the final value); <b>floating-point</b> (<code>0.1 + 0.2 != 0.3</code> — use <code>Decimal</code> for money); the <b>GIL surprise</b> (threads don't speed up CPU work); silent <b>dependency drift</b> (an unpinned transitive dep updates and breaks prod — why lockfiles matter); <code>is</code>-vs-<code>==</code> on values; blocking the async event loop; module-level import side effects; and <b>mutable class attributes</b> shared across instances. Each is subtle, works in dev, and bites under real conditions.</p>
+        <p class="arch">I keep this list because production Python failures cluster around these, and catching them in review is high-leverage. The meta-point: Python's dynamism and "consenting adults" philosophy give enormous velocity but move a class of guarantees from the compiler to the developer — so <b>discipline</b> (types + mypy in CI, linting with ruff, pinned lockfiles, code review for the known footguns, boundary validation with Pydantic) is what makes Python safe at scale. That's the architect's job with Python: keep the velocity, add the guardrails a stricter language would enforce for you. Being able to rattle off the footguns and their guardrails is exactly the "this person has actually shipped and debugged Python in production" signal — the whole point of a senior/architect Python conversation.</p>
+      </div>
+      <div class="terms"><span class="lbl">Land these terms</span><div class="termlist"><span class="term">mutable default arg · late-binding closures</span><span class="term">float != Decimal (money)</span><span class="term">GIL surprise</span><span class="term">dependency drift (pin/lock)</span><span class="term">is vs == · blocking the loop</span><span class="term">import side effects · mutable class attrs</span><span class="term">"consenting adults" → discipline (types/mypy/ruff/lockfiles/review)</span></div></div>
+    </article>
+  </section>
+
+  <p class="noresult" id="noresult">No scenarios match that. Clear the search or pick another track.</p>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>How to rehearse:</b> read each answer aloud once at pace — the mechanism, then the architect lens. Within each track the scenarios run basic → advanced, so start at the fundamentals and push into the production edges.<br>
+    The Python 3.12+ companion to the "What Happens When…" series, current to 3.14 (free-threading now supported, the JIT still experimental, PEP 649 deferred annotations default). Filter by track to drill one area; search a term (GIL, free-threading, PEP 695, uv) to jump straight to it.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  var q=document.getElementById('q');
+  var chips=Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var scenarios=Array.prototype.slice.call(document.querySelectorAll('.scenario'));
+  var sections=Array.prototype.slice.call(document.querySelectorAll('section.track'));
+  var countEl=document.getElementById('count');
+  var activeCat='all';
+
+  scenarios.forEach(function(s){ s._text=(s.textContent||'').toLowerCase(); });
+
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase();
+    var shown=0;
+    scenarios.forEach(function(s){
+      var okCat=activeCat==='all' || s.getAttribute('data-cat')===activeCat;
+      var okText=!term || s._text.indexOf(term)!==-1;
+      var vis=okCat && okText;
+      s.hidden=!vis;
+      if(vis) shown++;
+    });
+    sections.forEach(function(sec){
+      var any=Array.prototype.some.call(sec.querySelectorAll('.scenario'),function(s){return !s.hidden;});
+      sec.hidden=!any;
+    });
+    countEl.innerHTML='<b>'+shown+'</b> shown';
+    document.body.classList.toggle('empty', shown===0);
+  }
+
+  chips.forEach(function(c){
+    c.addEventListener('click',function(){
+      activeCat=c.getAttribute('data-cat');
+      chips.forEach(function(x){x.setAttribute('aria-pressed', x===c ? 'true':'false');});
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+})();
+</script>
+
+</body>
+</html>

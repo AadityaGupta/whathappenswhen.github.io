@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>The H-Bridge, Gate Drive & Dead-Time — How Four Switches Spin a Motor Both Ways · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#A6552A; --accent-ink:#FFFFFF; --accent-wash:#F4E6DC;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#E39A5C; --accent-ink:#241405; --accent-wash:#241711;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#E39A5C; --accent-ink:#241405; --accent-wash:#241711;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 07 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>The H-Bridge, Gate Drive &amp; Dead-Time: How Four Switches Spin a Motor Both Ways</h1>
+    <p class="dek">You have one DC supply and a motor you need to run forwards and backwards, at any speed, without cooking everything as heat. Four switches in an H solve direction; switching fast (PWM) solves efficient speed control; and a tiny, mandatory sliver of time called <em>dead-time</em> is all that stands between a working drive and a bang. This is the output stage under almost every motor, inverter and class-D amp.</p>
+    <div class="meta">
+      <span>&approx; 18 min read</span>
+      <span>power electronics · gate drive · motor control</span>
+      <span>companion to <b>Control Systems</b> and <b>Field-Oriented Control</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">You have one DC rail &mdash; say +12&nbsp;V and ground &mdash; and a brushed motor you need to run forwards and backwards, at any speed from zero to full, without pouring the difference away as heat. Each requirement defeats the obvious circuit on its own axis: a single switch in series with the motor can only interrupt one direction of current, never <em>reverse</em> it from a single-polarity supply; and throttling the speed with a partly-on switch, used as a dropping resistor, burns the excess voltage as heat until it melts. The way out is two reframes. Direction becomes a matter of which <em>diagonal</em> of four switches you close &mdash; the <b>H-bridge</b>. Speed becomes a <em>duty cycle</em>: switch fully on and fully off, fast, so the switch is almost never in the lossy middle and the motor&rsquo;s inductance averages the chopped voltage. From those two moves the whole subject falls out &mdash; efficiency splitting cleanly into conduction and switching loss, the gate driver that exists only to ram charge into a gate fast, and one iron rule that governs every half-bridge: the two switches in a leg must <em>never</em> be on together. Because a real MOSFET turns off slower than you command it, honouring that rule forces a tiny, mandatory sliver of time &mdash; <b>dead-time</b> &mdash; and that sliver is all that stands between a working drive and a bang. This piece builds that chain from the one constraint, then turns to the half the textbooks skip: how you design a bridge, how it blows up, what to spec, and a 12&nbsp;V, 5&nbsp;A drive sized end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: one supply, both directions, no heat</h2>
+    <p>Start with exactly what you&rsquo;re given and what you need. The supply is a single DC rail, +12&nbsp;V and ground &mdash; one polarity, nothing negative to reach for. The load is a brushed DC motor, and the spec is to drive it <em>forwards and backwards</em>, at a speed you can dial from zero to full, <em>efficiently</em>. Three requirements, and each one defeats the naïve circuit on a different axis.</p>
+    <p>Put a single transistor in series with the motor and you can switch it on and off &mdash; in <em>one</em> direction only. Current runs from the rail, through the motor, to ground; there is no way to make it run the other way without a negative supply or a second path, so one switch can never reverse. And suppose you try to vary the speed by holding that transistor <em>partly</em> on, using it as a variable resistor that drops the excess voltage. Now it dissipates <span class="m"><i>P</i> = <i>V</i><sub>drop</sub> &middot; <i>I</i></span> as heat: at half speed it is dropping roughly half the rail at the full motor current, burning about a quarter of the motor&rsquo;s full power in one small component &mdash; which melts. So the obvious approaches each fail on a separate count: one switch cannot reverse, and linear control cannot be efficient. We need a circuit that reverses the current <em>and</em> controls speed without ever leaning on a lossy dropping element.</p>
+
+    <h2><span class="sn">2</span>The reframe: switch the polarity, and switch fast</h2>
+    <p>Two ideas, each a reframe, and together they dissolve the whole problem. First, direction. Build an <b>H-bridge</b>: four switches arranged as two &ldquo;half-bridges,&rdquo; each a high-side switch to <span class="m">+<i>V</i></span> and a low-side switch to ground, with the motor bridged between the two midpoints &mdash; the crossbar of the H. Close the top-left and bottom-right switches and current runs through the motor left-to-right (call it forward); close the top-right and bottom-left pair and it runs right-to-left (reverse). Direction is no longer a property of the supply, which never changes polarity; it is simply <em>which diagonal you close</em>.</p>
+    <p>Second, speed &mdash; and here the move is a refusal. Do <em>not</em> throttle with a partly-on switch. Instead switch fully on and fully off, fast, over and over: <b>pulse-width modulation</b>. A switch that is fully on drops almost nothing (<span class="m"><i>V</i> &approx; <i>I</i>&middot;<i>R</i><sub>ds(on)</sub></span>, a few milliohms&rsquo; worth); a switch that is fully off carries no current. In both states the product <span class="m"><i>V</i>&middot;<i>I</i></span> is nearly zero, so the switch barely heats, no matter how long it sits there. The motor&rsquo;s inductance can&rsquo;t follow the fast chopping and averages it instead, so the motor sees an effective voltage set by the fraction of each cycle the switch is on &mdash; the duty cycle <span class="m"><i>D</i></span>:</p>
+    <div class="eq"><span class="m"><i>V</i><sub>avg</sub> = <i>D</i> &middot; <i>V</i></span><span class="lbl">the motor sees the duty-cycle fraction of the rail</span></div>
+    <p>So we have turned &ldquo;reverse the motor and vary its speed efficiently&rdquo; into &ldquo;pick a diagonal, choose a duty&rdquo; &mdash; two discrete choices, both lossless in principle, with the heat-burning middle ground designed out entirely.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Pick a diagonal, choose a duty — direction and speed from four switches</div>
+      <canvas class="sim" data-sim="hbridge" data-c="#A6552A" aria-label="H-bridge of four switches driving a motor; the conducting diagonal lights up, PWM chops the motor voltage, and the average tracks the duty cycle"></canvas>
+      <div class="ctrls" data-sim="hbridge"></div>
+    </div>
+    <p class="simnote">Drag the duty cycle and toggle the direction. Watch the conducting diagonal light up &mdash; top-left with bottom-right for forward, the other pair for reverse &mdash; and the motor terminal voltage chop between the rail and zero at the switching frequency. During each off-interval the current can&rsquo;t stop, so it <em>freewheels</em> through the opposite path rather than dying; the average terminal voltage <span class="m"><i>V</i><sub>avg</sub></span> tracks the duty, <span class="m"><i>D</i>&middot;<i>V</i></span> one way and its mirror the other. Direction is which diagonal; speed is the duty &mdash; two clean choices, and nowhere a lossy throttle.</p>
+
+    <h2><span class="sn">3</span>The core: why switching is efficient, and what it costs</h2>
+    <p>Put real numbers behind the efficiency claim, because it is not free &mdash; it is cheap, which is different. A switch&rsquo;s instantaneous dissipation is always <span class="m"><i>P</i> = <i>V</i><sub>switch</sub> &middot; <i>I</i></span>, and there are three operating points. <b>Fully on</b>: the voltage across the switch is only <span class="m"><i>I</i>&middot;<i>R</i><sub>ds(on)</sub></span> (tens of milliohms), so the loss is small and purely resistive. <b>Fully off</b>: the current is essentially zero, so the loss is essentially zero. <b>Half on (linear)</b>: both <span class="m"><i>V</i></span> and <span class="m"><i>I</i></span> are large at once, so the dissipation is huge &mdash; and this is precisely the region PWM avoids by racing through it on every edge.</p>
+    <p>So the honest accounting splits a switch&rsquo;s loss into two pieces. The first is <b>conduction loss</b>, paid the whole time the switch carries current:</p>
+    <div class="eq"><span class="m"><i>P</i><sub>cond</sub> = <i>I</i><sup>2</sup> &middot; <i>R</i><sub>ds(on)</sub></span><span class="lbl">per conducting FET &mdash; small, because <i>R</i><sub>ds(on)</sub> is milliohms</span></div>
+    <p>The second is <b>switching loss</b>, paid at every edge, because during the finite rise and fall the switch is forced through that lossy middle while both voltage and current are non-trivial:</p>
+    <div class="eq"><span class="m"><i>P</i><sub>sw</sub> = &frac12; &middot; <i>V</i> &middot; <i>I</i> &middot; (<i>t</i><sub>r</sub> + <i>t</i><sub>f</sub>) &middot; <i>f</i><sub>sw</sub></span><span class="lbl">paid at every edge &mdash; and it climbs with switching frequency</span></div>
+    <p>That tradeoff &mdash; conduction against switching loss &mdash; is why <span class="m"><i>f</i><sub>sw</sub></span> is a deliberate choice and never a free parameter: raise it and switching loss climbs linearly, lower it and you spend proportionally more of each period conducting (and you hear it whine). And this is exactly why a <b>gate driver</b> exists at all. A power MOSFET switches by charging its gate with a fixed charge <span class="m"><i>Q</i><sub>g</sub></span> up to the gate voltage <span class="m"><i>V</i><sub>gs</sub></span>; the faster you ram that charge in and yank it back out, the shorter <span class="m"><i>t</i><sub>r</sub></span> and <span class="m"><i>t</i><sub>f</sub></span> become, and the less time the switch spends in the lossy middle. But doing it fast takes real current &mdash; the peak gate current is the charge divided by the switching time:</p>
+    <div class="eq"><span class="m"><i>I</i><sub>g</sub> = <span class="frac"><span class="nu"><i>Q</i><sub>g</sub></span><span><i>t</i><sub>switch</sub></span></span></span><span class="lbl">the peak gate current &mdash; amps, not milliamps</span></div>
+    <p>A microcontroller pin cannot source that; a gate driver can. And because the <b>high-side</b> switch&rsquo;s source terminal swings all the way up to <span class="m">+<i>V</i></span> when it conducts, its gate must be held several volts <em>above</em> the rail to keep it on &mdash; which is the whole reason for the <b>bootstrap</b> capacitor (topped up through the low-side&rsquo;s on-time) or a separate isolated supply. The gate driver is not an accessory; it is the thing that makes the switching cheap in the first place.</p>
+
+    <h2><span class="sn">4</span>The inevitability: dead-time is forced by real switches</h2>
+    <p>Here is the punchline the whole topic turns on. In any half-bridge the high-side and low-side switches must <b>never be on at the same time</b>. If they are, you have wired a dead short from <span class="m">+<i>V</i></span> straight to ground through two closed switches &mdash; a <b>shoot-through</b> current limited only by a few milliohms, a spike of hundreds of amps that vaporises the FETs in microseconds. In an ideal world you would simply command &ldquo;high-side off at the very instant the low-side turns on&rdquo; and there would be no overlap at all.</p>
+    <p>But real MOSFETs do not obey instantly. A FET <em>turns off slower than you command it</em>: there is a turn-off propagation delay, and then the gate has to discharge through its Miller plateau, together tens to well over a hundred nanoseconds of lag between &ldquo;off&rdquo; on the logic pin and &ldquo;off&rdquo; in the silicon. If you turn one switch on the moment you <em>command</em> the other off, the one still finishing its turn-off overlaps the one already turning on &mdash; and that is shoot-through, by construction. So you are <em>forced</em> to insert a <b>dead-time</b>: a short interval, after turning one switch off, during which <em>both</em> switches are off, before the other is allowed on.</p>
+    <div class="key">
+      <span class="kl">The payoff — one law under all the choices</span>
+      <div class="eq"><span class="m"><i>t</i><sub>dead</sub> &gt; <i>t</i><sub>off</sub></span><span class="lbl">the one inequality a half-bridge may never break</span></div>
+      <p>A half-bridge is governed by one unbreakable rule &mdash; <b>never both switches on at once</b> &mdash; and one forced consequence &mdash; <b>a dead-time longer than the FET&rsquo;s real turn-off delay</b>. Efficiency, direction and speed are all choices you get to make. This one is not: it is demanded by the asymmetry between how fast a FET turns on and how slowly it actually turns off. Everything else in the subject is engineering; this is law.</p>
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">Shrink the dead-time below the turn-off delay — and both switches conduct</div>
+      <canvas class="sim" data-sim="deadtime" data-c="#A6552A" aria-label="one half-bridge switching edge showing high-side and low-side gate drives with a dead-time gap; when dead-time is too short a shoot-through current spike appears"></canvas>
+      <div class="ctrls" data-sim="deadtime"></div>
+    </div>
+    <p class="simnote">Zoom into one leg&rsquo;s switching edge. Drag the <em>dead-time</em> &mdash; the gap where both gates are commanded off &mdash; and the FET <em>turn-off delay</em>, the time the outgoing switch really takes to stop conducting. While the dead-time stays comfortably longer than the turn-off delay the two never overlap and the bus current is clean. Shrink it below the turn-off delay and the outgoing FET is still on when the incoming one turns on: the gate drives overlap, and a <b>shoot-through</b> spike erupts across the supply &mdash; the verdict flips from safe to destructive. That one inequality, <span class="m"><i>t</i><sub>dead</sub> &gt; <i>t</i><sub>off</sub></span>, is the whole ballgame.</p>
+
+    <div class="limit">
+      <b>Limit check — read the dead-time at its ends</b>
+      <b>Dead-time &rarr; 0</b> (or below the turn-off delay): the two switches overlap &rarr; <b>shoot-through</b>, a destructive current spike straight across the supply, limited only by milliohms. The FETs die. This is the floor you must never cross. <b>Dead-time too large</b>: during the gap <em>neither</em> switch drives the node, so the inductive motor current is forced through a <b>body diode</b> (freewheeling), which drops more voltage, burns more loss, and leaves the output voltage wrong for that sliver &mdash; <b>dead-time distortion</b>, worst at low duty and high frequency, corrupting low-speed control and adding torque ripple. <b><i>f</i><sub>sw</sub> &rarr; high</b>: switching loss (&prop;&nbsp;<i>f</i>) and gate-drive power (&prop;&nbsp;<i>f</i>) come to dominate and the dead-time eats a bigger fraction of each period &mdash; but current ripple shrinks and you climb above the audible band. <b><i>f</i><sub>sw</sub> &rarr; low</b>: conduction-dominated and efficient, but it whines audibly and the ripple (hence inductor and capacitor size) grows. <b><i>R</i><sub>ds(on)</sub> &rarr; 0</b> (the ideal switch): conduction loss vanishes &mdash; but a bigger, lower-<i>R</i><sub>ds</sub> FET usually carries more gate charge <span class="m"><i>Q</i><sub>g</sub></span>, so you pay it straight back in switching and drive loss. There is no free switch.
+    </div>
+
+    <p>Follow the off-interval through and a quieter necessity appears. During the dead-time &mdash; and during the whole off-portion of every PWM cycle &mdash; the motor&rsquo;s inductance refuses to let its current stop, so that current must <b>freewheel</b>: recirculate somewhere. Left alone it flows through a FET&rsquo;s <b>body diode</b>; better, you deliberately turn the <em>opposite</em> FET on to carry it at a far lower drop (<b>synchronous rectification</b>). Either way, the freewheel path is not an afterthought &mdash; it is the reason an inductive load does not destroy the bridge at every turn-off.</p>
+    <p>Push this one step further and the H-bridge stops being a mere direction switch. By choosing which switches carry the freewheel current you can run the motor in all <b>four quadrants</b> &mdash; driving or braking, in either direction &mdash; and when the motor overhauls or brakes it acts as a generator, so the <em>same</em> bridge pumps that energy <b>back</b> into the supply (<b>regenerative braking</b>). This is where <b>locked-antiphase</b> PWM earns its keep: drive both legs out of phase and the motor&rsquo;s average voltage becomes</p>
+    <div class="eq"><span class="m"><i>V</i><sub>avg</sub> = (2<i>D</i> &minus; 1) &middot; <i>V</i></span><span class="lbl">locked-antiphase: one duty, both directions &mdash; <i>D</i> = &frac12; is rest</span></div>
+    <p>so a single duty number spans the whole range: <span class="m"><i>D</i> = &frac12;</span> is rest, above it drives forward, below it reverses, with smooth four-quadrant control and easy regen. The H-bridge, read this way, is a bidirectional power converter that happens to be pointed at a motor.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: designing a drive, and how it blows up</h2>
+    <p>The H-bridge is the output stage under almost everything that moves electrically: every brushed-DC drive, each phase of a BLDC or stepper (three half-bridges for a BLDC), every class-D amplifier, every motor inverter. And real design is a fixed sequence, not a flash of insight: size the <b>FETs</b> (a <span class="m"><i>V</i><sub>ds</sub></span> rating comfortably above supply plus inductive margin; <span class="m"><i>R</i><sub>ds(on)</sub></span> for conduction; <span class="m"><i>Q</i><sub>g</sub></span> for switching); choose a <b>gate driver</b> (bootstrap for the high-side, enough peak current to switch fast, matched propagation delay); set <b><i>f</i><sub>sw</sub></b> (above ~20&nbsp;kHz to clear the audible band, below the switching-loss wall); set the <b>dead-time</b> (just above the FET turn-off delay); add <b>current sense</b> and protection. When a bridge fails it fails in a short, vivid vocabulary &mdash; and the worst entries are always shoot-through:</p>
+    <dl class="speclist">
+      <dt>FETs explode / loud bang / supply collapses</dt><dd><b>Shoot-through</b>: dead-time too short, or gate ringing re-triggering a FET that should be off. The single most destructive failure there is &mdash; find it with a current probe on the DC bus, which shows the spike at every edge.</dd>
+      <dt>FETs run hot but no bang</dt><dd>Plain dissipation: <span class="m"><i>R</i><sub>ds(on)</sub></span> too high (conduction loss) or <span class="m"><i>f</i><sub>sw</sub></span> too high / the gates too slow (switching loss). Thermal, not catastrophic, but it quietly ages the parts.</dd>
+      <dt>High-side won&rsquo;t turn on, or droops at full throttle</dt><dd>The <b>bootstrap cap isn&rsquo;t being refreshed</b>: it recharges only while the low-side is on, so near 100&nbsp;% duty it starves the high-side gate. Needs a periodic low-side pulse or a charge pump.</dd>
+      <dt>Motor whines audibly</dt><dd><span class="m"><i>f</i><sub>sw</sub></span> is sitting in the audible band &mdash; raise it above ~20&nbsp;kHz and the whine disappears.</dd>
+      <dt>Erratic or dead at very low speed</dt><dd><b>Dead-time distortion</b>: the dead-time is a large fraction of a tiny pulse, so low duty cycles don&rsquo;t come out linear. Compensate it in firmware.</dd>
+      <dt>Mystery EMI, resets, ringing</dt><dd>Fast <span class="m">d<i>v</i>/d<i>t</i></span> and <span class="m">d<i>i</i>/d<i>t</i></span> ringing on layout parasitics. Tighten the loops, slow the gates slightly, add a snubber.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How these choices shape the whole drive</h2>
+    <p>Three knobs set almost everything downstream, and they are not independent. <b>Dead-time</b> sets the minimum controllable pulse width, and therefore low-speed linearity and torque ripple &mdash; too much and the drive goes lumpy near zero. <b>Switching frequency</b> trades four things at once: audible noise, EMI, switching loss, and current ripple (hence the size of your inductor and capacitors); raise it for quiet running and small magnetics, lower it for efficiency. <b>Gate-drive strength</b> &mdash; how fast you make the edges &mdash; trades switching loss against EMI: fast edges are efficient but radiate and ring, slow edges are quiet but hot. And the <b>FET choice</b>, <span class="m"><i>R</i><sub>ds(on)</sub></span> against <span class="m"><i>Q</i><sub>g</sub></span>, sets the conduction/switching balance and the whole thermal design. Pick <span class="m"><i>f</i><sub>sw</sub></span> and you have constrained the FET; the FET constrains the driver; the driver constrains the layout. Designing a bridge is walking that loop until it closes.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>The identical circuit drives brushed DC motors, BLDC and PMSM machines (with field-oriented control layered on top), steppers, solenoids and valves, class-D audio stages, DC&ndash;DC converters, and grid inverters &mdash; anywhere current must be steered and chopped under an inductive load. When you pick the parts, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>FET <span class="m"><i>V</i><sub>ds</sub></span> rating</dt><dd>At least supply plus margin for inductive overshoot and ringing &mdash; rule of thumb 1.5&ndash;2&times;. Under-rating it is a fast, loud death.</dd>
+      <dt><span class="m"><i>R</i><sub>ds(on)</sub></span></dt><dd>Conduction loss, <span class="m"><i>I</i><sup>2</sup>&middot;<i>R</i>&middot;(duty)</span>. This is the efficiency number at high current.</dd>
+      <dt>Gate charge <span class="m"><i>Q</i><sub>g</sub></span></dt><dd>Sets switching loss and the gate-drive current you need (<span class="m"><i>I</i><sub>peak</sub> &approx; <i>Q</i><sub>g</sub>/<i>t</i><sub>switch</sub></span>). It trades directly against <span class="m"><i>R</i><sub>ds(on)</sub></span>.</dd>
+      <dt>Gate driver: peak source/sink, bootstrap, prop-delay match, UVLO</dt><dd>Strong enough to switch fast, and with matched propagation delay so your dead-time stays the number you designed.</dd>
+      <dt>Dead-time (fixed vs programmable)</dt><dd>Just above the FET turn-off delay; programmable lets you tune it to the actual parts you soldered.</dd>
+      <dt>Switching frequency</dt><dd>Above audible, below the loss wall. It sets both the ripple and the magnetics.</dd>
+      <dt>Current sense &amp; protection (OCP, SOA, thermal)</dt><dd>A bridge without fast overcurrent protection is a bridge waiting to shoot through exactly once.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the clean derivation won&rsquo;t tell you</span>
+      <ul>
+        <li><b>Dead-time is never free.</b> It distorts the output and is the number-one source of low-speed torque ripple. If low-speed smoothness matters, measure it and compensate it in firmware &mdash; don&rsquo;t just pick a datasheet typical and hope.</li>
+        <li><b>A FET you turned off can turn itself back on.</b> A fast rising voltage on the half-bridge node couples through the gate-drain (Miller) capacitance and can lift the gate above threshold &rarr; false shoot-through, with no logic error anywhere. Fix it with a gate resistor, a Miller clamp, or negative off-drive.</li>
+        <li><b>The high-side bootstrap must be refreshed.</b> The cap recharges only while the low-side conducts, so a sustained 100&nbsp;% duty starves the high-side gate. Plan a periodic refresh pulse or a charge pump if you need a true full-on state.</li>
+        <li><b>Layout is the circuit.</b> The gate loop and the power commutation loop must be physically tiny; a sloppy layout rings, couples and shoots through no matter how perfect the schematic. This is where bridges actually fail.</li>
+        <li><b>Measure shoot-through, don&rsquo;t guess it.</b> A current probe on the DC bus shows the tell-tale spike at every switching edge if your dead-time is short; a scope on the two gates shows the overlap directly. Both are cheap to check and expensive to skip.</li>
+        <li><b>Synchronous rectification cuts loss but raises the stakes.</b> Turning the opposite FET on during freewheel beats the body-diode drop, but now <em>both</em> FETs are being commanded near each other &mdash; so dead-time becomes even more critical, not less.</li>
+        <li><b>Body-diode reverse recovery is a hidden tax.</b> At high <span class="m"><i>f</i><sub>sw</sub></span> the silicon body diode&rsquo;s recovery charge is real loss and a big EMI source; Schottky catch diodes, or GaN/SiC devices (no or benign body diode), change the whole calculus.</li>
+        <li><b>&ldquo;Logic-level&rdquo; does not mean &ldquo;drive it from a GPIO.&rdquo;</b> A logic-level FET still needs real gate <em>current</em> to switch fast; driving a gate straight off a micro pin switches it slowly, parks it in the linear region, and cooks it. Always use a driver.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">a 12 V, 5 A bidirectional drive</span></div>
+
+    <h2><span class="sn">9</span>Build it: a 12 V, 5 A bidirectional brushed-DC drive at 20 kHz</h2>
+    <p>Enough principle &mdash; here is a real drive sized end to end, so you can copy the shape and reuse it. The job: run a 12&nbsp;V, 5&nbsp;A brushed DC motor both directions with PWM speed control at <span class="m"><i>f</i><sub>sw</sub> = 20&nbsp;kHz</span>. Every line below is one formula you plug into; the derivation already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a 12 V, 5 A H-bridge at 20 kHz</span>
+      <dl class="speclist">
+        <dt>FET voltage</dt><dd><span class="m"><i>V</i><sub>ds</sub></span> must clear 12&nbsp;V plus inductive and ringing margin &rarr; pick <b>30&nbsp;V</b> FETs (a comfortable 2.5&times; margin). A logic-level N-channel with <span class="m"><i>R</i><sub>ds(on)</sub> &approx; 10&nbsp;m&Omega;</span>.</dd>
+        <dt>Conduction loss</dt><dd>Per conducting FET, <span class="m"><i>P</i> = <i>I</i><sup>2</sup>&middot;<i>R</i><sub>ds</sub> = 5<sup>2</sup>&middot;0.010 = <b>0.25&nbsp;W</b></span>; two FETs conduct in a diagonal &rarr; ~0.5&nbsp;W total. Trivial, thermally easy.</dd>
+        <dt>Switching loss</dt><dd>Per switching FET, <span class="m">&frac12;&middot;<i>V</i>&middot;<i>I</i>&middot;(<i>t</i><sub>r</sub>+<i>t</i><sub>f</sub>)&middot;<i>f</i><sub>sw</sub> = &frac12;&middot;12&middot;5&middot;(50&nbsp;ns)&middot;20&nbsp;kHz &approx; <b>0.3&nbsp;W</b></span>. Comparable to conduction here &mdash; which is exactly why 20&nbsp;kHz, not 200&nbsp;kHz.</dd>
+        <dt>Gate drive</dt><dd><span class="m"><i>Q</i><sub>g</sub> &approx; 15&nbsp;nC</span>. Average drive power <span class="m">= <i>Q</i><sub>g</sub>&middot;<i>V</i><sub>gs</sub>&middot;<i>f</i><sub>sw</sub>&middot;4 = 15n&middot;10&middot;20k&middot;4 &approx; <b>12&nbsp;mW</b></span> (negligible). But the peak current to switch in 50&nbsp;ns is <span class="m"><i>Q</i><sub>g</sub>/<i>t</i> = 15n/50n = <b>0.3&nbsp;A</b></span> &rarr; choose a driver that sources and sinks &ge;&nbsp;0.5&nbsp;A.</dd>
+        <dt>Dead-time</dt><dd>FET turn-off delay is ~30&ndash;50&nbsp;ns &rarr; set dead-time &approx; <b>100&ndash;150&nbsp;ns</b> (2&ndash;3&times; margin). Enough never to overlap, small enough that the distortion at 20&nbsp;kHz (a 50&nbsp;&micro;s period) stays well under 1&nbsp;%.</dd>
+        <dt>Bootstrap cap</dt><dd>Must supply <span class="m"><i>Q</i><sub>g</sub></span> plus leakage over one on-time with little droop: <span class="m"><i>C</i><sub>boot</sub> &ge; <i>Q</i><sub>g</sub>/&Delta;<i>V</i> &approx; 15&nbsp;nC / 0.1&nbsp;V = 150&nbsp;nF</span> &rarr; use <b>1&nbsp;&micro;F</b> for margin.</dd>
+        <dt>Topology &amp; parts</dt><dd>A full H-bridge (4 N-channel FETs) driven by a gate-driver IC with built-in bootstrap and dead-time (e.g. a DRV8701, or two IR2104 half-bridge drivers). A low-side shunt for current sense and overcurrent.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a supply, a current, a frequency and a FET datasheet hand you every loss, the driver strength, the dead-time, and the bootstrap cap &mdash; and they tell you, loudly, that at these numbers conduction and switching loss are comparable and both tiny, so the real risk is never heat, it is the shoot-through you must engineer out. The plug-in set is small: average motor voltage <span class="m"><i>V</i><sub>avg</sub> = <i>D</i>&middot;<i>V</i><sub>supply</sub></span> (sign-magnitude) or <span class="m"><i>V</i><sub>avg</sub> = (2<i>D</i>&minus;1)&middot;<i>V</i><sub>supply</sub></span> (locked-antiphase); conduction loss per FET <span class="m"><i>P</i><sub>cond</sub> = <i>I</i><sup>2</sup>&middot;<i>R</i><sub>ds(on)</sub>&middot;(duty)</span>; switching loss per FET <span class="m"><i>P</i><sub>sw</sub> = &frac12;&middot;<i>V</i>&middot;<i>I</i>&middot;(<i>t</i><sub>r</sub>+<i>t</i><sub>f</sub>)&middot;<i>f</i><sub>sw</sub></span>; peak gate current <span class="m"><i>I</i><sub>g</sub> = <i>Q</i><sub>g</sub>/<i>t</i><sub>switch</sub></span> and gate-drive power <span class="m"><i>P</i><sub>g</sub> = <i>Q</i><sub>g</sub>&middot;<i>V</i><sub>gs</sub>&middot;<i>f</i><sub>sw</sub>&middot;(#FETs)</span>; the dead-time floor <span class="m"><i>t</i><sub>dead</sub> &gt; <i>t</i><sub>off</sub></span> with 2&ndash;3&times; margin; and the bootstrap cap <span class="m"><i>C</i><sub>boot</sub> &ge; <i>Q</i><sub>g</sub>/&Delta;<i>V</i><sub>boot</sub></span>, then &times;5&ndash;10 for margin.</p>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment something bangs:</p>
+    <ol class="recipe">
+      <li><b>Everything off, probe the bus.</b> Power the bridge with all four FETs commanded off; a current probe on the DC bus should read ~0. Any spike means a wiring or logic error <em>before</em> you have switched anything.</li>
+      <li><b>Scope the two gates of one half-bridge.</b> Command a low duty and confirm on the scope that the high-side and low-side gates are <em>never</em> high together, with a clear dead-time gap between them. Measure that gap in nanoseconds.</li>
+      <li><b>Scope the half-bridge node.</b> Confirm a clean PWM waveform swinging rail-to-rail at <span class="m"><i>f</i><sub>sw</sub></span>, with edges that are fast but not ringing up into the rails.</li>
+      <li><b>Ramp the duty, watch the bus current</b> for the shoot-through spike at the edges. If you see it, increase the dead-time or slow the turn-on &mdash; before you load anything.</li>
+      <li><b>Load it and check thermals.</b> Run the real motor, feel or measure the FET temperature; conduction plus switching loss should match your estimate (~1&nbsp;W per FET here).</li>
+      <li><b>Reverse and brake.</b> Flip the diagonal, test a direction change, then force a braking or overcurrent event and verify the current limit actually trips.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Discrete FETs + driver vs integrated motor-driver IC</dt><dd>An integrated DRV8xxx-class part hides the bootstrap, dead-time and protection and ships fast; discrete gives you higher current, voltage and control &mdash; but now you own the layout and the shoot-through risk.</dd>
+      <dt>N-channel high-side (bootstrap) vs P-channel high-side</dt><dd>N-channel is more efficient (lower <span class="m"><i>R</i><sub>ds</sub></span> for the money) but needs a gate driven above the rail (bootstrap or charge pump); P-channel is simpler to drive but bigger and lossier for the same <span class="m"><i>R</i><sub>ds</sub></span>.</dd>
+      <dt>Sign-magnitude vs locked-antiphase PWM</dt><dd>Sign-magnitude (one leg static, one chopping) is simpler and lower-ripple near zero; locked-antiphase (both legs chop out of phase) gives smooth four-quadrant control and easy regen but more ripple and loss at rest.</dd>
+      <dt>Si vs GaN/SiC</dt><dd>GaN/SiC switch faster with no nasty body-diode recovery &rarr; higher <span class="m"><i>f</i><sub>sw</sub></span>, smaller magnetics, higher efficiency; but the fast edges demand near-perfect layout and tight dead-time, and cost more.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do with real tools</b>
+      This page gets you a correct topology, the right FET and driver class, and sizing numbers that are right to a factor well under 2 &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% is layout and the scope, and it is where bridges actually live or die. <b>Lay out the loops tight:</b> the gate loop and the power commutation loop must be small and low-inductance &mdash; follow the driver datasheet&rsquo;s layout page religiously, because most &ldquo;random&rdquo; shoot-through is layout ringing, not your dead-time number. <b>Measure dead-time and shoot-through on real hardware</b> &mdash; gates on a scope, bus current on a current probe &mdash; and tune the dead-time to the FETs you actually soldered, not the datasheet typical. <b>Thermal-test under worst-case load and duty</b>, with the real heatsink and airflow; switching loss in particular is easy to under-estimate. And <b>chase the EMI</b> from those fast edges, conducted and radiated &mdash; a gate resistor and a snubber are your tuning knobs between efficiency and noise. Tools to reach for: a <b>motor-driver eval board</b> to start, <b>LTspice</b> for the gate-drive loop and the loss estimate, a <b>scope and current probe</b> for dead-time and shoot-through, and the driver IC&rsquo;s <b>datasheet layout guidance</b>. The four-switch idea in Part&nbsp;I never changes; the last mile is making real FETs commutate cleanly on a real board without ever letting both ends of a leg conduct at once.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">Your bridge works fine at 50&nbsp;% duty, but the high-side FET stops driving when you command 100&nbsp;% (full speed). Nothing is overheating. What&rsquo;s starving, and why does it only happen at full duty?</p><span class="a">The <b>high-side bootstrap capacitor</b> is starving. That cap is what holds the high-side gate several volts above the rail, and it can only recharge while the <em>low-side</em> FET is on, pulling the half-bridge node down to ground so the cap tops up from the supply. At 50&nbsp;% duty the low-side turns on every cycle and keeps the cap full; at 100&nbsp;% duty the low-side <em>never</em> turns on, so the cap is never refreshed, its charge bleeds away, and the high-side gate supply collapses &mdash; the FET can no longer be held on. It&rsquo;s duty-specific because the refresh mechanism is the low-side on-time itself. The fix is a periodic low-side refresh pulse (giving up true 100&nbsp;%) or a charge pump that doesn&rsquo;t depend on the low-side conducting.</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">You shrink the dead-time to reduce low-speed distortion, and the FETs start running hot and occasionally bang. What did you cross, and what sets the floor you can&rsquo;t go below?</p><span class="a">You dropped the dead-time <b>below the FET&rsquo;s real turn-off delay</b>, so the outgoing high- and low-side switches now overlap &mdash; shoot-through. At first it shows only as extra heat (brief current spikes at every edge, bleeding energy through both FETs); push it further and one of those spikes finishes a FET off, which is the bang. The floor is <em>not</em> a number you choose for smoothness &mdash; it is the actual turn-off time of the FET (propagation delay plus the Miller-plateau discharge) plus margin, <span class="m"><i>t</i><sub>dead</sub> &gt; <i>t</i><sub>off</sub></span>. And you measure that on the parts you soldered rather than trusting a typical, because the whole failure is the gap between commanded-off and really-off.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">Two designs run the same motor: one at 8&nbsp;kHz, one at 40&nbsp;kHz. One whines audibly and has large current ripple; the other is quiet but its FETs are hotter. Which is which, and what&rsquo;s the single trade behind both differences?</p><span class="a">The <b>8&nbsp;kHz</b> design whines &mdash; 8&nbsp;kHz is squarely in the audible band &mdash; and has the large current ripple, because the motor&rsquo;s inductance has longer between edges to let its current drift. The <b>40&nbsp;kHz</b> design is quiet (above hearing) with small ripple, but its FETs are hotter. The single trade behind both is <b>switching frequency</b>: noise and current ripple both <em>fall</em> as <span class="m"><i>f</i><sub>sw</sub></span> rises, while switching loss (paid at every edge) <em>rises</em> with it &mdash; so you buy quiet running and small ripple with heat, and buy efficiency with whine and ripple. There is no setting that wins all three, which is why <span class="m"><i>f</i><sub>sw</sub></span> is a deliberate choice.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-opamp.html"><b>&larr; Prev:</b> The Op-Amp &amp; Negative Feedback</a>
+      <span class="nextpill"><b>Coming next:</b> MPPT &amp; the Solar I-V Knee</span>
+    </div>
+    <p class="footnote"><b>The H-Bridge, Gate Drive &amp; Dead-Time — How Four Switches Spin a Motor Both Ways.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (one DC supply, a motor to run both ways at any speed without burning the difference as heat) and the two reframes (pick a diagonal of four switches for direction; chop fully on and off for speed) from which <span class="m"><i>V</i><sub>avg</sub> = <i>D</i>&middot;<i>V</i></span>, the split of loss into conduction <span class="m"><i>I</i><sup>2</sup>&middot;<i>R</i><sub>ds(on)</sub></span> and switching <span class="m">&frac12;&middot;<i>V</i>&middot;<i>I</i>&middot;(<i>t</i><sub>r</sub>+<i>t</i><sub>f</sub>)&middot;<i>f</i><sub>sw</sub></span>, the gate driver, and the one iron law <span class="m"><i>t</i><sub>dead</sub> &gt; <i>t</i><sub>off</sub></span> all fall out &mdash; then the practitioner&rsquo;s half: how you design a bridge, why it shoots through, whines or distorts, what to spec, and a 12&nbsp;V, 5&nbsp;A drive sized end to end. With live simulations of the four-switch H picking a diagonal and tracking the duty, and of a switching edge erupting into shoot-through as the dead-time shrinks below the turn-off delay. The honest truth of it: this gets you a correct bridge, the right parts and sane sizing &mdash; dead-time tuning, layout and EMI are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>Control Systems</b> and <b>Field-Oriented Control</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* hbridge — four switches spin the motor both ways. The classic H: a +V rail across the top,
+     a GND rail across the bottom, a LEFT leg (high-side Q1 over low-side Q2, midpoint node A) and
+     a RIGHT leg (high-side Q3 over low-side Q4, midpoint node B), with a MOTOR between A and B.
+     Sign-magnitude PWM off s.t (V_supply = 12 V): forward lights the Q1+Q4 diagonal (V_AB = +12),
+     reverse lights Q3+Q2 (V_AB = −12); in the OFF sub-interval both low-side FETs conduct and the
+     motor current freewheels (V_AB ≈ 0). V_avg = dir·(D/100)·12. Conducting FETs fill and current
+     dots ride the live loop; an inset plots V_AB with a dashed average. s.accent = hero (V_avg /
+     live path), PAL.good = safe, unicode literals only in txt(). */
+  SIMS.hbridge={
+    controls:[
+      {k:'duty',label:'PWM duty D',min:0,max:100,step:1,val:60,unit:' %'},
+      {k:'dir',label:'Direction',min:-1,max:1,step:2,val:1,fmt:v=>v>0?'forward':'reverse'}
+    ],
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    _sample:function(pts,u){
+      var i,segs=[],total=0;
+      for(i=0;i<pts.length;i++){ var a=pts[i],b=pts[(i+1)%pts.length];
+        var d=Math.hypot(b.x-a.x,b.y-a.y); segs.push(d); total+=d; }
+      if(!(total>0)) return {x:pts[0].x,y:pts[0].y};
+      var target=(((u%1)+1)%1)*total;
+      for(i=0;i<pts.length;i++){
+        if(target<=segs[i]||i===pts.length-1){
+          var a2=pts[i],b2=pts[(i+1)%pts.length];
+          var f=segs[i]>0?target/segs[i]:0;
+          return {x:a2.x+(b2.x-a2.x)*f,y:a2.y+(b2.y-a2.y)*f};
+        }
+        target-=segs[i];
+      }
+      return {x:pts[0].x,y:pts[0].y};
+    },
+    draw:function(ctx,w,h,s){
+      var R=SIMS.hbridge;
+      // ---- controls + physics ----
+      var D=clamp(s.p.duty,0,100);
+      var dir=(s.p.dir>=0)?1:-1;
+      var Vsup=12;
+      var Vavg=dir*(D/100)*Vsup;
+      var period=1.2;
+      var tt=s.t||0;
+      var onFrac=D/100;
+      var phase=(tt%period)/period;          // 0..1 within the PWM cycle
+      var driving=phase<onFrac;              // ON (drive) vs OFF (freewheel)
+
+      // ---- geometry ----
+      var padL=14;
+      var schR=Math.round(w*0.54);
+      var xBatt=padL;
+      var xL=padL+46;
+      var xR=schR-30;
+      var topY=44, botY=h-42, midY=Math.round((topY+botY)/2);
+      var swW=clamp(w*0.045,22,30), swH=clamp(h*0.09,16,22);
+      // key nodes
+      var TL={x:xL,y:topY},   TRr={x:xR,y:topY};
+      var BLl={x:xL,y:botY},  BRr={x:xR,y:botY};
+      var A={x:xL,y:midY},    B={x:xR,y:midY};
+      var battT={x:xBatt,y:topY}, battB={x:xBatt,y:botY};
+
+      // ---- which switches conduct ----
+      var q={1:false,2:false,3:false,4:false};
+      if(driving){ if(dir>0){ q[1]=true; q[4]=true; } else { q[3]=true; q[2]=true; } }
+      else { q[2]=true; q[4]=true; }         // freewheel: both low-side on
+      var loopCol=driving?s.accent:PAL.cool;
+
+      // ---- active current loop ----
+      var pts;
+      if(driving){ pts=(dir>0)?[battT,TL,A,B,BRr,battB]:[battT,TRr,B,A,BLl,battB]; }
+      else { pts=(dir>0)?[A,B,BRr,BLl]:[B,A,BLl,BRr]; }
+
+      // ---- rails + battery ----
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(xBatt,topY); ctx.lineTo(xR,topY); ctx.stroke();   // +V rail
+      ctx.beginPath(); ctx.moveTo(xBatt,botY); ctx.lineTo(xR,botY); ctx.stroke();   // GND rail
+      // left & right legs
+      ctx.beginPath(); ctx.moveTo(xL,topY); ctx.lineTo(xL,botY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xR,topY); ctx.lineTo(xR,botY); ctx.stroke();
+      // battery symbol on the far left
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(xBatt,topY); ctx.lineTo(xBatt,midY-9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xBatt,midY+9); ctx.lineTo(xBatt,botY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xBatt-7,midY-9); ctx.lineTo(xBatt+7,midY-9); ctx.stroke(); // long (+)
+      ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.moveTo(xBatt-4,midY+9); ctx.lineTo(xBatt+4,midY+9); ctx.stroke(); // short (−)
+      txt(ctx,'+V 12 V',xBatt-4,topY-6,PAL.muted,9,'left');
+      txt(ctx,'GND',xBatt-4,botY+13,PAL.muted,9,'left');
+
+      // ---- motor between A and B ----
+      var mc={x:(xL+xR)/2,y:midY};
+      var mr=clamp(Math.min((xR-xL)*0.16,(botY-topY)*0.14),9,22);
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.moveTo(xL,midY); ctx.lineTo(xR,midY); ctx.stroke();
+      ctx.fillStyle=PAL.surf; ctx.strokeStyle=PAL.ink; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(mc.x,mc.y,mr,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      // spinning spoke (direction-dependent)
+      var spin=tt*dir*3;
+      ctx.strokeStyle=driving?s.accent:PAL.muted; ctx.lineWidth=1.6; ctx.globalAlpha=0.9;
+      ctx.beginPath();
+      ctx.moveTo(mc.x-Math.cos(spin)*mr*0.7,mc.y-Math.sin(spin)*mr*0.7);
+      ctx.lineTo(mc.x+Math.cos(spin)*mr*0.7,mc.y+Math.sin(spin)*mr*0.7); ctx.stroke();
+      ctx.globalAlpha=1;
+      txt(ctx,'M',mc.x,mc.y-mr-5,PAL.muted,10,'center');
+      // direction arc + arrowhead above the motor
+      var a0=dir>0?(-0.55*Math.PI):(-0.45*Math.PI);
+      var a1=dir>0?(-0.05*Math.PI):(-0.95*Math.PI);
+      ctx.strokeStyle=s.accent; ctx.lineWidth=1.6; ctx.globalAlpha=0.85;
+      ctx.beginPath(); ctx.arc(mc.x,mc.y,mr+5,Math.min(a0,a1),Math.max(a0,a1)); ctx.stroke();
+      ctx.globalAlpha=1;
+      var ah=mr+5;
+      var hx=mc.x+Math.cos(a1)*ah, hy=mc.y+Math.sin(a1)*ah;
+      var tx=hx+(dir>0?6:-6), ty=hy-2;
+      arrow(ctx,tx,ty,hx,hy,s.accent);
+
+      // ---- switches as labelled boxes Q1..Q4 (filled = on) ----
+      function sw(id,cx,cy,label){
+        var on=q[id];
+        var fill=on?(driving?s.accent:PAL.cool):PAL.surf;
+        var col=on?PAL.ink:PAL.muted;
+        box(ctx,cx-swW/2,cy-swH/2,swW,swH,label,col,fill);
+        if(on){ dot(ctx,cx+swW/2-4,cy-swH/2+4,2,driving?s.accent:PAL.cool); }
+      }
+      var yHS=(topY+midY)/2, yLS=(midY+botY)/2;
+      sw(1,xL,yHS,'Q1'); sw(2,xL,yLS,'Q2');
+      sw(3,xR,yHS,'Q3'); sw(4,xR,yLS,'Q4');
+
+      // ---- node dots + labels ----
+      dot(ctx,A.x,A.y,2.6,PAL.ink); dot(ctx,B.x,B.y,2.6,PAL.ink);
+      txt(ctx,'A',A.x-9,A.y-5,PAL.muted,9,'right');
+      txt(ctx,'B',B.x+9,B.y-5,PAL.muted,9,'left');
+
+      // ---- moving current dots along the live loop ----
+      var seglen=0,i;
+      for(i=0;i<pts.length;i++){ var pa=pts[i],pb=pts[(i+1)%pts.length]; seglen+=Math.hypot(pb.x-pa.x,pb.y-pa.y); }
+      var nDots=Math.round(clamp(seglen/36,4,16));
+      var off=tt*0.55;
+      for(i=0;i<nDots;i++){
+        var p=R._sample(pts,i/nDots+off);
+        dot(ctx,clamp(p.x,0,w),clamp(p.y,0,h),2.6,loopCol);
+      }
+
+      // ---- V_AB inset waveform ----
+      var wfX=schR+16, wfW=Math.max(70,w-wfX-12);
+      var wTop=48, wBot=h-56, cy=(wTop+wBot)/2, halfH=(wBot-wTop)/2;
+      var nCyc=2.5, cycW=wfW/nCyc;
+      function yv(v){ return clamp(cy-(v/13)*halfH,wTop,wBot); }
+      // frame + zero line
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(wfX,wTop,wfW,wBot-wTop);
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.7; ctx.setLineDash([2,2]);
+      ctx.beginPath(); ctx.moveTo(wfX,yv(0)); ctx.lineTo(wfX+wfW,yv(0)); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'+12',wfX+3,wTop+9,PAL.faint,8,'left');
+      txt(ctx,'0',wfX+3,yv(0)-2,PAL.faint,8,'left');
+      txt(ctx,'−12',wfX+3,wBot-3,PAL.faint,8,'left');
+      txt(ctx,'V_AB',wfX+wfW,wTop-4,PAL.muted,9,'right');
+      // square wave: ON level dir·12, OFF level 0
+      var lvlOn=dir*Vsup;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2;
+      ctx.beginPath();
+      var started=false;
+      for(var c=0;c<Math.ceil(nCyc)+1;c++){
+        var xs=wfX+c*cycW;
+        if(xs>wfX+wfW) break;
+        var onW=cycW*onFrac;
+        var xe1=Math.min(xs+onW,wfX+wfW);
+        var xe2=Math.min(xs+cycW,wfX+wfW);
+        if(!started){ ctx.moveTo(xs,yv(lvlOn)); started=true; } else { ctx.lineTo(xs,yv(lvlOn)); }
+        ctx.lineTo(xe1,yv(lvlOn));
+        ctx.lineTo(xe1,yv(0));
+        ctx.lineTo(xe2,yv(0));
+        if(xe2<wfX+wfW) ctx.lineTo(xe2,yv(lvlOn));
+      }
+      ctx.stroke();
+      // average line (dashed)
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.6; ctx.setLineDash([4,3]); ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(wfX,yv(Vavg)); ctx.lineTo(wfX+wfW,yv(Vavg)); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'avg '+Vavg.toFixed(1),wfX+wfW-2,clamp(yv(Vavg)-3,wTop+8,wBot-2),s.accent,8.5,'right');
+      // playhead (current PWM phase in the first cycle)
+      var phX=clamp(wfX+phase*cycW,wfX,wfX+wfW);
+      ctx.strokeStyle=driving?s.accent:PAL.cool; ctx.globalAlpha=0.7; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(phX,wTop); ctx.lineTo(phX,wBot); ctx.stroke(); ctx.globalAlpha=1;
+      var curV=driving?lvlOn:0;
+      dot(ctx,phX,yv(curV),2.6,driving?s.accent:PAL.cool);
+
+      // ---- titles + readouts ----
+      txt(ctx,'H-bridge — four switches drive the motor both ways',8,13,PAL.muted,10,'left');
+      var ry=h-9;
+      txt(ctx,'duty D = '+D.toFixed(0)+' %',padL,ry,PAL.ink,9.5,'left');
+      txt(ctx,'dir: '+(dir>0?'forward':'reverse'),padL+118,ry,(dir>0?PAL.good:PAL.viol),9.5,'left');
+      txt(ctx,'V_avg = '+Vavg.toFixed(1)+' V',wfX,ry,s.accent,9.5,'left');
+      txt(ctx,driving?'drive':'freewheel (V_AB ≈ 0)',wfX+wfW,wBot+12,driving?s.accent:PAL.cool,8.5,'right');
+    }
+  };
+
+  /* deadtime — why dead-time is mandatory. Zoom into one half-bridge transition on a nanosecond
+     timeline (−50 … +300 ns). The high-side is ON and commanded OFF at t=0, but it actually keeps
+     conducting until t = toff (its turn-off delay). The low-side is commanded ON at t = tdead. If
+     tdead < toff the two conduct at once over [tdead, toff] — overlap = max(0, toff − tdead) — and
+     the bus sees a shoot-through spike (PAL.bad) whose height scales with the overlap. If overlap
+     = 0 there is a clean gap during which the load freewheels through a body diode (PAL.good).
+     Lane 1 = HS gate cmd + actual conduction (hatched tail), Lane 2 = LS gate cmd, Lane 3 = bus
+     current. Verdict flips SAFE ⇄ SHOOT-THROUGH. s.accent = HS conduction hero, unicode only. */
+  SIMS.deadtime={
+    controls:[
+      {k:'tdead',label:'Commanded dead-time',min:0,max:200,step:5,val:100,unit:' ns'},
+      {k:'toff',label:'FET turn-off delay',min:10,max:150,step:5,val:50,unit:' ns'}
+    ],
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      // ---- controls + model ----
+      var tdead=clamp(s.p.tdead,0,200);
+      var toff=clamp(s.p.toff,10,150);
+      var overlap=Math.max(0,toff-tdead);
+      var shoot=overlap>0;
+      var gap=Math.max(0,tdead-toff);
+
+      // ---- axes ----
+      var tMin=-50,tMax=300;
+      var mL=16,mR=16,mT=40,mB=44;
+      var x0=mL,x1=w-mR,yTop=mT,yBot=h-mB;
+      function xOf(tn){ return x0+(clamp(tn,tMin,tMax)-tMin)/(tMax-tMin)*(x1-x0); }
+      var totalH=yBot-yTop, laneH=totalH/3;
+      function lane(i){ var top=yTop+i*laneH; return {top:top,hi:top+8,lo:top+laneH-10}; }
+      var L1=lane(0), L2=lane(1), L3=lane(2);
+
+      // ---- region shading (behind traces) ----
+      if(shoot){
+        ctx.fillStyle=PAL.bad; ctx.globalAlpha=0.12;
+        ctx.fillRect(xOf(tdead),yTop,Math.max(0,xOf(toff)-xOf(tdead)),yBot-yTop); ctx.globalAlpha=1;
+      } else if(gap>0){
+        ctx.fillStyle=PAL.good; ctx.globalAlpha=0.10;
+        ctx.fillRect(xOf(toff),yTop,Math.max(0,xOf(tdead)-xOf(toff)),yBot-yTop); ctx.globalAlpha=1;
+      }
+
+      // ---- vertical guides ----
+      function guide(tn,label,col){
+        var gx=xOf(tn);
+        ctx.strokeStyle=col; ctx.globalAlpha=0.55; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(gx,yTop); ctx.lineTo(gx,yBot); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha=1;
+        txt(ctx,label,clamp(gx,x0+2,x1-2),yTop-4,col,8,'center');
+      }
+      guide(0,'t=0 HS off',PAL.muted);
+      guide(tdead,'LS on',PAL.cool);
+      guide(toff,'HS really off',s.accent);
+
+      function sig(points,col,lw,dash){
+        ctx.strokeStyle=col; ctx.lineWidth=lw;
+        if(dash) ctx.setLineDash(dash); else ctx.setLineDash([]);
+        ctx.beginPath();
+        for(var i=0;i<points.length;i++){ if(i===0)ctx.moveTo(points[i][0],points[i][1]); else ctx.lineTo(points[i][0],points[i][1]); }
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      // ---- Lane 1: HS gate command + actual conduction ----
+      txt(ctx,'high-side',x0,L1.top-1,PAL.faint,8,'left');
+      // gate command (crisp): high until 0, then low
+      sig([[x0,L1.hi],[xOf(0),L1.hi],[xOf(0),L1.lo],[x1,L1.lo]],PAL.muted,1.6,null);
+      // hatched tail: still conducting from 0 .. toff though commanded off
+      var hx0=xOf(0), hx1=xOf(toff);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(hx0,L1.hi,Math.max(0,hx1-hx0),L1.lo-L1.hi); ctx.clip();
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.35; ctx.lineWidth=1;
+      for(var hxx=hx0-(L1.lo-L1.hi);hxx<hx1;hxx+=6){
+        ctx.beginPath(); ctx.moveTo(hxx,L1.lo); ctx.lineTo(hxx+(L1.lo-L1.hi),L1.hi); ctx.stroke();
+      }
+      ctx.restore(); ctx.globalAlpha=1;
+      // actual conduction line: solid high to t=0, dashed tail to toff, then drops
+      sig([[x0,L1.hi-2],[xOf(0),L1.hi-2]],s.accent,2.2,null);
+      sig([[xOf(0),L1.hi-2],[xOf(toff),L1.hi-2],[xOf(toff),L1.lo]],s.accent,2.2,[5,3]);
+      txt(ctx,'HS gate',x1,L1.lo-3,PAL.muted,8,'right');
+      txt(ctx,'actually conducts (turn-off delay)',clamp((hx0+hx1)/2,x0+2,x1-2),L1.hi-3,s.accent,7.5,'center');
+
+      // ---- Lane 2: LS gate command ----
+      txt(ctx,'low-side',x0,L2.top-1,PAL.faint,8,'left');
+      sig([[x0,L2.lo],[xOf(tdead),L2.lo],[xOf(tdead),L2.hi],[x1,L2.hi]],PAL.cool,2,null);
+      txt(ctx,'LS gate',x1,L2.hi+10,PAL.cool,8,'right');
+
+      // ---- Lane 3: bus / shoot-through current ----
+      txt(ctx,'bus current',x0,L3.top-1,PAL.faint,8,'left');
+      sig([[x0,L3.lo],[x1,L3.lo]],PAL.line,1.2,null);   // baseline ~0
+      if(shoot){
+        var sx0=xOf(tdead), sx1=xOf(toff), amp=L3.lo-L3.hi;
+        var hpk=amp*clamp(overlap/120,0.12,1);
+        ctx.fillStyle=PAL.bad; ctx.globalAlpha=0.85;
+        ctx.beginPath(); ctx.moveTo(sx0,L3.lo);
+        var N=14;
+        for(var k=0;k<=N;k++){ var ff=k/N; var sx=sx0+(sx1-sx0)*ff; ctx.lineTo(sx,L3.lo-hpk*Math.sin(Math.PI*ff)); }
+        ctx.lineTo(sx1,L3.lo); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+        txt(ctx,'shoot-through',clamp((sx0+sx1)/2,x0+2,x1-2),clamp(L3.lo-hpk-4,L3.hi,L3.lo),PAL.bad,8,'center');
+      } else {
+        sig([[x0,L3.lo],[x1,L3.lo]],PAL.good,1.8,null);
+        if(gap>0){
+          var gx0=xOf(toff), gx1=xOf(tdead);
+          txt(ctx,'body-diode freewheel',clamp((gx0+gx1)/2,x0+2,x1-2),L3.lo+12,PAL.good,8,'center');
+        }
+      }
+
+      // ---- x-axis ticks ----
+      var ticks=[-50,0,100,200,300];
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      for(var ti=0;ti<ticks.length;ti++){ var txx=xOf(ticks[ti]);
+        ctx.beginPath(); ctx.moveTo(txx,yBot); ctx.lineTo(txx,yBot+4); ctx.stroke();
+        txt(ctx,ticks[ti]+'',txx,yBot+14,PAL.faint,8,'center');
+      }
+      txt(ctx,'ns',x1,yBot+14,PAL.muted,8,'right');
+
+      // ---- readouts + verdict ----
+      txt(ctx,'dead-time vs FET turn-off delay',8,13,PAL.muted,10,'left');
+      txt(ctx,'t_dead '+tdead.toFixed(0)+' ns',8,26,PAL.cool,9,'left');
+      txt(ctx,'t_off '+toff.toFixed(0)+' ns',108,26,s.accent,9,'left');
+      txt(ctx,'overlap '+overlap.toFixed(0)+' ns',200,26,(shoot?PAL.bad:PAL.good),9,'left');
+      txt(ctx,(shoot?'SHOOT-THROUGH':'SAFE'),x1,22,(shoot?PAL.bad:PAL.good),17,'right');
+      txt(ctx,'dead-time must exceed the FET turn-off delay',(x0+x1)/2,h-5,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

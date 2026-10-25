@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>Transmission-Line Reflections — When a Wire Stops Being a Wire · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#2F6EA8; --accent-ink:#FFFFFF; --accent-wash:#E3ECF5;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#6BA6E0; --accent-ink:#241405; --accent-wash:#101C2A;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#6BA6E0; --accent-ink:#241405; --accent-wash:#101C2A;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 15 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>Transmission-Line Reflections: When a Wire Stops Being a Wire</h1>
+    <p class="dek">The same board that worked perfectly at 1&nbsp;MHz rings, overshoots, and double-clocks at 100&nbsp;MHz &mdash; and nothing on it changed but the edge speed. That is the moment a piece of copper stops being a simple wire and becomes a <em>transmission line</em>, where signals travel at a finite speed and bounce off anything that isn&rsquo;t matched. Learn the one coefficient that governs the bouncing and you can tame &mdash; or prevent &mdash; the &ldquo;works slow, fails fast&rdquo; bug for good.</p>
+    <div class="meta">
+      <span>&approx; 17 min read</span>
+      <span>signal integrity · high-speed digital · PCB design</span>
+      <span>companion to <b>The Op-Amp</b> and <b>Microcontrollers / Embedded</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">You lay out a board, it works, you ship it &mdash; and then you speed the clock up, or drop in a faster driver with sharper edges, and the exact same copper starts corrupting the signal: overshoot and undershoot at the receiver, ringing that rattles across the switching threshold, a rising edge that climbs in a staircase, logic that double-clocks or latches the wrong value. You changed no geometry and added no component; only the <em>edge</em> got faster. The puzzle is sharp: why does an inert piece of wire, perfectly fine at low speed, suddenly wreck the signal when the edges get fast? The hidden assumption that just broke is that a wire is instantaneous &mdash; that the whole trace sits at one voltage at any instant. It doesn&rsquo;t: a voltage step travels down the trace at a finite speed (<span class="m">&approx;&nbsp;15&nbsp;cm/ns</span> in a PCB), so while the wave is in flight the near end can be high while the far end is still low, and the wire is a <b>transmission line</b>, not a lumped node. A travelling wave carries a fixed ratio of voltage to current &mdash; the characteristic impedance <span class="m"><i>Z</i><sub>0</sub> = &radic;(<i>L</i>/<i>C</i>)</span>, about <span class="m">50&nbsp;&Omega;</span> for a typical single-ended trace &mdash; and when it hits an impedance change at the far end, part of it bounces back by the <b>reflection coefficient</b> <span class="m">&Gamma; = (<i>Z</i><sub>L</sub> &minus; <i>Z</i><sub>0</sub>)/(<i>Z</i><sub>L</sub> + <i>Z</i><sub>0</sub>)</span>: <span class="m">+1</span> at an open end (the voltage doubles), <span class="m">&minus;1</span> at a short, and <span class="m">0</span> when the load is matched to <span class="m"><i>Z</i><sub>0</sub></span> (no reflection at all). The reflections re-reflect off the source and ring, stepped by the round-trip time <span class="m"><i>t</i><sub>rt</sub> = 2<i>&ell;</i>/<i>v</i></span>, and that ringing <em>is</em> the bug. From that one coefficient the whole subject falls out: when a wire is &ldquo;electrically long&rdquo; enough to matter (round-trip delay <span class="m">&gtrsim;</span> rise time, so it is the <em>rise time</em>, not the clock, that decides), and how you kill the ringing by matching an end &mdash; series termination at the driver (<span class="m"><i>R</i><sub>s</sub> = <i>Z</i><sub>0</sub> &minus; <i>R</i><sub>driver</sub></span>) or parallel termination at the load. Then the piece turns to the half the textbooks skip: where it lives in fast digital and RF, how it bites and how to read the symptoms, what to spec, and a 100&nbsp;MHz clock on a 20&nbsp;cm trace terminated end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: a wire that works slow and fails fast</h2>
+    <p>Start with exactly the thing that just went wrong. You lay out a board, it works, you ship it &mdash; and then you speed up the clock, or swap in a pin-compatible but faster driver with sharper edges, and the exact same copper starts misbehaving. The receiver sees overshoot and undershoot; ringing rattles around the switching threshold; a rising edge climbs in a staircase instead of a clean step; logic double-clocks or latches the wrong value. You changed no geometry and added no component &mdash; only the edge speed went up.</p>
+    <p>The puzzle is sharp, and it is genuinely baffling the first time you meet it: why does an inert piece of wire, perfectly fine at 1&nbsp;MHz, suddenly corrupt the signal when the edges get fast? Nothing about the copper changed. The mental model that served you at low speed &mdash; treat the whole trace as a single node sitting at one voltage &mdash; has quietly stopped being true, and the question this piece answers is exactly <b>when it stops being true, why, and what to do about it</b>.</p>
+
+    <h2><span class="sn">2</span>The reframe: a wire has a finite signal speed and a characteristic impedance</h2>
+    <p>The hidden assumption that just broke is that a wire is instantaneous &mdash; that the entire trace is at one voltage at any instant. It isn&rsquo;t. A voltage step launched at one end travels down the wire at a <b>finite speed</b>, roughly half the speed of light in a PCB dielectric, about <span class="m">15&nbsp;cm/ns</span>. While that wave is in flight, the near end can be high while the far end is still sitting low &mdash; <em>different points of the same wire are at different voltages at the same time</em>. Once that is true, the wire is a <b>transmission line</b>, not a lumped node, and you have to think of the signal as something that travels and takes time to arrive.</p>
+    <p>A travelling wave has a fixed relationship between its voltage and its current, set entirely by the line&rsquo;s geometry &mdash; specifically its inductance and capacitance <em>per unit length</em>:</p>
+    <div class="eq"><span class="m"><i>Z</i><sub>0</sub> = &radic;(<i>L</i>/<i>C</i>)</span><span class="lbl">the characteristic impedance &mdash; <span class="m">&approx;&nbsp;50&nbsp;&Omega;</span> for typical single-ended PCB traces, 75/90/100&nbsp;&Omega; for others</span></div>
+    <p>Here is the key thing to hold on to: to the driver launching the edge, the line <em>looks like a resistor of value</em> <span class="m"><i>Z</i><sub>0</sub></span> for as long as the wave is still travelling. The driver pushes current <span class="m"><i>I</i> = <i>V</i>/<i>Z</i><sub>0</sub></span> into what feels like a pure resistance, even though it is only copper over a reference plane with nothing resistive about it. <span class="m"><i>Z</i><sub>0</sub></span> is the new character in the story &mdash; the &ldquo;ohms&rdquo; a wave sees while it is in motion.</p>
+
+    <h2><span class="sn">3</span>The core: the reflection coefficient</h2>
+    <p>Now send the wave down the line and let it reach the far end, where the load has some impedance <span class="m"><i>Z</i><sub>L</sub></span>. The incident wave insists on <span class="m"><i>V</i>/<i>I</i> = <i>Z</i><sub>0</sub></span>. The load insists on <span class="m"><i>V</i>/<i>I</i> = <i>Z</i><sub>L</sub></span>. Both cannot be true at the junction at once &mdash; so something new must be launched to reconcile them. A <b>reflected wave</b> travels back up the line, carrying exactly the voltage and current needed to satisfy both conditions at the boundary. Solve that boundary condition and the fraction that reflects is the <b>reflection coefficient</b>:</p>
+    <div class="eq"><span class="m">&Gamma; = <span class="frac"><span class="nu"><i>Z</i><sub>L</sub> &minus; <i>Z</i><sub>0</sub></span><span><i>Z</i><sub>L</sub> + <i>Z</i><sub>0</sub></span></span></span><span class="lbl">the fraction of the wave that bounces back at an impedance change</span></div>
+    <p>Read its three signature values and you understand reflections completely. At an <b>open far end</b> (<span class="m"><i>Z</i><sub>L</sub> = &infin;</span> &mdash; an unloaded CMOS input is close to this), <span class="m">&Gamma; = +1</span>: the wave reflects fully and <em>in phase</em>, so the voltage at the open end <b>doubles</b>. At a <b>shorted far end</b> (<span class="m"><i>Z</i><sub>L</sub> = 0</span>), <span class="m">&Gamma; = &minus;1</span>: full reflection, but inverted. And when the load is <b>matched</b> (<span class="m"><i>Z</i><sub>L</sub> = <i>Z</i><sub>0</sub></span>), <span class="m">&Gamma; = 0</span>: <em>no reflection at all</em>. The line swallows the wave as if the copper went on forever. That last case is the entire cure.</p>
+    <p>The story doesn&rsquo;t end at the far end. The reflected wave runs back up the line, hits the <em>source</em>, and re-reflects by the source&rsquo;s own coefficient <span class="m">&Gamma;<sub>s</sub> = (<i>Z</i><sub>s</sub> &minus; <i>Z</i><sub>0</sub>)/(<i>Z</i><sub>s</sub> + <i>Z</i><sub>0</sub>)</span>; that reflection runs forward again, and so on. Each bounce is smaller if there is any loss or partial match, and the receiver voltage climbs &mdash; or rings &mdash; its way to the final value in steps spaced by the <b>round-trip time</b>:</p>
+    <div class="eq"><span class="m"><i>t</i><sub>rt</sub> = <span class="frac"><span class="nu">2<i>&ell;</i></span><span><i>v</i></span></span></span><span class="lbl">one wave down the line and back, at the signal velocity <span class="m"><i>v</i> &approx; 15&nbsp;cm/ns</span></span></div>
+    <p>That staircase, or that ringing, is nothing more than the successive reflections superimposed. It is worth setting the whole payoff apart, because everything downstream is a consequence of it.</p>
+    <div class="key">
+      <span class="kl">The whole mechanism in one coefficient</span>
+      <div class="eq"><span class="m">&Gamma; = <span class="frac"><span class="nu"><i>Z</i><sub>L</sub> &minus; <i>Z</i><sub>0</sub></span><span><i>Z</i><sub>L</sub> + <i>Z</i><sub>0</sub></span></span></span></div>
+      <div class="eq"><span class="m"><i>t</i><sub>rt</sub> = 2<i>&ell;</i>/<i>v</i></span></div>
+      <p>A wave on a line carries a fixed ratio <span class="m"><i>V</i>/<i>I</i> = <i>Z</i><sub>0</sub></span>. Hit an impedance change and part of it bounces back, by <span class="m">&Gamma; = (<i>Z</i><sub>L</sub> &minus; <i>Z</i><sub>0</sub>)/(<i>Z</i><sub>L</sub> + <i>Z</i><sub>0</sub>)</span> &mdash; <b><span class="m">+1</span> at an open</b> (the voltage doubles), <b><span class="m">&minus;1</span> at a short</b>, and <b><span class="m">0</span> when matched</b> (<span class="m"><i>Z</i><sub>L</sub> = <i>Z</i><sub>0</sub></span>). The reflections re-reflect off the source and ring, stepped by the round-trip time <span class="m"><i>t</i><sub>rt</sub> = 2<i>&ell;</i>/<i>v</i></span>. Match the ends and the ringing vanishes.</p>
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">Match the end and the ringing vanishes</div>
+      <canvas class="sim" data-sim="bounce" data-c="#2F6EA8" aria-label="a step launched down a transmission line reflecting off the far-end load and the source, building ringing at the receiver, which disappears when the load is matched to the characteristic impedance"></canvas>
+      <div class="ctrls" data-sim="bounce"></div>
+    </div>
+    <p class="simnote">Drag the load impedance from open, through matched, to short, and watch the step launch down the line, hit the far end, and come bouncing back. At an open end (<span class="m">&Gamma; = +1</span>) the far-end voltage doubles and the receiver rings; at a short (<span class="m">&Gamma; = &minus;1</span>) it inverts; and right at the matched point, <span class="m"><i>Z</i><sub>L</sub> = <i>Z</i><sub>0</sub></span>, the reflection vanishes and a single clean edge is all that arrives. Watch the <span class="m">&Gamma;</span> readout cross zero exactly where the ringing goes quiet &mdash; that one value, driven to <span class="m">0</span>, is the whole of termination.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; when does a wire become a line?</h2>
+    <p>The reflection coefficient earns its keep at the extremes, and reading it there is the fastest way to see both where the trouble comes from and &mdash; the real question &mdash; when a wire even becomes a line in the first place.</p>
+    <div class="limit">
+      <b>Limit check — when is a wire a line?</b>
+      <b>Matched</b> (<span class="m"><i>Z</i><sub>L</sub> = <i>Z</i><sub>0</sub></span>): <span class="m">&Gamma; = 0</span>, no reflection, a clean single edge arrives. The design goal. <b>Open / high-impedance load</b> (the default CMOS case): <span class="m">&Gamma; = +1</span> &mdash; reflections are <em>maximal</em>, the voltage doubles and rings. An unterminated fast line is the worst case, and also the most common one. <b>Slow edges / short line</b> (rise time <span class="m">&#8811;</span> round-trip time): the wave fills the whole line before the edge even finishes, so every point tracks together and the line behaves as a <b>lumped</b> node &mdash; a wire is just a wire. This is why low-speed designs never need termination. <b>Fast edges / long line</b> (rise time <span class="m">&#8810;</span> round-trip time): the line is fully <b>distributed</b>, reflections arrive well after the edge, and they corrupt it. The practical threshold is simple: treat a line as <b>electrically long</b>, and terminate it, when the <em>round-trip delay exceeds the rise time</em> &mdash; equivalently, length <span class="m">&gtrsim; (<i>t</i><sub>rise</sub> &times; <i>v</i>)/6</span>. It is the <em>rise time</em>, not the clock frequency, that decides. <b>Zero loss, perfect mismatch</b>: the ring never fully dies, because a lossless line re-reflects forever &mdash; real lines have loss, so rings decay, but slowly enough to cause errors in the meantime.</p>
+    </div>
+    <div class="eq"><span class="m"><i>t</i><sub>rt</sub> &gtrsim; <i>t</i><sub>rise</sub></span><span class="lbl">electrically long when the round-trip delay exceeds the rise time&nbsp;&nbsp;(&hArr;&nbsp;<i>&ell;</i> &gtrsim; <i>t</i><sub>rise</sub>&middot;<i>v</i>/6)</span></div>
+
+    <div class="simwrap">
+      <div class="simcap">It&rsquo;s the rise time, not the clock</div>
+      <canvas class="sim" data-sim="riselength" data-c="#2F6EA8" aria-label="the same open-ended line shown as a clean lumped wire for slow edges and a ringing transmission line for fast edges, as rise time and length change"></canvas>
+      <div class="ctrls" data-sim="riselength"></div>
+    </div>
+    <p class="simnote">Here the whole &ldquo;works slow, fails fast&rdquo; mystery is on one canvas. Drag the <em>rise time</em> and the <em>length</em> and watch the verdict flip. Slow the edge or shorten the trace and the round-trip delay is a fraction of the rise time: the line charges as one node, the panel reads <b>lumped</b>, and the wire is just a wire. Speed the edge up or stretch the trace until the round-trip delay crosses the rise time and the same line snaps into <b>electrically long</b> &mdash; the step now rings, because reflections arrive after the edge has finished. Nothing about the mismatch changed; only the ratio of round-trip time to rise time did &mdash; and that single ratio is the whole test of whether you have a transmission-line problem at all.</p>
+
+    <p>Since reflections come from mismatch, you kill them by matching an end &mdash; and there are two families, each matching a different end. <b>Series (source) termination</b> puts a resistor <span class="m"><i>R</i><sub>s</sub></span> in series right at the driver, sized so the driver&rsquo;s own output resistance plus <span class="m"><i>R</i><sub>s</sub></span> equals <span class="m"><i>Z</i><sub>0</sub></span>:</p>
+    <div class="eq"><span class="m"><i>R</i><sub>s</sub> = <i>Z</i><sub>0</sub> &minus; <i>R</i><sub>driver</sub></span><span class="lbl">series termination &mdash; make <span class="m"><i>R</i><sub>driver</sub> + <i>R</i><sub>s</sub> = <i>Z</i><sub>0</sub></span> so the source is matched</span></div>
+    <p>The driver now launches a <em>half-amplitude</em> wave &mdash; a voltage divider between <span class="m"><i>R</i><sub>s</sub></span> and the line&rsquo;s <span class="m"><i>Z</i><sub>0</sub></span> &mdash; which travels to the open far end, where <span class="m">&Gamma; = +1</span> <b>doubles it back to full amplitude</b>, so the receiver sees a clean full-swing edge; the reflection that returns is then absorbed at the now-matched source (<span class="m">&Gamma;<sub>s</sub> = 0</span>). One resistor, no DC power &mdash; but only the far end gets a clean edge, since points along the line see the half-step first. It is ideal for point-to-point. <b>Parallel (end) termination</b> instead puts a resistor equal to <span class="m"><i>Z</i><sub>0</sub></span> at the <em>load</em> &mdash; to ground, to <span class="m"><i>V</i><sub>cc</sub></span>, as a Th&eacute;venin pair, or an AC/RC version to save power. The wave is absorbed the instant it arrives, <span class="m">&Gamma;<sub>L</sub> = 0</span>, there is no reflection at all, and every point on the line is clean &mdash; but it burns DC power and loads the driver.</p>
+    <p>Everything else in high-speed design flows from this one idea. <b>Impedance-controlled PCBs</b> are traces deliberately built to a target <span class="m"><i>Z</i><sub>0</sub></span> by controlling width and dielectric height; keeping <b>stubs and vias short</b> is about not leaving little discontinuities that reflect; differential pairs are matched to <span class="m">100&nbsp;&Omega;</span>; and the whole discipline of <b>signal integrity</b> &mdash; eye diagrams, overshoot and undershoot budgets, crosstalk &mdash; is, at bottom, managing where waves travel and making sure they do not bounce.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: fast digital/RF design, and how it bites</h2>
+    <p>Transmission-line effects govern every fast interface: DDR memory, high-speed serial (USB, PCIe, Ethernet, SATA, HDMI), clock distribution, long logic runs, backplanes and cables, and all of RF. You meet it the moment edges get fast or runs get long. The design sequence is fixed, not a flash of insight: estimate the signal&rsquo;s <b>rise time</b>; compare the line&rsquo;s <b>round-trip delay</b> to it to decide whether the line is electrically long; if it is, set the trace to a <b>controlled <span class="m"><i>Z</i><sub>0</sub></span></b> and choose a <b>termination</b> &mdash; series or parallel &mdash; to match an end; keep <b>stubs and vias</b> minimal; and verify with simulation and a scope or TDR. When it bites, the symptoms are a recognisable set, and almost every one is the reflection coefficient talking back:</p>
+    <dl class="speclist">
+      <dt>Ringing / overshoot / undershoot at the receiver</dt><dd>An <b>unterminated or mismatched</b> fast line (<span class="m">&Gamma; &ne; 0</span>); the classic. Add the right termination for <span class="m"><i>Z</i><sub>0</sub></span>.</dd>
+      <dt>Staircase edges or a &ldquo;plateau&rdquo; partway up</dt><dd>Reflections stepping the voltage over successive round-trips, or a series-terminated line seen <em>mid-line</em> (the half-step before the far-end doubling). Expected with source termination; a bug if unintended.</dd>
+      <dt>Double-clocking / false triggering</dt><dd>Ring crossing the logic threshold more than once near the edge &mdash; the overshoot/undershoot is landing in the switching window.</dd>
+      <dt>&ldquo;Works at low speed, fails at high speed&rdquo; / fails only with the fast part</dt><dd>The rise time crossed the electrically-long threshold and nothing else changed. The signature clue.</dd>
+      <dt>Reflections off a connector, via, or stub</dt><dd>An <b>impedance discontinuity</b> mid-path (an unmatched connector, a long via stub, a T-branch). Back-drill stubs, match connectors, avoid stubs.</dd>
+      <dt>EMI radiating from the ringing</dt><dd>The bouncing energy couples out; fixing the match usually fixes the emissions too.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How <span class="m"><i>Z</i><sub>0</sub></span> and rise time shape the system</h2>
+    <p>Two numbers set the whole high-speed personality of a board, and they are not independent. The <b>rise time</b> decides <em>whether you have a transmission-line problem at all</em> &mdash; it is the real design driver, not the clock rate. A 10&nbsp;MHz clock with 300&nbsp;ps edges is a transmission-line problem; a 100&nbsp;MHz clock with deliberately slow edges might not be. And the <b>characteristic impedance <span class="m"><i>Z</i><sub>0</sub></span></b> &mdash; set by trace width, dielectric thickness, and copper weight &mdash; is the quantity every termination, connector, and cable along the path must agree on; a controlled, consistent <span class="m"><i>Z</i><sub>0</sub></span> end to end is exactly what lets a wave travel without bouncing. Together those two drive the stack-up (the dielectric heights that give 50 and 100&nbsp;&Omega;), the routing rules (length matching, stub limits, reference-plane continuity), the termination strategy and its power budget, and the connector and cable selection. &ldquo;Fast digital design&rdquo; is, in large part, the discipline of giving signals a constant-<span class="m"><i>Z</i><sub>0</sub></span> path and matching its ends.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>It governs DDR and high-speed serial links, clock trees, RF and microwave, backplanes, cables and connectors, and any long or fast logic net; antennas and RF front-ends live and die by it. When you design or debug one, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Characteristic impedance <span class="m"><i>Z</i><sub>0</sub></span></dt><dd>The target (<b>50&nbsp;&Omega;</b> single-ended, <b>100&nbsp;&Omega;</b> differential, 75&nbsp;&Omega; video/RF), set by trace geometry and dielectric. Everything along the path matches to it.</dd>
+      <dt>Signal rise/fall time</dt><dd>Sets whether the line is electrically long and how tight the matching must be. Spec and control it &mdash; and don&rsquo;t use edges faster than you actually need.</dd>
+      <dt>Termination type &amp; value</dt><dd>Series (<span class="m"><i>R</i><sub>s</sub> = <i>Z</i><sub>0</sub> &minus; <i>R</i><sub>driver</sub></span>, point-to-point, low power) vs parallel (<span class="m">= <i>Z</i><sub>0</sub></span> at the load, multi-drop, higher power) vs Th&eacute;venin/AC. The core signal-integrity choice.</dd>
+      <dt>Line length vs round-trip delay</dt><dd>Keep it short enough to stay lumped, or terminate; length-match differential pairs and parallel buses.</dd>
+      <dt>Discontinuities (vias, stubs, connectors)</dt><dd>Minimise and back-drill; each one is a reflector. Spec connector and via impedance.</dd>
+      <dt>Loss (dielectric + skin) &amp; crosstalk</dt><dd>At very high rates, attenuation and coupling matter as much as reflections. Budget them (insertion loss, eye mask).</dd>
+      <dt>Return path / reference-plane continuity</dt><dd>A signal&rsquo;s current returns right under the trace, so a gap in the plane is a huge discontinuity. Keep the reference solid.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the textbook won&rsquo;t tell you</span>
+      <ul>
+        <li><b>It&rsquo;s the rise time, not the clock frequency.</b> A &ldquo;slow&rdquo; bus with a modern fast-edged driver can ring hard; a fast clock with a deliberately slowed edge may be fine. Always reason from the <em>edge</em> &mdash; and slow edges down when you can afford to, the cheapest fix for reflections and EMI both.</li>
+        <li><b>An open far end is the worst, and it&rsquo;s the default.</b> Most logic inputs are high-impedance (<span class="m">&Gamma; = +1</span>), so an untreated fast net <em>doubles</em> and rings. Assume you need termination on anything fast and long until you prove otherwise.</li>
+        <li><b>Series termination gives a clean edge only at the far end.</b> Mid-line taps see the half-amplitude step before the far-end doubling &mdash; fine for a single receiver at the end, wrong for a multi-drop bus (use parallel/Th&eacute;venin there).</li>
+        <li><b>The return current flows right under the trace.</b> Signal integrity is a <em>loop</em>; a slot or split in the reference plane under a fast trace is a massive discontinuity and an EMI antenna. Never route a fast signal over a plane gap.</li>
+        <li><b>Stubs and via stubs are stealth reflectors.</b> A short T-branch or an unused via barrel resonates and corrupts fast signals; keep stubs <span class="m">&#8810;</span> the rise-time length and back-drill via stubs on high-rate links.</li>
+        <li><b>A TDR is the truth machine.</b> A time-domain reflectometer literally shows you <em>where</em> the impedance changes along the line (and whether it&rsquo;s open, short, or a bump) &mdash; learn to read one before guessing.</li>
+        <li><b>Match where the mismatch is.</b> A clean board with one bad connector still rings; chase the <em>discontinuity</em>, don&rsquo;t just pile on termination.</li>
+        <li><b>50&nbsp;&Omega; isn&rsquo;t sacred &mdash; consistency is.</b> Any <span class="m"><i>Z</i><sub>0</sub></span> works if the whole path and its terminations agree; reflections come from <em>changes</em> in <span class="m"><i>Z</i><sub>0</sub></span>, not from its value.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">a 100 MHz clock on a 20 cm trace</span></div>
+
+    <h2><span class="sn">9</span>Build it: a 100&nbsp;MHz clock on a 20&nbsp;cm trace</h2>
+    <p>Enough principle &mdash; here is a real decision walked end to end, so you can copy the shape and reuse it. The goal: route a 100&nbsp;MHz clock to a single FPGA input across a 20&nbsp;cm PCB trace, and decide whether &mdash; and how &mdash; to terminate it. The driver has a <span class="m">&approx;&nbsp;0.5&nbsp;ns</span> rise time; the receiver is a high-impedance CMOS input, so the far end is effectively open (<span class="m">&Gamma; &approx; +1</span>). Walk the numbers:</p>
+    <div class="worked">
+      <span class="wl">Worked example — a 100 MHz clock to an FPGA over 20 cm</span>
+      <dl class="speclist">
+        <dt>Signal velocity &amp; delay</dt><dd>PCB velocity <span class="m">&approx; 15&nbsp;cm/ns</span>, so one-way delay <span class="m">= 20/15 &approx; <b>1.33&nbsp;ns</b></span>; round-trip <span class="m"><i>t</i><sub>rt</sub> &approx; <b>2.67&nbsp;ns</b></span>.</dd>
+        <dt>Electrically long?</dt><dd>Compare <span class="m"><i>t</i><sub>rt</sub></span> (2.67&nbsp;ns) to the rise time (0.5&nbsp;ns): round-trip <span class="m">&#8811;</span> rise time, so the line is firmly <b>electrically long</b> &rarr; reflections will corrupt the edge. (Threshold check: length 20&nbsp;cm <span class="m">&#8811;</span> <span class="m">(0.5&nbsp;ns &times; 15&nbsp;cm/ns)/6 &approx; 1.25&nbsp;cm</span>.) You <b>must</b> terminate. Note the clock is &ldquo;only&rdquo; 100&nbsp;MHz &mdash; it is the <em>rise time</em> that damns it, not the frequency.</dd>
+        <dt>Unterminated behaviour</dt><dd><span class="m">&Gamma;<sub>load</sub> = +1</span>, so the open end doubles and rings; with a typical low-impedance driver the ring decays over several 2.67&nbsp;ns round-trips &mdash; right through the receiver&rsquo;s threshold. Double-clocking risk.</dd>
+        <dt>Pick the termination</dt><dd>One receiver at the far end, point-to-point &rarr; <b>series (source) termination</b>. If the driver output impedance is <span class="m">&approx; 20&nbsp;&Omega;</span> and the trace is <span class="m"><i>Z</i><sub>0</sub> = 50&nbsp;&Omega;</span>, add <span class="m"><i>R</i><sub>s</sub> = <i>Z</i><sub>0</sub> &minus; <i>R</i><sub>driver</sub> = 50 &minus; 20 = <b>30&nbsp;&Omega;</b></span> in series <em>at the driver</em>. The launched half-step (with <span class="m"><i>R</i><sub>driver</sub> + <i>R</i><sub>s</sub> = 50&nbsp;&Omega;</span> into a 50&nbsp;&Omega; line) travels to the open end, doubles to full swing, and the return is absorbed at the matched source. Clean full-amplitude edge at the FPGA, essentially no DC power.</dd>
+        <dt>Alternative (multi-drop)</dt><dd>If several inputs tapped the line, series wouldn&rsquo;t work (mid-line points see the half-step); use <b>parallel 50&nbsp;&Omega;</b> at the far end &mdash; to a Th&eacute;venin <span class="m"><i>V</i><sub>cc</sub></span>/GND pair to cut DC power &mdash; accepting the DC current.</dd>
+        <dt>Control the <span class="m"><i>Z</i><sub>0</sub></span></dt><dd>Tell the fab the trace must be <b>50&nbsp;&Omega;</b> (set width and dielectric height in the stack-up), keep the reference plane solid under it, and keep the series resistor and any via stubs tiny.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a length, a rise time, a driver impedance and a target <span class="m"><i>Z</i><sub>0</sub></span> hand you the round-trip delay, the electrically-long verdict, the termination type, and the one resistor value that fixes it &mdash; and, loudly, the fact that a 100&nbsp;MHz clock is damned by its 0.5&nbsp;ns edge, not its frequency. The plug-in set is small, and the whole problem lives in a handful of lines you already own:</p>
+    <div class="eq"><span class="m"><i>Z</i><sub>0</sub> = &radic;(<i>L</i>/<i>C</i>)</span><span class="lbl">characteristic impedance (per unit length); target 50&nbsp;&Omega; SE, 100&nbsp;&Omega; diff</span></div>
+    <div class="eq"><span class="m">&Gamma; = <span class="frac"><span class="nu"><i>Z</i><sub>L</sub> &minus; <i>Z</i><sub>0</sub></span><span><i>Z</i><sub>L</sub> + <i>Z</i><sub>0</sub></span></span></span><span class="lbl">reflection coefficient &rarr; +1 open, &minus;1 short, 0 matched</span></div>
+    <div class="eq"><span class="m"><i>t</i><sub>rt</sub> = 2<i>&ell;</i>/<i>v</i></span><span class="lbl">round-trip time, with <span class="m"><i>v</i> &approx; 15&nbsp;cm/ns</span> in FR-4</span></div>
+    <div class="eq"><span class="m"><i>t</i><sub>rt</sub> &gtrsim; <i>t</i><sub>rise</sub></span><span class="lbl">electrically long&nbsp;&nbsp;(&hArr;&nbsp;<i>&ell;</i> &gtrsim; <i>t</i><sub>rise</sub>&middot;<i>v</i>/6)</span></div>
+    <div class="eq"><span class="m"><i>R</i><sub>s</sub> = <i>Z</i><sub>0</sub> &minus; <i>R</i><sub>driver</sub></span><span class="lbl">series termination &mdash; clean edge at the far end</span></div>
+    <div class="eq"><span class="m"><i>R</i><sub>term</sub> = <i>Z</i><sub>0</sub></span><span class="lbl">parallel termination at the load &mdash; clean everywhere, burns DC power</span></div>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment the receiver double-clocks or the scope shows ring you did not budget for:</p>
+    <ol class="recipe">
+      <li><b>Find the rise time</b> (datasheet or scope) &mdash; the real driver, not the clock period. This decides everything.</li>
+      <li><b>Compute the round-trip delay</b> <span class="m"><i>t</i><sub>rt</sub> = 2<i>&ell;</i>/<i>v</i></span> and compare it to the rise time. If <span class="m"><i>t</i><sub>rt</sub> &gtrsim; <i>t</i><sub>rise</sub></span> it is a transmission line &mdash; terminate; if not, it is lumped &mdash; relax.</li>
+      <li><b>Set a controlled <span class="m"><i>Z</i><sub>0</sub></span></b> &mdash; specify the trace geometry and stack-up to the fab (50&nbsp;&Omega; SE / 100&nbsp;&Omega; diff), and keep the reference plane continuous.</li>
+      <li><b>Choose the termination</b> &mdash; series at the source for point-to-point (<span class="m"><i>R</i><sub>s</sub> = <i>Z</i><sub>0</sub> &minus; <i>R</i><sub>driver</sub></span>), parallel/Th&eacute;venin at the load for multi-drop; place it at the right end.</li>
+      <li><b>Minimise discontinuities</b> &mdash; short stubs, back-drill high-rate via stubs, match connectors, length-match pairs and buses.</li>
+      <li><b>Verify</b> &mdash; simulate (IBIS/SPICE), then measure on hardware: scope the receiver for overshoot and ring, and use a <b>TDR</b> to find any impedance bumps along the path.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Series vs parallel termination</dt><dd>Series for a single far-end receiver, point-to-point, low power (clean only at the end); parallel (incl. Th&eacute;venin/AC) for multi-drop or when every tap must be clean, at the cost of DC power and driver loading.</dd>
+      <dt>Terminate vs slow the edge</dt><dd>If you don&rsquo;t need fast edges, <em>slow them</em> (series R at the driver, slew-rate control): it can push the line back to &ldquo;lumped&rdquo; and kills EMI too &mdash; often the cheapest fix. Terminate when you genuinely need the speed.</dd>
+      <dt>Single-ended vs differential</dt><dd>Differential (matched 100&nbsp;&Omega; pairs) rejects common-mode noise and tolerates reference imperfections, and is essential at multi-Gbps; single-ended is simpler and fine when slower and shorter.</dd>
+      <dt>Controlled-impedance board vs not</dt><dd>Pay for impedance control on any fast or long interface; skip it only for genuinely slow, short nets. Reflections come from <em>changes</em> in <span class="m"><i>Z</i><sub>0</sub></span>, so the consistency end to end is what you&rsquo;re buying.</dd>
+    </dl>
+
+    <h2><span class="sn">10</span>The honest last mile</h2>
+    <p>A deep dive gets you the mechanism, the electrically-long test, the right <span class="m"><i>Z</i><sub>0</sub></span> target, and the correct termination &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% is the fab, the field solver, and the bench.</p>
+    <div class="lastmile">
+      <b>The last mile — what you still do on the bench</b>
+      This page gets you the mechanism cold, the electrically-long test, the right <span class="m"><i>Z</i><sub>0</sub></span> target, and the correct termination &mdash; a defensible first cut, about 90&nbsp;% of the job. The last 10&nbsp;% is pinning down the real numbers on a real board. <b>Get the <span class="m"><i>Z</i><sub>0</sub></span> right with a field solver and the fab&rsquo;s real stack-up</b> &mdash; hand formulas are approximate, and the actual dielectric constant, trace etch, and copper roughness all shift it, so specify controlled impedance and confirm it with the board house. <b>Simulate with real device models</b> &mdash; IBIS/IBIS-AMI or SPICE with the actual driver and receiver and the routed topology (stubs, vias, connectors), not an ideal line &mdash; and check the eye and the overshoot budget. <b>Measure on hardware</b> &mdash; scope the receiver for ring and threshold crossings, and run a <b>TDR</b> to localise any discontinuity: a bad connector, a plane gap, a via stub; the board will teach you what the model missed. And <b>at multi-Gbps, budget loss and crosstalk too</b> &mdash; dielectric and skin attenuation and coupling can dominate reflections, so lean on eye masks, equalisation, and length and spacing rules. Tools to stand on: a <b>2D field solver / impedance calculator</b> (or the fab&rsquo;s), <b>IBIS/SPICE</b> signal-integrity simulation (a vendor SI tool, or LTspice for first cuts), a fast <b>oscilloscope</b>, and a <b>TDR</b>. The reflection coefficient in Part&nbsp;I never changes; the last mile is pinning down the real <span class="m"><i>Z</i><sub>0</sub></span> and finding the real discontinuity on a real board.
+    </div>
+    <p>Reason these out from the reflection coefficient and the electrically-long test, rather than recalling them &mdash; if &ldquo;works slow, fails fast&rdquo; still feels like a trick, these are where it stops being one:</p>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">A 25&nbsp;MHz clock net that worked for years starts failing when you swap to a pin-compatible but faster buffer &mdash; same board, same frequency. In transmission-line terms, what changed, and why does the frequency being unchanged not save you?</p><p class="a">The faster buffer has a shorter <em>rise time</em>, and it is the rise time &mdash; not the clock frequency &mdash; that decides whether the line is electrically long (<span class="m"><i>t</i><sub>rt</sub> &gtrsim; <i>t</i><sub>rise</sub></span>). The round-trip delay <span class="m">2<i>&ell;</i>/<i>v</i></span> didn&rsquo;t change, but the rise time shrank <em>below</em> it, so reflections that used to arrive &ldquo;within&rdquo; the slow edge now arrive after it and ring through the switching threshold. Same board, same frequency, same mismatch (<span class="m">&Gamma; = +1</span> at the open input) &mdash; the only thing that moved was the edge, and the edge is the whole criterion. You reason from the rise time, never the clock.</p></div>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">You series-terminate a point-to-point line and it looks perfect at the destination, but a logic analyser tapped halfway along the trace shows a weird half-height plateau for one round-trip. Is the board broken?</p><p class="a">No &mdash; that is exactly how series termination works. The driver launches a half-amplitude step (the voltage divider of <span class="m"><i>R</i><sub>driver</sub> + <i>R</i><sub>s</sub></span> against <span class="m"><i>Z</i><sub>0</sub></span>), and mid-line points see that half-step until the wave reaches the open far end, where <span class="m">&Gamma; = +1</span> doubles it to full swing and that full level propagates back. Only the far-end receiver is guaranteed clean &mdash; which is precisely why series termination is for a single end-of-line receiver, not a mid-line tap. The plateau is the mechanism working, not a fault.</p></div>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">Two traces carry identical fast signals; one rings badly and one is clean, and both are &ldquo;unterminated.&rdquo; The clean one happens to be very short. Explain, with the electrically-long criterion, why length alone made the difference, and what the short one is effectively doing.</p><p class="a">For the short trace the round-trip delay <span class="m"><i>t</i><sub>rt</sub> = 2<i>&ell;</i>/<i>v</i></span> is <span class="m">&#8810;</span> the rise time, so the reflected wave returns <em>before the edge even finishes</em> &mdash; the whole line charges together and behaves as a lumped node, so there is effectively no distinct reflection to see. The long trace&rsquo;s round-trip exceeds the rise time, so its reflections arrive after the edge and ring. The mismatch is identical (<span class="m">&Gamma; = +1</span> at both open ends); only the short line is &ldquo;electrically short&rdquo; enough to hide it. Shortening a line is, in effect, a way of forcing it back to lumped.</p></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-hohmann.html"><b>&larr; Prev:</b> The Hohmann Transfer</a>
+      <span class="nextpill"><b>Coming next:</b> Eddy-Current Braking</span>
+    </div>
+    <p class="footnote"><b>Transmission-Line Reflections — When a Wire Stops Being a Wire.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (a wire that works slow and fails fast &mdash; the same copper rings and double-clocks when only the edge gets faster) and the one reframe (a wire has a finite signal speed, so it is a transmission line carrying a fixed <span class="m"><i>V</i>/<i>I</i> = <i>Z</i><sub>0</sub></span>, not a lumped node) from which the characteristic impedance <span class="m"><i>Z</i><sub>0</sub> = &radic;(<i>L</i>/<i>C</i>)</span>, the reflection coefficient <span class="m">&Gamma; = (<i>Z</i><sub>L</sub> &minus; <i>Z</i><sub>0</sub>)/(<i>Z</i><sub>L</sub> + <i>Z</i><sub>0</sub>)</span> (<span class="m">+1</span> open, <span class="m">&minus;1</span> short, <span class="m">0</span> matched), the round-trip ringing stepped by <span class="m"><i>t</i><sub>rt</sub> = 2<i>&ell;</i>/<i>v</i></span>, the electrically-long test <span class="m"><i>t</i><sub>rt</sub> &gtrsim; <i>t</i><sub>rise</sub></span>, and the two cures &mdash; series <span class="m"><i>R</i><sub>s</sub> = <i>Z</i><sub>0</sub> &minus; <i>R</i><sub>driver</sub></span> and parallel <span class="m"><i>R</i><sub>term</sub> = <i>Z</i><sub>0</sub></span> &mdash; all fall out, then the practitioner&rsquo;s half: where it lives in fast digital and RF, how it bites, what to spec, the field notes, and a 100&nbsp;MHz clock on a 20&nbsp;cm trace fixed with a 30&nbsp;&Omega; series resistor. With live simulations of a step bouncing off an open, short, and matched load, and of the same line flipping between lumped and electrically long as the rise time and length change. The honest truth of it: this gets you the mechanism, the electrically-long test, the <span class="m"><i>Z</i><sub>0</sub></span> target, and the termination &mdash; the real stack-up <span class="m"><i>Z</i><sub>0</sub></span>, device-model simulation, and TDR hunting are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The Op-Amp</b> and <b>Microcontrollers / Embedded</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+
+  /* bounce — reflections build the ringing (the money sim). A 1 V step is launched into a fixed 20 cm
+     line (Z₀ = 50 Ω, v = 15 cm/ns → one-way T1 ≈ 1.33 ns, round-trip ≈ 2.67 ns). TOP: the line drawn
+     as a bar from a Source box (Z_s) to a Load box (Z_L); a wavefront packet bounces left↔right, its
+     amplitude shrinking by Γ_L·Γ_S each round trip, coloured by sign (accent + / bad −). BOTTOM: the
+     far-end (load) voltage vs time — the bounce-diagram staircase converging to V_final, dashed at
+     V_final and at the ideal full swing (1 V). Γ_L = (Z_L−Z₀)/(Z_L+Z₀), Γ_S = (Z_s−Z₀)/(Z_s+Z₀),
+     V0 = Z₀/(Z_s+Z₀), each arriving incident wave w adds w·(1+Γ_L); returns, re-reflects ×Γ_S, back
+     ×Γ_L … Z_L = 50 → Γ_L ≈ 0 → one clean step; Z_L → 400 (open) → overshoot + ring; Z_L → 0 (short)
+     → Γ_L = −1, far end stays low. Controls read ONLY via s.p.*; unicode literals only. */
+  SIMS.bounce={
+    controls:[
+      {k:'zl',label:'Load impedance Z_L',min:0,max:400,step:5,val:400,unit:' Ω'},
+      {k:'zs',label:'Source impedance Z_s',min:0,max:150,step:5,val:20,unit:' Ω'}
+    ],
+    init:function(s,w,h){ s.phase=0; },
+    step:function(s,dt){ /* animation driven off s.t */ },
+    draw:function(ctx,w,h,s){
+      var Z0=50, vprop=15, LEN=20;                 // Ω, cm/ns, cm (fixed line)
+      var zl=clamp(s.p.zl,0,400), zs=clamp(s.p.zs,0,150);
+      var gL=(zl-Z0)/(zl+Z0);                      // zl+Z0 >= 50 > 0
+      var gS=(zs-Z0)/(zs+Z0);                      // zs+Z0 >= 50 > 0
+      var V0=Z0/(zs+Z0);                           // launched step amplitude
+      var dsum=zs+zl, Vfinal=(dsum>1e-9)?(zl/dsum):0;
+      var T1=LEN/vprop, trt=2*T1;                  // one-way / round-trip (ns)
+      var matched=Math.abs(gL)<0.05;
+      var Vfull=1.0;                               // ideal full swing
+
+      // ---- build the far-end staircase ----
+      var Kshow=9;
+      var times=[], levels=[], g=gL*gS, prod=1, lvl=0, k;
+      for(k=0;k<=Kshow;k++){
+        var stp=V0*prod*(1+gL);
+        lvl+=stp;
+        times.push((2*k+1)*T1);
+        levels.push(lvl);
+        prod*=g;
+      }
+      var tWin=(2*Kshow+3)*T1;
+      function levelAt(tau){ var L=0,j; for(j=0;j<=Kshow;j++){ if(times[j]<=tau)L=levels[j]; else break; } return L; }
+
+      // ---- geometry ----
+      var topT=32, topB=clamp(h*0.40,80,110), yMid=(topT+topB)/2;
+      var boxW=clamp(w*0.12,46,72), boxH=30;
+      var srcX=10, ldX=w-10-boxW, byT=clamp(yMid-boxH/2,topT,topB-boxH);
+      var lineL=clamp(srcX+boxW+4,0,w), lineR=clamp(ldX-4,0,w);
+      if(lineR<lineL+10)lineR=lineL+10;
+
+      // title + verdict
+      txt(ctx,'reflections build the ring',8,13,PAL.muted,10,'left');
+      txt(ctx,matched?'MATCHED — clean step':'reflections ringing',w-8,13,matched?PAL.good:PAL.bad,9.5,'right');
+
+      // readout strip
+      var ro='Z₀ 50 Ω   Γ_L '+gL.toFixed(2)+'   Γ_S '+gS.toFixed(2)+'   t_rt '+trt.toFixed(2)+' ns   V_final '+Vfinal.toFixed(2)+' V';
+      txt(ctx,ro,w/2,25,PAL.ink,8.5,'center');
+
+      // ---- TOP: the line ----
+      // characteristic-impedance bar
+      ctx.fillStyle=PAL.surf; rr(ctx,lineL,clamp(yMid-7,topT,topB),Math.max(10,lineR-lineL),14,5); ctx.fill();
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=1; rr(ctx,lineL,clamp(yMid-7,topT,topB),Math.max(10,lineR-lineL),14,5); ctx.stroke();
+      txt(ctx,'Z₀ = 50 Ω',(lineL+lineR)/2,clamp(yMid-11,topT+6,topB),PAL.faint,8,'center');
+
+      // source + load boxes
+      box(ctx,srcX,byT,boxW,boxH,'',PAL.muted,PAL.surf);
+      box(ctx,ldX,byT,boxW,boxH,'',matched?PAL.good:PAL.cool,PAL.surf);
+      txt(ctx,'SOURCE',srcX+boxW/2,byT+13,PAL.muted,8,'center');
+      txt(ctx,'Z_s '+Math.round(zs)+'Ω',srcX+boxW/2,byT+25,PAL.ink,8,'center');
+      txt(ctx,'LOAD',ldX+boxW/2,byT+13,matched?PAL.good:PAL.cool,8,'center');
+      txt(ctx,'Z_L '+Math.round(zl)+'Ω',ldX+boxW/2,byT+25,PAL.ink,8,'center');
+
+      // bouncing wavefront packet
+      var legDur=1.1, nLegs=2*Kshow;
+      var lgf=(s.t||0)/legDur, lg=Math.floor(lgf);
+      var leg=((lg%nLegs)+nLegs)%nLegs, fr=clamp(lgf-lg,0,1);
+      var amp=V0, i;
+      for(i=1;i<=leg;i++){ amp*=(i%2===1)?gL:gS; }
+      var rightward=(leg%2===0), p=rightward?fr:(1-fr);
+      var px=clamp(lerp(lineL+8,lineR-8,p),lineL+2,lineR-2);
+      var ampN=clamp(amp/(V0||1),-1.3,1.3);
+      var bumpH=clamp(Math.abs(ampN)*17,1.5,20);
+      var sgn=(amp>=0)?1:-1;
+      var pcol=(amp>=0)?s.accent:PAL.bad;
+      var apexY=clamp(yMid-sgn*bumpH,topT+2,topB-2);
+      // packet triangle
+      ctx.fillStyle=pcol; ctx.globalAlpha=0.92;
+      ctx.beginPath();
+      ctx.moveTo(clamp(px-6,0,w),clamp(yMid,topT,topB));
+      ctx.lineTo(clamp(px,0,w),apexY);
+      ctx.lineTo(clamp(px+6,0,w),clamp(yMid,topT,topB));
+      ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+      // travel-direction arrow
+      var dir=rightward?1:-1;
+      arrow(ctx,clamp(px-dir*12,lineL,lineR),yMid,clamp(px+dir*2,lineL,lineR),yMid,pcol,1.5);
+      dot(ctx,px,apexY,2.4,pcol);
+
+      // ---- BOTTOM: far-end voltage vs time ----
+      var plL=46, plR=clamp(w-14,plL+40,w), plT=clamp(h*0.47,108,150), plB=h-22;
+      if(plB<plT+30)plB=plT+30;
+      function X(t){ return clamp(plL+clamp(t,0,tWin)/tWin*(plR-plL),plL,plR); }
+      var vMin=0, vMax=2.0;
+      function Y(v){ return clamp(plB-(clamp(v,vMin,vMax)-vMin)/(vMax-vMin)*(plB-plT),plT,plB); }
+
+      txt(ctx,'far-end (load) voltage',plL,clamp(plT-4,14,h),PAL.muted,8.5,'left');
+      txt(ctx,'V',plL-6,clamp(plT+4,14,h),PAL.faint,7.5,'right');
+      txt(ctx,'time (ns) →',plR,clamp(plB+13,14,h-2),PAL.faint,7.5,'right');
+
+      // axes
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(plL,plT); ctx.lineTo(plL,plB); ctx.lineTo(plR,plB); ctx.stroke();
+      // y ticks (0,1,2 V)
+      var vt; for(vt=0;vt<=2;vt++){ var gy=Y(vt); ctx.globalAlpha=0.5; ctx.strokeStyle=PAL.line;
+        ctx.beginPath(); ctx.moveTo(plL,gy); ctx.lineTo(plR,gy); ctx.stroke(); ctx.globalAlpha=1;
+        txt(ctx,vt.toFixed(0),plL-4,gy+3,PAL.faint,7,'right'); }
+      // x tick marks per round trip
+      var rtn; for(rtn=1;rtn*trt<=tWin;rtn++){ var tx=X(rtn*trt);
+        ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.6; ctx.beginPath(); ctx.moveTo(tx,plB); ctx.lineTo(tx,plB+3); ctx.stroke(); ctx.globalAlpha=1; }
+
+      // dashed ideal full-swing (1 V) and V_final
+      ctx.setLineDash([4,3]); ctx.lineWidth=1;
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.7;
+      ctx.beginPath(); ctx.moveTo(plL,Y(Vfull)); ctx.lineTo(plR,Y(Vfull)); ctx.stroke();
+      txt(ctx,'full swing',clamp(plR-2,plL,w),clamp(Y(Vfull)-3,plT+6,plB),PAL.faint,7,'right');
+      ctx.strokeStyle=matched?PAL.good:PAL.muted; ctx.globalAlpha=0.85;
+      ctx.beginPath(); ctx.moveTo(plL,Y(Vfinal)); ctx.lineTo(plR,Y(Vfinal)); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'V_final',clamp(plR-2,plL,w),clamp(Y(Vfinal)+9,plT+6,plB),matched?PAL.good:PAL.muted,7,'right');
+
+      // the staircase (hero waveform)
+      ctx.strokeStyle=matched?PAL.good:s.accent; ctx.lineWidth=2.3;
+      ctx.beginPath(); ctx.moveTo(X(0),Y(0));
+      var cur=0, kk;
+      for(kk=0;kk<=Kshow;kk++){
+        if(times[kk]>tWin)break;
+        ctx.lineTo(X(times[kk]),Y(cur));
+        ctx.lineTo(X(times[kk]),Y(levels[kk]));
+        cur=levels[kk];
+      }
+      ctx.lineTo(X(tWin),Y(cur));
+      ctx.stroke();
+
+      // sweeping "now" marker, synced to the packet
+      var nowT=(((s.t||0)/legDur)*T1)%tWin; if(!(nowT>=0))nowT=0;
+      var nx=X(nowT), nlv=levelAt(nowT);
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.35; ctx.setLineDash([2,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(nx,plT); ctx.lineTo(nx,plB); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      dot(ctx,nx,Y(nlv),3,matched?PAL.good:s.accent);
+
+      // caption
+      txt(ctx,'match the end (Z_L = Z₀) → Γ = 0 → the ringing vanishes',w/2,h-6,PAL.faint,8,'center');
+    }
+  };
+
+  /* riselength — when a wire becomes a transmission line. The SAME open-ended line (Γ_L = +1, low
+     driver Z_s = 10 Ω so it rings) is a clean wire for slow edges and a ringing line for fast ones.
+     Round-trip t_rt = 2·length/v (v = 15 cm/ns). Compare to the edge rise time: LUMPED when
+     t_rt ≪ t_rise (a single smooth edge, PAL.good), ELECTRICALLY LONG when t_rt ≳ t_rise (edge + a
+     decaying ring of period ≈ t_rt, overshoot past V_final, PAL.bad). Ring amplitude A = (1 − t_rise
+     /t_rt)·0.85 grows with the ratio and vanishes for a slow edge (the finite-rise convolution). A
+     small gauge compares t_rt vs t_rise. At length 20 cm, dragging t_rise 5 ns → 0.3 ns flips the
+     verdict; so does growing length at fixed t_rise. Controls read ONLY via s.p.*; unicode only. */
+  SIMS.riselength={
+    controls:[
+      {k:'trise',label:'Edge rise time',min:0.1,max:10,step:0.1,val:0.5,unit:' ns'},
+      {k:'length',label:'Line length',min:1,max:60,step:1,val:20,unit:' cm'}
+    ],
+    init:function(s,w,h){ s.phase=0; },
+    step:function(s,dt){ /* static plot for current controls */ },
+    draw:function(ctx,w,h,s){
+      var Z0=50, vprop=15, Zs=10;                  // low driver → it rings when long
+      var trise=clamp(s.p.trise,0.1,10);
+      var len=clamp(s.p.length,1,60);
+      var T1=len/vprop, trt=2*T1;                  // one-way / round-trip (ns)
+      var ratio=trt/trise;                         // > 0
+      var Vf=1.0;
+      var isLong=(ratio>=1);
+      var A=clamp(1-trise/trt,0,1)*0.85;           // overshoot/ring amplitude (0 when lumped)
+
+      function sstep(u){ u=clamp(u,0,1); return u*u*(3-2*u); }
+      function vrx(tau){
+        if(tau<=T1) return 0;
+        var rise=sstep(clamp((tau-T1)/trise,0,1));
+        var u=(tau-T1)/trt;
+        var ring=A*Math.exp(-u/2.5)*Math.sin(2*Math.PI*u);
+        var v=Vf*rise + Vf*ring*rise;
+        return clamp(v,-0.5,2.5);
+      }
+
+      var tWin=T1+clamp(Math.max(3*trise,6*trt),2,400);
+
+      // title + verdict
+      txt(ctx,'when a wire becomes a line',8,13,PAL.muted,10,'left');
+      txt(ctx,isLong?'ELECTRICALLY LONG — terminate':'LUMPED — a wire is a wire',
+          w-8,13,isLong?PAL.bad:PAL.good,9.5,'right');
+
+      // readouts
+      var ro='t_rt '+trt.toFixed(2)+' ns   t_rise '+trise.toFixed(2)+' ns   ratio '+ratio.toFixed(2)+'×';
+      txt(ctx,ro,w/2,25,PAL.ink,8.5,'center');
+
+      // ---- gauge: t_rt vs t_rise on one scale ----
+      var gL2=clamp(w*0.5-120,30,w*0.5), gR2=clamp(w*0.5+120,gL2+60,w-20), gy=42;
+      var gmax=Math.max(trt,trise)*1.15; if(!(gmax>0))gmax=1;
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(gL2,gy); ctx.lineTo(gR2,gy); ctx.stroke();
+      function gx(t){ return clamp(gL2+clamp(t,0,gmax)/gmax*(gR2-gL2),gL2,gR2); }
+      // t_rise marker
+      var xr=gx(trise);
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(xr,gy-6); ctx.lineTo(xr,gy+6); ctx.stroke();
+      txt(ctx,'t_rise',clamp(xr,gL2,gR2),clamp(gy-9,16,h),PAL.muted,7.5,'center');
+      // t_rt marker (good/bad by verdict)
+      var xt=gx(trt);
+      ctx.strokeStyle=isLong?PAL.bad:PAL.good; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(xt,gy-6); ctx.lineTo(xt,gy+6); ctx.stroke();
+      txt(ctx,'t_rt',clamp(xt,gL2,gR2),clamp(gy+15,16,h-2),isLong?PAL.bad:PAL.good,7.5,'center');
+
+      // threshold note
+      txt(ctx,'electrically long when t_rt ≳ t_rise  (ℓ ≳ t_rise·v / 6)',w/2,62,PAL.faint,7.5,'center');
+
+      // ---- received voltage vs time ----
+      var plL=46, plR=clamp(w-14,plL+40,w), plT=clamp(h*0.33,72,96), plB=h-22;
+      if(plB<plT+30)plB=plT+30;
+      function X(t){ return clamp(plL+clamp(t,0,tWin)/tWin*(plR-plL),plL,plR); }
+      var vMin=0, vMax=2.0;
+      function Y(v){ return clamp(plB-(clamp(v,vMin,vMax)-vMin)/(vMax-vMin)*(plB-plT),plT,plB); }
+
+      txt(ctx,'received (far-end) voltage',plL,clamp(plT-4,14,h),PAL.muted,8.5,'left');
+      txt(ctx,'V',plL-6,clamp(plT+4,14,h),PAL.faint,7.5,'right');
+      txt(ctx,'time (ns) →',plR,clamp(plB+13,14,h-2),PAL.faint,7.5,'right');
+
+      // axes + y grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(plL,plT); ctx.lineTo(plL,plB); ctx.lineTo(plR,plB); ctx.stroke();
+      var vt; for(vt=0;vt<=2;vt++){ var gyy=Y(vt); ctx.globalAlpha=0.5; ctx.strokeStyle=PAL.line;
+        ctx.beginPath(); ctx.moveTo(plL,gyy); ctx.lineTo(plR,gyy); ctx.stroke(); ctx.globalAlpha=1;
+        txt(ctx,vt.toFixed(0),plL-4,gyy+3,PAL.faint,7,'right'); }
+
+      // dashed V_final (full swing of the open line = 1 V)
+      ctx.setLineDash([4,3]); ctx.lineWidth=1; ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.8;
+      ctx.beginPath(); ctx.moveTo(plL,Y(Vf)); ctx.lineTo(plR,Y(Vf)); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'V_final',clamp(plR-2,plL,w),clamp(Y(Vf)-3,plT+6,plB),PAL.faint,7,'right');
+
+      // one-way-delay marker (signal silent until T1)
+      var xT1=X(T1);
+      ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.6; ctx.setLineDash([2,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(xT1,plT); ctx.lineTo(xT1,plB); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+
+      // the received waveform
+      ctx.strokeStyle=isLong?PAL.bad:PAL.good; ctx.lineWidth=2.4;
+      ctx.beginPath(); var started=false, N=220, ii;
+      for(ii=0;ii<=N;ii++){ var tau=tWin*ii/N; var vx=X(tau), vy=Y(vrx(tau));
+        if(!started){ ctx.moveTo(vx,vy); started=true; } else ctx.lineTo(vx,vy); }
+      ctx.stroke();
+
+      // mode label on the curve
+      txt(ctx,isLong?'ringing — period ≈ t_rt':'smooth edge over t_rise',
+          clamp((plL+plR)/2,plL,plR),clamp(plT+12,plT+6,plB),isLong?PAL.bad:PAL.good,8,'center');
+
+      // caption
+      txt(ctx,"it's the rise time, not the clock — fast edges + long line = reflections",w/2,h-6,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

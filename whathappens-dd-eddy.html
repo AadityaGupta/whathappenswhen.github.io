@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>Eddy-Current Braking — A Brake With Nothing Touching · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#4A7A5E; --accent-ink:#FFFFFF; --accent-wash:#E4EFE9;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#7FC098; --accent-ink:#241405; --accent-wash:#10201A;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#7FC098; --accent-ink:#241405; --accent-wash:#10201A;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 16 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>Eddy-Current Braking: A Brake With Nothing Touching</h1>
+    <p class="dek">Drop a magnet down a copper pipe and it drifts down as if through honey &mdash; nothing touches it, yet something drags. That something is a brake with no pads, no wear, no fade, and no power required: move a conductor through a magnetic field and the field fights back, harder the faster you go. It&rsquo;s how trains, roller coasters, drop towers and gym machines shed speed smoothly &mdash; and its one real limitation falls right out of the same physics.</p>
+    <div class="meta">
+      <span>&approx; 16 min read</span>
+      <span>electromagnetism · braking · retarders</span>
+      <span>companion to <b>The DC Motor</b> and <b>Control Systems</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">Drop a small, strong magnet down a vertical copper pipe and it does not fall &mdash; it <em>sinks</em>, drifting down as though the pipe were full of honey, taking seconds to travel what a pebble clears in a blink. Nothing touches it: the magnet never grazes the walls, there is no friction surface, no fluid, no mechanism. Yet something is clearly dragging on it, and dragging harder the faster it tries to go. That &ldquo;something&rdquo; is the whole subject of this piece, and it is a genuinely strange thing to want: a brake with <em>nothing in contact</em> &mdash; no pads to wear, no dust, no fade, ideally no power to apply &mdash; which on its face sounds impossible, because braking means removing kinetic energy and how do you pull energy out of a moving thing you never touch? The escape is a single reframe: let the motion <em>induce its own opposition</em>. Faraday says a conductor moving through a magnetic field has a changing flux through it, which drives currents; Lenz says those induced currents flow in exactly the direction that <em>opposes the motion that made them</em>. From that one move the whole subject falls out: swirling &ldquo;eddy&rdquo; currents fill the metal, their own field pushes back against the motion, and the drag works out to be proportional to speed &mdash; <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span>, with <span class="m"><i>k</i> &prop; <i>B</i><sup>2</sup>/<i>R</i></span> &mdash; which is magnetic &ldquo;viscosity,&rdquo; so a freely-moving mass decays as <span class="m"><i>v</i> = <i>v</i><sub>0</sub><i>e</i><sup>&minus;<i>t</i>/&tau;</sup></span> and a gravity-driven one settles at a terminal velocity. The same law that makes it smooth, fade-free, wear-free and fail-safe also writes its two hard limits, right there in plain sight: it runs <em>hot</em> (every joule becomes heat in the conductor), and it <em>cannot hold a stopped load</em> (no motion, no drag). Then the piece turns to the half the textbooks skip: how you spec a retarder, how it bites when it misbehaves, what to put on the order, and a fin-and-magnet brake for a small drop/zip ride sized end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: a brake that never touches</h2>
+    <p>Start with exactly what you want. You need to slow something down &mdash; a train, a roller-coaster car, a drop-tower gondola, a spinning saw blade, a gym flywheel &mdash; reliably, over and over, for years. The obvious answer is a friction brake, and the obvious answer is a maintenance headache. The pads <b>wear</b> and must be replaced on a schedule. They <b>fade</b> when they get hot and lose their bite exactly when you are braking hardest &mdash; the worst possible moment to go soft. They <b>grab unevenly</b>, throw dust, can glaze or seize, and a failed caliper is a safety event, not an inconvenience. A friction brake is a consumable rubbing against a consumable, and everything it does well it does by wearing itself out.</p>
+    <p>So the thing you really want is a brake with <b>nothing in contact</b> &mdash; no rubbing surface, no consumable, ideally no power to apply, and smooth, repeatable drag that does not fade as it heats. Put that way it sounds like a wish, not a specification, because braking is the business of <em>taking kinetic energy away from a moving object</em>, and your entire intuition says you take energy out of something by pushing on it, grabbing it, rubbing against it &mdash; by <em>touching</em> it. The question this piece answers is whether you can drain the energy out of a moving mass without ever making contact. You can; and once you see how, the same physics tells you the two things such a brake can never do.</p>
+
+    <h2><span class="sn">2</span>The reframe: let a moving magnet induce its own opposition</h2>
+    <p>The escape is electromagnetic induction, read in the right direction. Two laws do all the work, and everything else in the piece is their consequence. The first is <b>Faraday&rsquo;s law</b>: a <em>changing</em> magnetic flux through a conductor induces a voltage &mdash; an EMF &mdash; around any loop in it. Move a conductor through a magnetic field, or sweep a field past a stationary conductor, and the flux threading the metal changes from instant to instant, and that changing flux drives currents through the metal.</p>
+    <p>The second is <b>Lenz&rsquo;s law</b>, and it is the one that turns induction into a brake: those induced currents always flow in the direction that <em>opposes the change that created them</em>. The currents set up their own magnetic field, and that field pushes <b>back against the motion</b> that is causing the flux to change in the first place. Put the two together and the picture is complete: move a conductor through a magnetic field and the metal fills with swirling closed loops of induced current &mdash; <b>eddy currents</b> &mdash; whose own magnetic field drags against the very motion that made them. Nothing touches; the &ldquo;contact&rdquo; is entirely magnetic, carried across an air gap by the field.</p>
+    <p>And here is the self-regulating beauty of it, the hinge the whole subject swings on. The <em>faster</em> you move, the faster the flux changes, so the larger the induced EMF, the larger the eddy currents, and therefore the <em>larger the opposing force</em>. The brake creates exactly as much drag as the speed calls for, automatically, with no mechanism deciding anything &mdash; and, with a permanent magnet, no power. It is a brake that applies itself in proportion to how fast you are going, and lets go the instant you stop.</p>
+
+    <h2><span class="sn">3</span>The core: drag proportional to speed</h2>
+    <p>Now make it quantitative with the simplest possible picture &mdash; a conductor moving at speed <span class="m"><i>v</i></span> through a field <span class="m"><i>B</i></span> &mdash; and the whole chain falls out in three short steps. First, the induced EMF is proportional to how fast the flux is swept, which is set by the field, a length scale of the conductor in the field, and the speed:</p>
+    <div class="eq"><span class="m">EMF &prop; <i>B</i>&middot;<i>L</i>&middot;<i>v</i></span><span class="lbl">faster sweep of flux &rarr; bigger induced voltage (<i>L</i> a length scale of the conductor in the field)</span></div>
+    <p>That EMF drives an eddy current through the metal&rsquo;s own resistance <span class="m"><i>R</i></span> &mdash; a better conductor (lower <span class="m"><i>R</i></span>) carries more of it:</p>
+    <div class="eq"><span class="m"><i>I</i> &prop; <span class="frac"><span class="nu">EMF</span><span><i>R</i></span></span> &prop; <span class="frac"><span class="nu"><i>B</i>&middot;<i>L</i>&middot;<i>v</i></span><span><i>R</i></span></span></span><span class="lbl">the EMF pushes current through the conductor&rsquo;s resistance</span></div>
+    <p>Finally, the same field <span class="m"><i>B</i></span> acting on that current produces a force &mdash; and because the current already carries a factor of <span class="m"><i>B</i></span>, the force comes out proportional to the <em>square</em> of the field:</p>
+    <div class="eq"><span class="m"><i>F</i> = <i>B</i>&middot;<i>I</i>&middot;<i>L</i> &prop; <span class="frac"><span class="nu"><i>B</i><sup>2</sup>&middot;<i>L</i><sup>2</sup>&middot;<i>v</i></span><span><i>R</i></span></span></span><span class="lbl">the field acting on the induced current &mdash; drag that rises with speed and with <i>B</i><sup>2</sup></span></div>
+    <p>Collect the constants into one coefficient and the result is startlingly simple:</p>
+    <div class="eq"><span class="m"><i>F</i><sub>drag</sub> &approx; <i>k</i>&middot;<i>v</i>,  <i>k</i> &prop; <span class="frac"><span class="nu"><i>B</i><sup>2</sup>&middot;(geometry)</span><span><i>R</i></span></span></span><span class="lbl">the braking force is proportional to speed &mdash; a viscous drag</span></div>
+    <p>So the braking force is <b>proportional to speed</b> in the normal operating range, proportional to the <b>square of the field</b>, and <b>inversely proportional to resistance</b> &mdash; a better conductor brakes harder. A retarding force that grows in proportion to speed is a <em>viscous</em> drag, mathematically identical to moving through a thick fluid. That identity is worth dwelling on, because it hands you the dynamics for free. A mass braked only by eddy currents obeys <span class="m"><i>m</i>&middot;d<i>v</i>/d<i>t</i> = &minus;<i>k</i>&middot;<i>v</i></span>, and that equation has one famous solution &mdash; exponential decay:</p>
+    <div class="eq"><span class="m"><i>m</i>&middot;<span class="frac"><span class="nu">d<i>v</i></span><span>d<i>t</i></span></span> = &minus;<i>k</i>&middot;<i>v</i>   &rarr;   <i>v</i>(<i>t</i>) = <i>v</i><sub>0</sub>&middot;<i>e</i><sup>&minus;<i>t</i>/&tau;</sup>,  &tau; = <i>m</i>/<i>k</i></span><span class="lbl">a freely-coasting mass decays exponentially, with time constant &tau; = <i>m</i>/<i>k</i></span></div>
+    <p>And if a steady force is <em>driving</em> the motion &mdash; gravity on the falling magnet, say &mdash; then the speed rises only until the growing drag exactly balances the drive, and there it settles, at a <b>terminal velocity</b>:</p>
+    <div class="eq"><span class="m"><i>v</i><sub>term</sub> = <span class="frac"><span class="nu"><i>F</i><sub>drive</sub></span><span><i>k</i></span></span></span><span class="lbl">a gravity-driven magnet settles where drag balances the drive (<i>F</i><sub>drive</sub> = <i>mg</i>)</span></div>
+    <p>That is the magnet-in-the-pipe demo, explained end to end: it accelerates from rest, the eddy drag climbs with speed, and it coasts down at the constant terminal velocity where <span class="m"><i>k</i>&middot;<i>v</i><sub>term</sub> = <i>mg</i></span> &mdash; reached, like everything here, exponentially.</p>
+    <div class="key">
+      <span class="kl">Magnetic viscosity: drag proportional to speed</span>
+      <div class="eq"><span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i>,  <i>k</i> &prop; <i>B</i><sup>2</sup>/<i>R</i></span></div>
+      <p>Move a conductor through a field and Lenz&rsquo;s law fights back with a drag <b>proportional to speed</b> and to <b><span class="m"><i>B</i><sup>2</sup></span></b>, inversely to resistance. It is magnetic &ldquo;viscosity&rdquo;: a freely-moving mass decays as <span class="m"><i>v</i> = <i>v</i><sub>0</sub><i>e</i><sup>&minus;<i>t</i>/&tau;</sup></span> with <span class="m">&tau; = <i>m</i>/<i>k</i></span>, and a gravity-driven one settles at a terminal velocity <span class="m"><i>v</i><sub>term</sub> = <i>F</i><sub>drive</sub>/<i>k</i></span>. No contact, no wear, no power &mdash; and all the drag comes from the metal, the field, and the speed, nothing else.</p>
+    </div>
+
+    <div class="simwrap"><div class="simcap">Nothing touches — the faster it falls, the harder the field drags</div><canvas class="sim" data-sim="magtube" data-c="#4A7A5E" aria-label="a magnet falling through a copper tube dragged by induced eddy currents to a terminal velocity, with free fall when the field is off"></canvas><div class="ctrls" data-sim="magtube"></div></div>
+    <p class="simnote">This is the iconic demo made live. Watch the magnet accelerate from rest, feel the eddy drag climb with its speed, and see it settle into a steady <em>terminal velocity</em> where the magnetic drag exactly balances gravity &mdash; it never touches the tube wall. Now drag the <em>magnet strength</em> up and the terminal velocity drops hard, because <span class="m"><i>k</i> &prop; <i>B</i><sup>2</sup></span> and <span class="m"><i>v</i><sub>term</sub> = <i>mg</i>/<i>k</i></span> &mdash; double the field and the drag coefficient quadruples, so it crawls. Drag the <em>tube conductivity</em> up (lower resistance) and it slows for the same reason: more current, more drag. Then flip the field to <b><span class="m"><i>B</i> = 0</span></b> and the whole brake vanishes &mdash; <span class="m"><i>k</i> = 0</span>, no flux change, no current, no force &mdash; and the magnet simply free-falls. That last toggle is the entire mechanism in one switch: the drag is made of motion through a field, and nothing else.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span> at its ends</h2>
+    <p>The law earns its keep &mdash; and gives up its two hard limits &mdash; the moment you read it at its extremes. Push <span class="m"><i>v</i></span> to each end, push <span class="m"><i>B</i></span> and <span class="m"><i>R</i></span> to their ends, and the character of the whole brake is written out for you.</p>
+    <div class="limit">
+      <b>Limit check — read <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span> at its ends</b>
+      <b>Stopped</b> (<span class="m"><i>v</i> &rarr; 0</span>): <span class="m"><i>F</i> &rarr; 0</span>. This is the defining limitation of the whole technology. With no motion there is no flux change, no eddy current, and no force &mdash; so <b>an eddy brake cannot hold a stationary load</b>. It slows you beautifully but cannot park you; you always need a friction brake or a mechanical lock for the final hold and to keep you stopped. <b>High speed</b>: the clean <span class="m"><i>F</i> &prop; <i>v</i></span> rise does not continue forever &mdash; at high enough speed the eddy currents&rsquo; own reaction field and skin/AC effects (the induced currents can no longer fully penetrate the conductor) make the force <b>peak and then roll off</b>. The real characteristic rises, crests, and declines; most brakes are designed to operate on the rising, speed-proportional part. <b>Strong field</b> (<span class="m"><i>B</i></span> up): <span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span> &mdash; double the field and you <em>quadruple</em> the drag. Field strength is by far the most powerful design lever. <b>Low resistance</b> (a better conductor &mdash; copper, aluminium): <span class="m"><i>F</i> &prop; 1/<i>R</i></span> &mdash; more current, more drag. But all of that current dissipates as <span class="m"><i>I</i><sup>2</sup><i>R</i></span> heat in the conductor: every joule of kinetic energy you remove becomes heat, with no recovery (unless you deliberately harvest it &mdash; then it is regenerative braking). <b>Field off</b> (<span class="m"><i>B</i> = 0</span>): <span class="m"><i>k</i> = 0</span>, no drag at all &mdash; which is exactly why a permanent-magnet eddy brake is <b>passive and fail-safe</b> (always on, no power needed), while an electromagnet version can be switched on and off and varied.
+    </div>
+
+    <div class="simwrap"><div class="simcap">Speed-proportional drag — and zero at a standstill</div><canvas class="sim" data-sim="dragspeed" data-c="#4A7A5E" aria-label="the eddy-brake drag force versus speed, rising proportionally to speed then rolling off, and falling to zero at zero speed so it cannot hold a stopped load"></canvas><div class="ctrls" data-sim="dragspeed"></div></div>
+    <p class="simnote">Here is the characteristic that decides everything, drawn as a curve. The drag <b>rises in proportion to speed</b> over the normal range &mdash; that is the <span class="m"><i>F</i> = <i>k</i>&middot;<i>v</i></span> line &mdash; then crests and <em>rolls off</em> at high speed as the reaction field and skin effect catch up. Drag the <em>field</em> and watch the whole curve rescale by <span class="m"><i>B</i><sup>2</sup></span>: a stronger magnet does not just shift it, it steepens the entire thing fourfold for a doubling. Drag the <em>conductivity</em> and it climbs the same way (<span class="m"><i>F</i> &prop; 1/<i>R</i></span>). But watch the <em>left end</em> no matter what you set: the curve always goes through the origin. <b><span class="m"><i>F</i> &rarr; 0</span> as <span class="m"><i>v</i> &rarr; 0</span></b> &mdash; the drag asymptotically weakens as you slow, and at a dead stop there is no force at all. That is not a tuning you can dial out; it is why an eddy brake, however strong, can never park a stopped load, and why every real one is paired with a friction brake for the final metre and the hold.</p>
+
+    <p>The character of the brake is written entirely by <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span>, and it is a genuinely unusual mix of virtues and two stubborn vices. It is <b>smooth and fade-free</b>: more heat does not sap the force the way it kills a friction pad &mdash; if anything the physics is stable &mdash; and there is no stick-slip, no grab, no chatter. It is <b>wear-free and clean</b>: nothing abrades, there is no dust, essentially no maintenance, and with permanent magnets it is <b>fail-safe and passive</b> &mdash; the drag appears automatically from motion alone, with no hydraulics, no actuator, and no power to fail. That last property is why drop rides and zip-line arrestors lean on it: a runaway simply self-limits to a safe terminal speed with nothing switched on. The speed-proportional law makes it ideal for <b>controlled descent and speed-limiting</b>, where you want strong drag at speed and gentle drag as things settle.</p>
+    <p>But the same law imposes two hard facts you do not get to engineer away. It <b>cannot hold at zero speed</b> (<span class="m"><i>F</i> &rarr; 0</span> as <span class="m"><i>v</i> &rarr; 0</span>), so it is always paired with a parking brake. And <b>all of the energy becomes heat</b> in the conductor (<span class="m"><i>I</i><sup>2</sup><i>R</i></span>), so a hard-working eddy brake needs real <b>thermal mass and cooling</b> &mdash; or you turn it into a regenerative system that recovers the energy as electricity instead of dumping it as heat. The trade is clean: you give up the friction brake&rsquo;s holding ability and its mechanical simplicity, and in return you get no wear, no fade, and automatic, contactless control.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: speccing a retarder, and how it bites</h2>
+    <p>Eddy-current braking is the retarder of choice wherever you need smooth, wear-free, fail-safe speed control and do <em>not</em> need to hold the load: rail retarders and high-speed-train brakes, roller-coaster and drop-tower braking (the fins that slide between rows of magnets), zip-line and fall-arrest dampers, gym and rowing-machine resistance, circular-saw and power-tool blade stops, tram and truck retarders, and the slowly-spinning aluminium disc in the old utility energy meter. You never design it as a standalone brake; you design it as a <em>system paired with a holding brake</em>. The sequence is fixed: size the <b>drag you need versus speed</b> (the F&ndash;v curve) for your deceleration profile; pick the <b>field</b> (permanent magnets for passive/fail-safe, electromagnets for switchable/variable) and the <b>conductor</b> (a copper or aluminium fin or disc) and set their <b>air gap</b>; budget the <b>heat</b> (all the kinetic energy lands in the conductor); and <b>add a friction/parking brake</b> for the final hold. When it bites, every symptom traces straight back to a line in the physics:</p>
+    <dl class="speclist">
+      <dt>Won&rsquo;t stop the load completely, or creeps at the end</dt><dd>Expected, and not a fault: <span class="m"><i>F</i> &rarr; 0</span> as <span class="m"><i>v</i> &rarr; 0</span>. An eddy brake <em>cannot</em> bring you to a dead, held stop &mdash; the drag fades away as you slow. Add a friction or mechanical brake for the last bit and to park. This is the one &ldquo;failure&rdquo; that is actually the design working correctly.</dd>
+      <dt>Weak braking</dt><dd>The field is too low (<span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span>, so a small <span class="m"><i>B</i></span> hurts disproportionately), the <b>air gap is too large</b> (the field falls off fast with gap), or the conductor is too resistive or too thin. Reach for stronger magnets, a smaller gap, or a better/thicker conductor &mdash; in that order.</dd>
+      <dt>Overheats, warps, or demagnetizes</dt><dd>All the removed energy is <span class="m"><i>I</i><sup>2</sup><i>R</i></span> heat in the conductor, and the magnets sit right next to it &mdash; so an under-sized thermal mass or inadequate cooling cooks both. Size the fin or disc for the energy <em>per stop</em> and the duty cycle, and keep the magnets below their thermal limit (NdFeB demagnetizes at roughly <span class="m">80&ndash;150&nbsp;&deg;C</span> depending on grade).</dd>
+      <dt>Force falls off at very high speed</dt><dd>The high-speed roll-off of the F&ndash;v curve &mdash; skin effect and the eddy currents&rsquo; own reaction field. If you need drag up there, change the geometry (laminations, a thinner conductor) or the field, rather than assuming more speed buys more braking.</dd>
+      <dt>Drag where you don&rsquo;t want it (parasitic loss)</dt><dd>Any conductor moving near any field drags &mdash; the same effect wastes power as stray eddy losses in motors, transformers, and the brake&rsquo;s own structure. The cure is to <b>break the loops</b>: laminate or slot the conductor so the induced currents cannot circulate where you do not want drag.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How the <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span> law shapes the machine</h2>
+    <p>Every design choice is a move on the F&ndash;v curve, and the knobs are not independent. The <b>field <span class="m"><i>B</i></span></b> is the dominant lever (<span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span>): it sets magnet cost, mass, and the demagnetization and thermal limit, and a doubling of it is worth four of anything else. The <b>conductor and air gap</b> set <span class="m"><i>k</i></span> and the heat together &mdash; copper brakes harder than steel, a thin gap couples the field strongly, and the conductor pulls double duty as the <b>heat sink</b>, so its thermal mass and cooling are what actually size the duty cycle. The <b>speed range</b> decides whether you live on the clean linear part of the curve or up near the roll-off, which in turn drives the geometry (laminated versus solid, fin thickness). And because the brake fundamentally <b>cannot hold</b>, every real system carries a <b>companion friction/parking brake</b>, so the control naturally splits in two: eddy drag for the smooth, high-speed retardation, friction for the final stop and the park. Choosing an eddy brake is really choosing <em>where</em> on the deceleration you use contactless drag and <em>where</em> you hand off to contact &mdash; the rest of the design is bookkeeping on that one decision.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>It runs rail and roller-coaster retarders, drop-tower and zip-line arrestors, gym and rehab resistance, blade brakes and tool stops, truck and tram retarders, eddy-current dynamometers (which <em>measure</em> power by braking it), and the classic induction energy meter. Its active cousin, <b>regenerative braking</b>, is the same induction harnessed to recover the energy as electricity instead of dumping it as heat. When you spec an eddy brake, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Required drag vs speed (the F&ndash;v curve)</dt><dd>The deceleration profile you need across your speed range &mdash; the master requirement that everything else serves. Draw this first.</dd>
+      <dt>Field source &amp; strength</dt><dd>Permanent magnet (passive, fail-safe, fixed drag) versus electromagnet (switchable, variable, needs power). <span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span>, so this is the strongest lever and the biggest cost/mass driver.</dd>
+      <dt>Conductor material, thickness &amp; air gap</dt><dd>Copper or aluminium, sized for drag <em>and</em> heat; a small gap couples strongly because the field decays fast with distance. The gap is a primary tuning knob and a tight mechanical tolerance.</dd>
+      <dt>Thermal capacity &amp; cooling</dt><dd>Joules per stop &times; duty cycle. The conductor must shed it all without warping or cooking the magnets &mdash; this is where eddy brakes actually fail in service.</dd>
+      <dt>Companion holding brake</dt><dd>A friction or mechanical brake for the final stop and to park. Mandatory, not optional &mdash; the eddy section only retards.</dd>
+      <dt>Speed range vs roll-off</dt><dd>Stay on the linear region, or manage the high-speed force decline with geometry and laminations if you must operate up there.</dd>
+      <dt>Fail-safe behavior</dt><dd>Passive PM brakes self-apply from motion alone &mdash; spec that wherever a power or control failure must still brake the load.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the textbook won&rsquo;t tell you</span>
+      <ul>
+        <li><b>It can slow you but can&rsquo;t stop you &mdash; always pair it with a friction brake.</b> <span class="m"><i>F</i> &rarr; 0</span> at <span class="m"><i>v</i> &rarr; 0</span> is not a defect to engineer around; it is the physics. Eddy drag for the smooth retard, friction for the last metre and the park. Every real installation has both.</li>
+        <li><b>Field is king: <span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></b></span>. Doubling the magnet flux quadruples the drag; a bigger or closer magnet beats a fancier conductor every time. Spend your effort on field strength and air gap first, conductor second.</li>
+        <li><b>Air gap is brutal &mdash; the field falls off fast with distance.</b> A couple of extra millimetres of gap can halve the braking. Mechanical tolerances on the gap matter every bit as much as the magnet grade.</li>
+        <li><b>The conductor is the heat sink, and the magnets are right next to it.</b> Every joule you remove heats the fin or disc; size its thermal mass and cooling for the energy per stop and the repeat rate, and keep NdFeB magnets below their demag temperature (<span class="m">&approx; 80&ndash;150&nbsp;&deg;C</span> by grade) &mdash; a demagnetized magnet is a dead brake.</li>
+        <li><b>Copper vs aluminium is a density/cost/heat trade, not just conductivity.</b> Copper brakes harder per unit area but is heavy and expensive; aluminium is light and cheap and very often the right call for a <em>moving</em> fin, where mass costs you twice.</li>
+        <li><b>Break the loops to kill unwanted eddy drag.</b> The same effect that brakes also wastes power as stray eddy losses in motors and transformers &mdash; which is exactly why their cores are <em>laminated</em> or slotted: thin insulated layers interrupt the eddy loops. A slotted plate barely brakes; a solid one brakes hard &mdash; the classic physics demo in one sentence.</li>
+        <li><b>No contact means no dust and no fade &mdash; a real reliability win.</b> For high-cycle or safety-critical retarding (coasters, drop rides), the complete absence of wear and the passive fail-safe behavior are the whole reason it is chosen, cost aside.</li>
+        <li><b>You can switch it (electromagnet) or harvest it (generator).</b> Want variable or releasable braking? Use an electromagnet and vary the current. Want the energy back instead of as heat? Feed the induced current into a load or battery &mdash; that is regenerative braking, the same physics with a wire attached.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">a fin-and-magnet retarder</span></div>
+
+    <h2><span class="sn">9</span>Build it: a fin-and-magnet retarder for a small drop/zip ride</h2>
+    <p>Enough principle &mdash; here is a real retarder sized end to end, so you can copy the shape and reuse it. The job: smoothly limit the descent of a <span class="m">&approx; 100&nbsp;kg</span> gondola on a zip line or drop track to a safe speed, bleed its energy without any friction wear, and then hand off to a friction stop at the bottom. Every line below is one move on the <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span> curve you already own.</p>
+    <div class="worked">
+      <span class="wl">Worked example &mdash; a fin-and-magnet brake for a ~100 kg gondola</span>
+      <dl class="speclist">
+        <dt>What drag, at what speed</dt><dd>You want the gondola to <em>self-limit</em> around a target descent speed, so set the eddy drag to equal the driving force (the gravity component along the track) at that speed: at <span class="m"><i>v</i><sub>target</sub></span>, require <span class="m"><i>F</i><sub>drag</sub> = <i>k</i>&middot;<i>v</i><sub>target</sub> = <i>F</i><sub>drive</sub></span>. That single equation fixes the required <span class="m"><i>k</i></span> &mdash; and since <span class="m"><i>k</i> &prop; <i>B</i><sup>2</sup>&middot;(geometry)/<i>R</i></span>, it tells you how much field, conductor, and gap you need.</dd>
+        <dt>Build the field</dt><dd>Mount rows of strong <b>permanent magnets (NdFeB)</b> straddling a <b>conductive fin</b> fixed to the gondola, with <em>alternating polarity</em> along the track so the fin sweeps a rapidly reversing field &mdash; more flux change per metre means more drag per metre. Permanent magnets make it <b>passive and fail-safe</b>: no power, always on, a runaway self-limits.</dd>
+        <dt>Set the air gap</dt><dd>As small as mechanical tolerances safely allow &mdash; a few millimetres. The field, and therefore <span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span>, falls off steeply with gap, so the gap is your primary tuning knob and your tightest tolerance.</dd>
+        <dt>Choose the fin</dt><dd><b>Aluminium</b> for the moving fin: lower conductivity than copper, but far lighter and cheaper &mdash; and because it moves with the gondola, its mass costs you in the very force you are trying to budget. Trade its thickness against the high-speed roll-off and its heat capacity.</dd>
+        <dt>Budget the heat</dt><dd>All the kinetic and potential energy removed becomes <span class="m"><i>I</i><sup>2</sup><i>R</i></span> heat in the fin: energy per run <span class="m">&approx; &frac12;<i>mv</i><sup>2</sup> + <i>mgh</i></span> bled. Confirm the fin&rsquo;s <b>thermal mass</b> absorbs that per run and cools between runs without warping &mdash; and crucially without carrying the magnets above their demag temperature (<span class="m">&approx; 80&ndash;150&nbsp;&deg;C</span> for NdFeB).</dd>
+        <dt>Add the holding brake</dt><dd>Because <span class="m"><i>F</i> &rarr; 0</span> as <span class="m"><i>v</i> &rarr; 0</span>, the eddy section only <em>retards</em>. A <b>friction or mechanical brake</b> at the end makes the final stop and holds the gondola parked. This is not optional.</dd>
+        <dt>Tune on the curve</dt><dd>If it brakes too weakly: strengthen the magnets, shrink the gap, or deepen the fin&rsquo;s engagement. Too strongly: the reverse. The gap moves <span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span> the most for the least effort &mdash; start there.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a mass, a target speed, a drop, and a choice of magnets and fin hand you the required <span class="m"><i>k</i></span>, the field and gap, the heat per run, and &mdash; loudly &mdash; the fact that the eddy section can never make the final stop. The plug-in set is small, and the whole brake lives in a handful of lines you already have:</p>
+    <div class="eq"><span class="m">EMF &prop; <i>B</i>&middot;<i>L</i>&middot;<i>v</i>   ;   <i>I</i> &prop; <i>B</i>&middot;<i>L</i>&middot;<i>v</i>/<i>R</i></span><span class="lbl">induced voltage and the eddy current it drives</span></div>
+    <div class="eq"><span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i>,  <i>k</i> &prop; <i>B</i><sup>2</sup>&middot;(geometry)/<i>R</i></span><span class="lbl">drag proportional to speed (&prop; <i>B</i><sup>2</sup>, &prop; 1/<i>R</i>)</span></div>
+    <div class="eq"><span class="m"><i>v</i>(<i>t</i>) = <i>v</i><sub>0</sub>&middot;<i>e</i><sup>&minus;<i>t</i>/&tau;</sup>,  &tau; = <i>m</i>/<i>k</i></span><span class="lbl">free decay with no drive (a coasting flywheel)</span></div>
+    <div class="eq"><span class="m"><i>v</i><sub>term</sub> = <i>F</i><sub>drive</sub>/<i>k</i>   (falling magnet: <i>v</i><sub>term</sub> = <i>mg</i>/<i>k</i>)</span><span class="lbl">terminal velocity under a steady drive</span></div>
+    <div class="eq"><span class="m"><i>P</i> = <i>F</i>&middot;<i>v</i> &approx; <i>k</i>&middot;<i>v</i><sup>2</sup></span><span class="lbl">power dissipated &rarr; all of it becomes <i>I</i><sup>2</sup><i>R</i> heat in the conductor</span></div>
+    <div class="eq"><span class="m"><i>F</i> &rarr; 0 as <i>v</i> &rarr; 0   ;   <i>F</i> peaks then rolls off at high <i>v</i></span><span class="lbl">the two limits: cannot hold, and the high-speed decline</span></div>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment the fin cooks, the magnets demagnetize, or the gondola won&rsquo;t actually stop at the bottom:</p>
+    <ol class="recipe">
+      <li><b>Set the target F&ndash;v point.</b> Decide the drag you need at your operating speed (for a self-limiting ride, drag = drive at the self-limit speed), which fixes the required <span class="m"><i>k</i></span>.</li>
+      <li><b>Pick field and conductor to hit <span class="m"><i>k</i></span></b> &mdash; magnet grade and arrangement (<span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span>) and conductor material and thickness &mdash; then set the <b>air gap</b>, the strongest and easiest knob. Start small.</li>
+      <li><b>Measure the real F&ndash;v curve.</b> Run the fin through the magnets at several speeds and record the force (a load cell, or a known-slope descent). Confirm it is linear in your range, and find where it rolls off.</li>
+      <li><b>Check terminal / decay behavior.</b> Verify the gondola self-limits at the intended terminal speed (or that a flywheel decays with the intended <span class="m">&tau;</span>).</li>
+      <li><b>Do the thermal run.</b> Compute joules per cycle and the duty cycle; confirm the conductor&rsquo;s thermal mass and cooling keep it &mdash; and the magnets &mdash; in range over repeated use.</li>
+      <li><b>Integrate the holding brake.</b> Add and test the friction or mechanical stop for the final halt and the park, and verify the hand-off from eddy retard to friction hold is smooth.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Permanent magnet vs electromagnet</dt><dd>PM for passive, fail-safe, fixed drag (coasters, drop rides, zip lines); electromagnet for switchable or variable/controlled braking, and it can be released &mdash; at the cost of power and complexity.</dd>
+      <dt>Copper vs aluminium conductor</dt><dd>Copper for maximum drag per unit area (heavy, pricey); aluminium for light, cheap moving fins (lower conductivity, but usually the right trade when the conductor is the part that moves).</dd>
+      <dt>Eddy (dissipate) vs regenerative (recover)</dt><dd>Plain eddy braking dumps the energy as heat &mdash; simple and robust. Feed the induced current to a load or battery and you <em>recover</em> it as electricity (regen) where efficiency matters &mdash; same physics, extra circuitry.</dd>
+      <dt>Solid vs laminated/slotted conductor</dt><dd>Solid for maximum braking; laminated or slotted where you want to <em>suppress</em> eddy drag (motor and transformer cores) &mdash; the loops are deliberately broken.</dd>
+    </dl>
+
+    <h2><span class="sn">10</span>The honest last mile</h2>
+    <p>A deep dive gets you the mechanism, the <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span> law and its scalings, the thermal budget, and the architecture (eddy retard plus friction hold) &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% is magnetics, heat, and the bench.</p>
+    <div class="lastmile">
+      <b>The last mile — what you still do with real tools</b>
+      This page gets you the mechanism cold, the <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span> law and its scalings, the thermal budget, and the eddy-plus-friction architecture &mdash; a defensible first cut. The last 10&nbsp;% is pinning the field, the heat, and the hand-off on real hardware. <b>Model the field and the real F&ndash;v curve</b> with a magnetics FE tool &mdash; the air-gap flux and the high-speed roll-off are geometry-specific and hard to hand-calculate &mdash; then <em>measure</em> it on a rig. <b>Do the thermal design for real</b>: energy per cycle &times; duty, the conductor&rsquo;s thermal mass and cooling, and the magnet temperature limit (NdFeB demagnetizes when hot) &mdash; this is where eddy brakes actually fail in service, not in the force calculation. <b>Tune the air gap and magnet arrangement on hardware</b> &mdash; small changes move <span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span> a lot, and alternating-polarity (Halbach-ish) arrays and gap control are the practical knobs. And <b>prove the holding and fail-safe behavior</b>: test the friction hand-off, the park, and &mdash; for PM brakes &mdash; that a power or control failure still brakes the load. Tools to stand on: a <b>magnetostatic / eddy FE solver</b> (FEMM, Ansys Maxwell, COMSOL) for the field and force curve, a <b>force / dyno rig</b> to measure F versus v, a thermal analysis for the duty cycle, and a companion <b>friction-brake</b> design. The Faraday&ndash;Lenz drag in Part&nbsp;I never changes; the last mile is pinning the field, the heat, and the hand-off on real hardware.
+    </div>
+    <p>Reason these out from <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span> and its scalings, rather than recalling them &mdash; if the &ldquo;can&rsquo;t hold&rdquo; limit still feels like a flaw rather than a law, these are where it stops being one:</p>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">A roller coaster uses eddy-current fins to brake the train from full speed, yet the train still rolls gently into the station and is held there by a separate friction brake. Using <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span>, explain why the eddy brake alone could never bring the train to a held stop.</p><p class="a">The eddy drag is proportional to speed (<span class="m"><i>F</i> = <i>k</i>&middot;<i>v</i></span>), so as the train slows the braking force shrinks with it &mdash; and at <span class="m"><i>v</i> = 0</span> there is no flux change, no eddy current, and therefore <span class="m"><i>F</i> = 0</span>. It can decelerate the train hard at speed but only asymptotically weakly near zero, and it produces no force at all once stopped, so it cannot hold a stationary load. A friction or mechanical brake is required for the final stop and the park. The &ldquo;can&rsquo;t hold&rdquo; limit is intrinsic to the physics of induction, not a shortcoming of this particular brake &mdash; it is the same fact that makes the brake fail-safe (no motion, no force) read from the other side.</p></div>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">You double the strength of the magnets in an eddy brake and the braking force goes up about four-fold &mdash; but the copper fin also gets much hotter for the same stop. Explain both effects from the core relations.</p><p class="a">The force scales as <span class="m"><i>F</i> &prop; <i>B</i><sup>2</sup></span>, so doubling <span class="m"><i>B</i></span> quadruples the drag &mdash; that is the four-fold increase. The heat is the dissipated power <span class="m"><i>P</i> = <i>F</i>&middot;<i>v</i> &approx; <i>k</i>&middot;<i>v</i><sup>2</sup></span> with <span class="m"><i>k</i> &prop; <i>B</i><sup>2</sup></span>, so a four-fold-larger <span class="m"><i>k</i></span> means about four-fold more power dissipated as <span class="m"><i>I</i><sup>2</sup><i>R</i></span> heat in the fin at any given speed. Every joule of kinetic energy removed becomes heat in the conductor, so stronger braking is <em>necessarily</em> a hotter fin &mdash; which is why thermal mass and the magnets&rsquo; demag temperature, not the force itself, become the real design limit.</p></div>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">A physics demo swings two identical-looking metal plates through a magnet gap: the solid plate stops almost immediately, while the one with slots cut in it swings many times. Same metal, same magnet &mdash; why the enormous difference, and what everyday devices exploit the slotted version on purpose?</p><p class="a">The drag comes from eddy-current <em>loops</em> circulating in the plate. The slots cut across and <b>break</b> those loops, forcing the current into long, high-resistance paths (or preventing large loops forming at all), so <span class="m"><i>I</i> &prop; 1/<i>R</i></span> collapses and the Lenz drag nearly vanishes &mdash; same field <span class="m"><i>B</i></span>, but the current can&rsquo;t form the loops that make the force. Motors and transformers <em>laminate</em> their cores &mdash; thin insulated layers that break the loops exactly this way &mdash; precisely to suppress that wasteful eddy-current heating, which is the same effect used as a brake here and as a loss to be killed there.</p></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-transmission.html"><b>&larr; Prev:</b> Transmission-Line Reflections</a>
+      <a class="nextpill" href="index.html">Back to the Deep Dives index &rarr;</a>
+    </div>
+    <p class="footnote"><b>Eddy-Current Braking — A Brake With Nothing Touching.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (you want a brake with nothing in contact &mdash; no wear, no fade, no power &mdash; yet braking means draining energy from a moving thing) and the one reframe (let the motion induce its own opposition &mdash; Faraday makes the current, Lenz points it against the motion) from which the induced EMF <span class="m">&prop; <i>B</i>&middot;<i>L</i>&middot;<i>v</i></span>, the eddy current <span class="m"><i>I</i> &prop; <i>B</i>&middot;<i>L</i>&middot;<i>v</i>/<i>R</i></span>, the speed-proportional drag <span class="m"><i>F</i> = <i>B</i>&middot;<i>I</i>&middot;<i>L</i> &approx; <i>k</i>&middot;<i>v</i></span> with <span class="m"><i>k</i> &prop; <i>B</i><sup>2</sup>/<i>R</i></span>, the exponential decay <span class="m"><i>v</i> = <i>v</i><sub>0</sub><i>e</i><sup>&minus;<i>t</i>/&tau;</sup></span> (<span class="m">&tau; = <i>m</i>/<i>k</i></span>), the terminal velocity <span class="m"><i>v</i><sub>term</sub> = <i>F</i><sub>drive</sub>/<i>k</i></span>, and the heat <span class="m"><i>P</i> &approx; <i>k</i>&middot;<i>v</i><sup>2</sup></span> all fall out &mdash; along with the two hard limits the same law writes: <span class="m"><i>F</i> &rarr; 0</span> at <span class="m"><i>v</i> &rarr; 0</span> (it cannot hold a stopped load) and the high-speed roll-off. Then the practitioner&rsquo;s half: how you spec a retarder, how it bites (won&rsquo;t hold, weak braking, overheats and demagnetizes, drag where you don&rsquo;t want it), what to spec, the field notes, and a fin-and-magnet brake for a ~100&nbsp;kg drop/zip gondola sized end to end. With live simulations of a magnet falling to terminal velocity in a copper tube (and free-falling at <span class="m"><i>B</i> = 0</span>), and of the drag-vs-speed curve rescaling with <span class="m"><i>B</i><sup>2</sup></span> while it falls to zero at a standstill. The honest truth of it: this gets you the mechanism, the <span class="m"><i>F</i> &approx; <i>k</i>&middot;<i>v</i></span> law and scalings, the thermal budget, and the eddy-plus-friction architecture &mdash; the field-and-force FE model, the real thermal design, and the hand-off are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The DC-Motor Speed&ndash;Torque Line</b> and <b>Control Systems</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+
+  /* magtube — the iconic demo. A bar magnet falls down a vertical copper tube (left ~55% of the
+     canvas, two walls in s.accent). Induced eddy currents in the walls (gold circulating glyphs
+     just above and below the magnet) drag it by Lenz's law; it settles at a terminal velocity
+     where magnetic drag balances gravity. Normalized units: g=1, m=1. Drag coefficient
+     k = KMAX·(B/100)²·(cond/100) with KMAX=3; while falling dv/dt = g − k·v so v climbs toward
+     v∞ = g/k. With B=0 → k=0 → free fall (dv/dt = g, no bound). Position y runs 0→Ltube downward;
+     at the bottom the magnet loops back to the top at v=0. Right ~40%: v(t) rises toward a dashed
+     terminal-v line (or climbs when B=0). Three arrows on the magnet: v (ink, down), mg (muted,
+     down) and the magnetic drag (gold, up) — equal at terminal. Controls read ONLY via s.p.*;
+     unicode literals only. */
+  SIMS.magtube={
+    controls:[
+      {k:'B',    label:'Magnet strength',   min:0,  max:100, step:5, val:60, unit:' %'},
+      {k:'cond', label:'Tube conductivity', min:10, max:100, step:5, val:70, unit:' %'}
+    ],
+    init:function(s,w,h){ s.y=0; s.v=0; s.hist=[]; },
+    step:function(s,dt){
+      var g=1, KMAX=3.0, Ltube=5;
+      var B=clamp(s.p.B,0,100)/100, cond=clamp(s.p.cond,10,100)/100;
+      var k=KMAX*B*B*cond;
+      var d=clamp(dt,0,0.08);
+      var dv=(g-k*(s.v||0))*d;
+      s.v=clamp((s.v||0)+dv,0,50);
+      if(!isFinite(s.v)) s.v=0;
+      s.y=(s.y||0)+s.v*d;
+      if(!isFinite(s.y)) s.y=0;
+      if(s.y>=Ltube){ s.y=0; s.v=0; }
+      if(!s.hist) s.hist=[];
+      s.hist.push(s.v);
+      if(s.hist.length>180) s.hist.shift();
+    },
+    draw:function(ctx,w,h,s){
+      var g=1, KMAX=3.0, Ltube=5;
+      var B=clamp(s.p.B,0,100)/100, cond=clamp(s.p.cond,10,100)/100;
+      var k=KMAX*B*B*cond;
+      var freefall=(k<1e-9);
+      var vterm=freefall?Infinity:g/k;
+      var v=s.v||0;
+      var dragF=k*v;                                   // magnetic retarding force
+
+      // ---- tube geometry (left ~55%) ----
+      var tubeCx=clamp(w*0.26,60,w*0.46);
+      var tubeHalf=clamp(w*0.07,18,34);
+      var wallL=clamp(tubeCx-tubeHalf,8,w), wallR=clamp(tubeCx+tubeHalf,8,w);
+      var tubeTop=30, tubeBot=clamp(h-24,tubeTop+40,h);
+
+      // title + headline readout
+      txt(ctx,'magnet in a copper tube — eddy-current drag',8,13,PAL.muted,10,'left');
+
+      // tube interior + walls
+      ctx.fillStyle=PAL.surf; ctx.globalAlpha=0.5;
+      ctx.fillRect(clamp(wallL+2,0,w),tubeTop,clamp(wallR-wallL-4,0,w),clamp(tubeBot-tubeTop,0,h));
+      ctx.globalAlpha=1;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(wallL,tubeTop); ctx.lineTo(wallL,tubeBot); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(wallR,tubeTop); ctx.lineTo(wallR,tubeBot); ctx.stroke();
+      ctx.lineCap='butt';
+      txt(ctx,'copper tube',tubeCx,clamp(tubeTop-6,8,h-2),s.accent,8,'center');
+      // ground mark at the bottom
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(clamp(wallL-8,0,w),tubeBot); ctx.lineTo(clamp(wallR+8,0,w),tubeBot); ctx.stroke();
+
+      // magnet position
+      var frac=clamp((s.y||0)/Ltube,0,1);
+      var magH=20, magW=clamp(tubeHalf*1.3,14,46);
+      var magY=lerp(tubeTop+magH/2+2,tubeBot-magH/2-2,frac);
+      magY=clamp(magY,tubeTop+magH/2,tubeBot-magH/2);
+      var mx=clamp(tubeCx,0,w), mt=clamp(magY-magH/2,0,h), mb=clamp(magY+magH/2,0,h);
+
+      // eddy-current glyphs (Lenz) — gold circulating arcs above & below the magnet on both walls
+      if(!freefall && v>0.05){
+        var glyph=function(gx,gy){
+          gx=clamp(gx,0,w); gy=clamp(gy,0,h);
+          ctx.strokeStyle=PAL.gold; ctx.lineWidth=1.6; ctx.globalAlpha=0.9;
+          ctx.beginPath(); ctx.arc(gx,gy,5.5,0.6,0.6+Math.PI*1.55); ctx.stroke();
+          ctx.globalAlpha=1;
+          var ea=0.6+Math.PI*1.55;
+          dot(ctx,clamp(gx+5.5*Math.cos(ea),0,w),clamp(gy+5.5*Math.sin(ea),0,h),2,PAL.gold);
+        };
+        glyph(wallL, clamp(mt-13,0,h)); glyph(wallR, clamp(mt-13,0,h));
+        glyph(wallL, clamp(mb+13,0,h)); glyph(wallR, clamp(mb+13,0,h));
+        txt(ctx,'eddy currents',tubeCx,clamp(mt-24,10,h-2),PAL.gold,7.5,'center');
+      }
+
+      // the bar magnet: N (top, red-ish) / S (bottom, cool)
+      ctx.fillStyle=PAL.bad; ctx.fillRect(clamp(mx-magW/2,0,w),mt,clamp(magW,0,w),clamp(magY-mt,0,h));
+      ctx.fillStyle=PAL.cool; ctx.fillRect(clamp(mx-magW/2,0,w),clamp(magY,0,h),clamp(magW,0,w),clamp(mb-magY,0,h));
+      ctx.strokeStyle=PAL.ink; ctx.lineWidth=1; ctx.strokeRect(clamp(mx-magW/2,0,w),mt,clamp(magW,0,w),clamp(mb-mt,0,h));
+      txt(ctx,'N',mx,clamp(magY-4,10,h-2),PAL.surf,9,'center');
+      txt(ctx,'S',mx,clamp(magY+10,10,h-2),PAL.surf,9,'center');
+
+      // velocity arrow (ink, down) on the left of the magnet
+      var vx=clamp(mx-magW/2-13,0,w);
+      var Lv=clamp(v*20,3,clamp(tubeBot-magY-3,3,52));
+      arrow(ctx,vx,clamp(magY,0,h),vx,clamp(magY+Lv,0,h),PAL.ink,2);
+      txt(ctx,'v',clamp(vx-3,8,w-2),clamp(magY+Lv*0.5,10,h-2),PAL.ink,8,'right');
+
+      // force arrows (right of magnet): mg down (muted), magnetic drag up (gold) — equal at terminal
+      var fxr=clamp(mx+magW/2+13,0,w);
+      var Lg=clamp(24*g,4,40);
+      arrow(ctx,fxr,clamp(magY,0,h),fxr,clamp(magY+Lg,0,h),PAL.muted,2);
+      txt(ctx,'mg',clamp(fxr+3,8,w-2),clamp(magY+Lg-2,10,h-2),PAL.muted,7.5,'left');
+      if(dragF>0.02){
+        var Ld=clamp(24*dragF,3,50);
+        arrow(ctx,fxr,clamp(magY,0,h),fxr,clamp(magY-Ld,0,h),PAL.gold,2);
+        txt(ctx,'drag',clamp(fxr+3,8,w-2),clamp(magY-Ld+4,10,h-2),PAL.gold,7.5,'left');
+      }
+
+      // ---- v(t) plot (right ~40%) ----
+      var px0=clamp(w*0.60,wallR+26,w-110), pxB=clamp(w-10,px0+60,w);
+      var py0=42, pyB=clamp(h-30,py0+40,h);
+      var pw=Math.max(40,pxB-px0), ph=Math.max(30,pyB-py0);
+
+      // adaptive y-scale: show the terminal line when it's finite & on-range
+      var peak=0, i;
+      for(i=0;i<s.hist.length;i++){ if(s.hist[i]>peak) peak=s.hist[i]; }
+      var ref=isFinite(vterm)?Math.max(vterm,peak):peak;
+      var vMaxPlot=clamp(Math.max(ref,v,0.4)*1.2,0.6,6);
+
+      var Y=function(val){ return clamp(pyB-clamp(val,0,vMaxPlot)/vMaxPlot*ph,py0,pyB); };
+
+      // panel header + readouts
+      txt(ctx,'speed v(t)',px0,clamp(py0-20,10,h-2),PAL.muted,9,'left');
+      txt(ctx,'v '+v.toFixed(2),pxB,clamp(py0-20,10,h-2),s.accent,8.5,'right');
+      txt(ctx,freefall?'v∞ — (free fall)':'v∞ '+vterm.toFixed(2),
+          pxB,clamp(py0-9,10,h-2),freefall?PAL.warn:PAL.muted,8.5,'right');
+
+      // axes frame + faint grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px0,py0); ctx.lineTo(px0,pyB); ctx.lineTo(pxB,pyB); ctx.stroke();
+      ctx.globalAlpha=0.4;
+      for(i=1;i<4;i++){ var gy=clamp(pyB-ph*i/4,py0,pyB); ctx.beginPath(); ctx.moveTo(px0,gy); ctx.lineTo(pxB,gy); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      txt(ctx,'time →',pxB,clamp(pyB+12,10,h-2),PAL.faint,7.5,'right');
+
+      // terminal line (dashed) when visible
+      if(isFinite(vterm) && vterm<=vMaxPlot){
+        var ty=Y(vterm);
+        ctx.strokeStyle=s.accent; ctx.globalAlpha=0.7; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.moveTo(px0,ty); ctx.lineTo(pxB,ty); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha=1;
+        txt(ctx,'terminal v',px0+4,clamp(ty-3,10,h-2),s.accent,7.5,'left');
+        txt(ctx,'F = mg here',pxB,clamp(ty-3,10,h-2),PAL.faint,7,'right');
+      } else if(freefall){
+        txt(ctx,'no terminal — accelerating',px0+4,clamp(py0+10,10,h-2),PAL.warn,7.5,'left');
+      }
+
+      // v(t) curve (accent)
+      var N=180, len=s.hist.length, stepx=pw/(N-1), started=false;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2; ctx.beginPath();
+      for(i=0;i<len;i++){
+        var xx=clamp(pxB-(len-1-i)*stepx,px0,pxB);
+        var yy=Y(s.hist[i]);
+        if(!started){ ctx.moveTo(xx,yy); started=true; } else ctx.lineTo(xx,yy);
+      }
+      ctx.stroke();
+      // current point
+      dot(ctx,pxB,Y(v),3.2,s.accent);
+
+      // the balance note + caption
+      txt(ctx,'drag ∝ v  ·  F = mg at terminal',(px0+pxB)/2,clamp(pyB+24,10,h-2),PAL.faint,7.5,'center');
+      txt(ctx,'nothing touches — the faster it falls, the harder the field drags back',
+          w/2,clamp(h-6,12,h),PAL.faint,8,'center');
+    }
+  };
+
+  /* dragspeed — the eddy-brake force-vs-speed characteristic (and why it can't hold a stop). Plots
+     drag force F(v) = Kscale·k·v / (1 + (v/vpk)²) on fixed axes (speed 0→vmax, force 0→yMax) so that
+     k = (B/100)²·(cond/100) changes rescale the curve VISIBLY: F ∝ B² (quadruples with strength) and
+     F ∝ conductivity (∝ 1/R). F rises ~linearly (F ≈ k·v) at low speed, peaks near v = vpk, rolls off
+     at high speed, and always passes through the origin. Annotations: the low-speed linear region with
+     a faint tangent through the origin ("F ∝ v"), the peak dot, and a prominent red origin marker —
+     "F → 0 at v = 0", the reason it can't hold a stopped load. A gentle operating point sweeps the
+     curve off s.t. Controls read ONLY via s.p.*; unicode literals only. */
+  SIMS.dragspeed={
+    controls:[
+      {k:'B',    label:'Magnet strength', min:0,  max:100, step:5, val:60, unit:' %'},
+      {k:'cond', label:'Conductivity',    min:10, max:100, step:5, val:70, unit:' %'}
+    ],
+    init:function(s,w,h){ s.ph=0; },
+    step:function(s,dt){ /* static characteristic; the operating point sweeps off s.t in draw */ },
+    draw:function(ctx,w,h,s){
+      var vpk=3.5, vmax=10, Kscale=2/vpk;               // fixed peak-speed & display scale
+      var B=clamp(s.p.B,0,100)/100, cond=clamp(s.p.cond,10,100)/100;
+      var k=B*B*cond;                                   // ∝ B², ∝ conductivity (1/R)
+      var yMax=1.12;                                    // full-strength peak = 1.0, + headroom
+      var F=function(v){ var vv=clamp(v,0,vmax); return Kscale*k*vv/(1+(vv/vpk)*(vv/vpk)); };
+      var Fpeak=F(vpk);
+
+      // ---- axes ----
+      var px0=46, py0=26, pxw=clamp(w-px0-122,80,w-60), pyh=clamp(h-py0-42,60,260);
+      var pxB=px0+pxw, pyB=py0+pyh;
+      var X=function(v){ return clamp(px0+clamp(v,0,vmax)/vmax*pxw,px0,pxB); };
+      var Y=function(f){ return clamp(pyB-clamp(f,0,yMax)/yMax*pyh,py0,pyB); };
+
+      // title
+      txt(ctx,'eddy-brake drag vs speed',8,13,PAL.muted,10,'left');
+
+      // axes frame + grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px0,py0); ctx.lineTo(px0,pyB); ctx.lineTo(pxB,pyB); ctx.stroke();
+      ctx.globalAlpha=0.45;
+      var gi; for(gi=1;gi<4;gi++){ var gy=clamp(pyB-pyh*gi/4,py0,pyB); ctx.beginPath(); ctx.moveTo(px0,gy); ctx.lineTo(pxB,gy); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      txt(ctx,'drag F',px0-4,clamp(py0-6,8,h-2),PAL.faint,7.5,'right');
+      txt(ctx,'speed v →',pxB,clamp(pyB+16,10,h-2),PAL.faint,7.5,'right');
+      txt(ctx,'0',px0,clamp(pyB+16,10,h-2),PAL.faint,7.5,'left');
+
+      // faint tangent through the origin: F ≈ Kscale·k·v (the low-speed linear law)
+      if(k>1e-6){
+        var slope=Kscale*k;                             // dF/dv at v=0
+        var vEnd=Math.min(vmax,yMax/slope);             // where the tangent would hit yMax
+        ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.6; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.moveTo(X(0),Y(0)); ctx.lineTo(X(vEnd),Y(slope*vEnd)); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha=1;
+        var lx=clamp(vEnd*0.55,0,vmax);
+        txt(ctx,'F ∝ v',clamp(X(lx)+4,px0,pxB),clamp(Y(slope*lx)-5,10,h-2),PAL.faint,8,'left');
+      }
+
+      // F(v) curve (accent)
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4; ctx.beginPath();
+      var N=80, i, started=false;
+      for(i=0;i<=N;i++){ var v=vmax*i/N; var xx=X(v), yy=Y(F(v));
+        if(!started){ ctx.moveTo(xx,yy); started=true; } else ctx.lineTo(xx,yy); }
+      ctx.stroke();
+
+      // peak marker
+      dot(ctx,X(vpk),Y(Fpeak),4,s.accent);
+      txt(ctx,'peak',clamp(X(vpk),px0,pxB),clamp(Y(Fpeak)-7,10,h-2),s.accent,8,'center');
+
+      // sweeping operating point off s.t
+      var sweep=(1-Math.cos((s.t||0)*0.5))/2;            // 0 → 1 → 0, smooth
+      var vop=clamp(sweep*vmax,0,vmax), Fop=F(vop);
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.35; ctx.lineWidth=1; ctx.setLineDash([2,3]);
+      ctx.beginPath(); ctx.moveTo(X(vop),Y(Fop)); ctx.lineTo(X(vop),pyB); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      ctx.fillStyle=PAL.surf; ctx.beginPath(); ctx.arc(X(vop),Y(Fop),5,0,Math.PI*2); ctx.fill();
+      dot(ctx,X(vop),Y(Fop),3.2,PAL.gold);
+
+      // prominent origin marker — the "can't hold" point
+      var ox=X(0), oy=Y(0);
+      ctx.strokeStyle=PAL.bad; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(ox,oy,7,0,Math.PI*2); ctx.stroke();
+      dot(ctx,ox,oy,3,PAL.bad);
+      txt(ctx,'F → 0 at v = 0',clamp(ox+12,px0,pxB),clamp(oy-24,10,h-2),PAL.bad,8.5,'left');
+      txt(ctx,"can't hold a stopped load",clamp(ox+12,px0,pxB),clamp(oy-13,10,h-2),PAL.bad,7.5,'left');
+      txt(ctx,'→ needs a friction brake',clamp(ox+12,px0,pxB),clamp(oy-3,10,h-2),PAL.bad,7.5,'left');
+
+      // ---- readouts panel ----
+      var qx=clamp(pxB+14,w*0.6,w-70), qw=Math.max(52,w-8-qx);
+      txt(ctx,'scalings',qx,clamp(py0+8,10,h-2),PAL.muted,9,'left');
+      var rows=[
+        {n:'F ∝ B²',v:'',c:PAL.gold},
+        {n:'F ∝ 1/R',v:'cond',c:PAL.cool},
+        {n:'drag k',v:k.toFixed(3),c:PAL.muted},
+        {n:'peak F',v:Fpeak.toFixed(3),c:s.accent},
+        {n:'v @ peak',v:vpk.toFixed(1),c:PAL.faint},
+        {n:'F(op)',v:Fop.toFixed(3),c:PAL.gold}
+      ];
+      var ry=clamp(py0+24,16,h-20), rstep=clamp((pyB-ry)/rows.length,14,24), ri;
+      for(ri=0;ri<rows.length;ri++){ var yy2=clamp(ry+ri*rstep,14,h-6);
+        txt(ctx,rows[ri].n,qx,yy2,rows[ri].c,8.5,'left');
+        if(rows[ri].v) txt(ctx,rows[ri].v,qx+qw,yy2,PAL.ink,8.5,'right');
+      }
+
+      // caption
+      txt(ctx,'speed-proportional drag — strong at speed, zero at a standstill',
+          w/2,clamp(h-6,12,h),PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

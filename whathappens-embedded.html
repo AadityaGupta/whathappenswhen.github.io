@@ -1,0 +1,1590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>What Happens When · Embedded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E7ECEE; --surface:#FCFDFD; --surface-2:#F1F4F5;
+    --ink:#151B1F; --ink-soft:#3A454B; --muted:#63717A; --faint:#8A97A0;
+    --line:#D3DBDF; --line-soft:#E2E8EB;
+    --accent:#0E7C86; --accent-ink:#FFFFFF; --accent-wash:#DCEDEE;
+
+    --found:#3A6EA5; --arm:#1E8AA8; --serial:#2F8055; --can:#A9721A; --analog:#7A4F9E; --debug:#B0517E; --fwhw:#B5642E; --safety:#B23A48;
+
+    --shadow:0 1px 2px rgba(20,30,36,.05), 0 8px 24px -14px rgba(20,30,36,.18);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+      --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+      --line:#273035; --line-soft:#20282D;
+      --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+      --found:#7AA7DA; --arm:#5CC2DE; --serial:#5FB98C; --can:#D6A24A; --analog:#B98BD6; --debug:#D983AE; --fwhw:#E0985E; --safety:#E28088;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+    --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+    --line:#273035; --line-soft:#20282D;
+    --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+    --found:#7AA7DA; --arm:#5CC2DE; --serial:#5FB98C; --can:#D6A24A; --analog:#B98BD6; --debug:#D983AE; --fwhw:#E0985E; --safety:#E28088;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:840px;margin:0 auto;padding-inline:20px;padding-block:0}
+
+  header.top{padding-block:56px 20px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  .vol{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 9px}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(2.1rem,6vw,3.15rem);line-height:1.02;letter-spacing:-.02em;margin:.32em 0 .1em;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.16rem;color:var(--ink-soft);max-width:64ch;margin:.6em 0 0}
+  .metaline{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .metaline b{color:var(--ink);font-weight:600}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  .controls{position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(9px);border-bottom:1px solid var(--line-soft);margin-top:12px}
+  .controls .wrap{padding-block:12px;display:flex;flex-direction:column;gap:11px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .search input{width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--ink)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);padding:5px 12px 5px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:border-color .12s,color .12s,background .12s}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--dot,var(--faint))}
+  .chip[data-cat="all"]{--dot:var(--accent)}
+  .chip[data-cat="found"]{--dot:var(--found)}
+  .chip[data-cat="arm"]{--dot:var(--arm)}
+  .chip[data-cat="serial"]{--dot:var(--serial)}
+  .chip[data-cat="can"]{--dot:var(--can)}
+  .chip[data-cat="analog"]{--dot:var(--analog)}
+  .chip[data-cat="debug"]{--dot:var(--debug)}
+  .chip[data-cat="fwhw"]{--dot:var(--fwhw)}
+  .chip[data-cat="safety"]{--dot:var(--safety)}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--ink)}
+
+  section.track{padding-top:40px}
+  .track-head{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:6px}
+  .track-head .tno{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--track,var(--accent));font-weight:600}
+  .track-head h2{font-family:var(--sans);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:.15em 0 .1em}
+  .track-head p{font-family:var(--serif);color:var(--muted);margin:.2em 0 0;font-size:1rem;max-width:64ch}
+  section[data-track="found"]{--track:var(--found)}
+  section[data-track="arm"]{--track:var(--arm)}
+  section[data-track="serial"]{--track:var(--serial)}
+  section[data-track="can"]{--track:var(--can)}
+  section[data-track="analog"]{--track:var(--analog)}
+  section[data-track="debug"]{--track:var(--debug)}
+  section[data-track="fwhw"]{--track:var(--fwhw)}
+  section[data-track="safety"]{--track:var(--safety)}
+
+  .scenario{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--cat,var(--accent));border-radius:12px;padding:22px 24px 20px;margin-top:16px;box-shadow:var(--shadow)}
+  .scenario[data-cat="found"]{--cat:var(--found)}
+  .scenario[data-cat="arm"]{--cat:var(--arm)}
+  .scenario[data-cat="serial"]{--cat:var(--serial)}
+  .scenario[data-cat="can"]{--cat:var(--can)}
+  .scenario[data-cat="analog"]{--cat:var(--analog)}
+  .scenario[data-cat="debug"]{--cat:var(--debug)}
+  .scenario[data-cat="fwhw"]{--cat:var(--fwhw)}
+  .scenario[data-cat="safety"]{--cat:var(--safety)}
+
+  .s-top{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .s-no{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--cat,var(--accent));flex:none}
+  .s-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:500;margin-left:auto;flex:none}
+  .scenario h3{font-family:var(--sans);font-weight:600;font-size:1.24rem;line-height:1.22;letter-spacing:-.01em;margin:.1em 0 .5em;text-wrap:balance}
+  .gist{font-family:var(--serif);font-style:italic;font-size:1.02rem;color:var(--ink);margin:0 0 12px;padding-left:12px;border-left:2px solid var(--cat,var(--accent))}
+  .gist b{font-style:normal;font-weight:600}
+  .answer{font-family:var(--serif);font-size:1.06rem;line-height:1.6;color:var(--ink-soft)}
+  .answer p{margin:0 0 .8em}
+  .answer p:last-child{margin-bottom:0}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);color:var(--ink);padding:1px 5px;border-radius:5px;border:1px solid var(--line-soft)}
+
+  /* --- Simulation --- */
+  .simwrap{margin:16px 0 6px;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden;background:var(--surface-2)}
+  canvas.sim{display:block;width:100%;height:230px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:6px 12px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--cat,var(--accent));cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--cat,var(--accent));color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12px;color:var(--muted);margin:4px 0 0;padding-left:2px}
+
+  .milciv{font-family:var(--sans);font-size:12.5px;color:var(--ink-soft);margin:14px 0 0;padding:10px 12px;background:var(--surface-2);border-radius:8px}
+  .milciv b{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--cat,var(--accent));font-weight:600;display:block;margin-bottom:3px}
+
+  .foot-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:16px;padding-top:13px;border-top:1px dashed var(--line)}
+  .ytlink{font-family:var(--sans);font-size:12.5px;font-weight:500;color:var(--cat,var(--accent));text-decoration:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+  .ytlink:hover{border-color:var(--cat,var(--accent));background:var(--surface-2)}
+  .ytlink svg{width:15px;height:15px;flex:none}
+  .terms{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+  .term{font-family:var(--mono);font-size:11px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;line-height:1.3}
+
+  .noresult{display:none;text-align:center;font-family:var(--serif);color:var(--muted);padding:48px 0 12px;font-size:1.05rem}
+  body.empty .noresult{display:block}
+
+  footer.foot{margin-top:52px;padding:26px 0 60px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.7}
+  footer.foot b{color:var(--muted);font-weight:500}
+
+  @media (max-width:520px){
+    .scenario{padding:18px 16px 16px}
+    header.top{padding-block:40px 16px}
+    .s-tag{display:none}
+    canvas.sim{height:200px}
+  }
+  @media print{ .toggle,.controls,.simwrap{display:none} body{background:#fff;color:#000} .scenario{box-shadow:none;border:1px solid #ccc;break-inside:avoid} }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html" title="Back to all volumes" aria-label="Back to all volumes">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker"><span class="vol">Embedded &amp; Safety-Critical · Newbie → Working Knowledge</span> Interactive Field Guide</div>
+    <h1>What Happens <em>When…</em></h1>
+    <p class="lede">How a microcontroller actually runs your code, wiggles a wire, talks to other chips over UART/SPI/I²C/CAN, reads the analog world, and how engineers debug it with a debugger, an oscilloscope and a logic analyzer — right up to the rigor of safety-critical avionics (DO-178C and friends). Written for someone new to embedded: every idea gets a plain analogy, and many come with a live animation you can play with. Drag the sliders — the point is to build a feel for it.</p>
+    <div class="metaline">
+      <span><b>42</b> scenarios</span>
+      <span><b>16</b> live animations</span>
+      <span><b>8</b> tracks · newbie-friendly</span>
+      <span>Firmware · signals · debug · safety</span>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Search — e.g. GPIO, UART, I2C, CAN, ADC, PWM, SWD, interrupt, DO-178C" aria-label="Search scenarios">
+      </label>
+      <span class="count" id="count"><b>42</b> shown</span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by track">
+      <button class="chip" data-cat="all" aria-pressed="true"><span class="dot"></span>All</button>
+      <button class="chip" data-cat="found" aria-pressed="false"><span class="dot"></span>Foundations</button>
+      <button class="chip" data-cat="arm" aria-pressed="false"><span class="dot"></span>ARM &amp; Cortex-M</button>
+      <button class="chip" data-cat="serial" aria-pressed="false"><span class="dot"></span>UART · SPI · I²C</button>
+      <button class="chip" data-cat="can" aria-pressed="false"><span class="dot"></span>CAN &amp; networks</button>
+      <button class="chip" data-cat="analog" aria-pressed="false"><span class="dot"></span>Analog edge</button>
+      <button class="chip" data-cat="debug" aria-pressed="false"><span class="dot"></span>Debug tools</button>
+      <button class="chip" data-cat="fwhw" aria-pressed="false"><span class="dot"></span>Firmware↔hardware</button>
+      <button class="chip" data-cat="safety" aria-pressed="false"><span class="dot"></span>Safety-critical</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="list">
+
+  <!-- ============ FOUNDATIONS ============ -->
+  <section class="track" data-track="found">
+    <div class="track-head">
+      <div class="tno">Track 01 — Meet the microcontroller</div>
+      <h2>Foundations</h2>
+      <p>A microcontroller is a whole tiny computer on a single chip — brain, memory, and a fistful of pins. Everything in this guide builds on how it wakes up, runs your code, and flips a pin from 0 to 1.</p>
+    </div>
+
+    <article class="scenario" data-cat="found">
+      <div class="s-top"><span class="s-no">01</span><span class="s-tag">Foundations</span></div>
+      <h3>You power on a microcontroller</h3>
+      <p class="gist"><b>Analogy:</b> more like a vending machine than a laptop — it wakes already knowing the one program it will run, and runs it forever.</p>
+      <div class="answer">
+        <p>The moment power reaches the chip it isn't actually ready — the supply voltage takes a few milliseconds to rise and settle. A <b>power-on-reset</b> circuit (usually paired with a <b>brown-out detector</b> that watches for sagging voltage later) holds the CPU frozen in <b>reset</b> until things are stable, then releases it. Only then does the core run its first instruction, so the chip never tries to execute on a half-powered supply.</p>
+        <p>Where does it find that first instruction? On a Cortex-M the very start of flash is the <b>vector table</b>, and its first two entries are the <b>initial stack pointer</b> and the address of the <b>reset handler</b> — that address is the <b>reset vector</b>. So the CPU loads the stack pointer, jumps to the reset handler, and begins running your <b>firmware</b> (the program you flashed). There's no operating system to boot and no disk to read; the code lives in flash and executes directly, from the first microsecond.</p>
+        <p>That reset handler is <b>startup code</b> — the C runtime, often called <code>crt0</code> — and it does the housekeeping a PC does for you invisibly. It copies the initial values of your global variables from flash into RAM (the <code>.data</code> section), zeroes the globals that start at zero (<code>.bss</code>), sets up the stack and heap, runs any C++ constructors, and finally <b>calls <code>main()</code></b>. Your <code>main()</code> then almost always enters an infinite loop, because on bare metal there is nowhere to "return" to — the program <em>is</em> the whole show until the power is cut.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Unlike a PC, a microcontroller runs one program deterministically from power-on — which is exactly why it's trusted in cars, pacemakers and aircraft.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+a+microcontroller+boots+reset+vector+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how a microcontroller boots</a>
+        <div class="terms"><span class="term">reset vector</span><span class="term">boots from flash</span><span class="term">no OS needed</span><span class="term">startup code → main()</span><span class="term">runs forever</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="found">
+      <div class="s-top"><span class="s-no">02</span><span class="s-tag">Foundations</span></div>
+      <h3>What's actually inside the chip</h3>
+      <p class="gist"><b>Analogy:</b> a kitchen — the chef (CPU), the recipe book (flash), the counter space (RAM), and appliances (peripherals) wired out to the world.</p>
+      <div class="answer">
+        <p>Everything sits on one piece of silicon. The <b>CPU core</b> (usually an ARM Cortex-M) does the actual computing. <b>Flash memory</b> holds your program and keeps it when the power is off (it's non-volatile). <b>RAM</b> (SRAM) holds your variables, stack and heap while the program runs, and forgets everything on power-down. And a set of <b>peripherals</b> — timers, an ADC and sometimes a DAC, communication blocks (UART, SPI, I²C, CAN), a DMA engine, a watchdog, and GPIO — do specialized jobs so the CPU doesn't have to babysit every wire.</p>
+        <p>The CPU reaches all of it through an internal <b>bus</b> (on Cortex-M, a small bus matrix), and every region has a fixed home in one big <b>address map</b>: flash lives around <code>0x0800&nbsp;0000</code>, RAM around <code>0x2000&nbsp;0000</code>, and peripherals up around <code>0x4000&nbsp;0000</code>. So "talking to hardware" is literally reading and writing particular addresses — the idea the next scenario builds on, and the one that unlocks embedded programming.</p>
+        <p>Two things surprise newcomers. First, <b>pins are multiplexed</b>: one physical pin can act as a plain GPIO, or a UART transmit line, or a timer output, depending on the "alternate function" you configure — so part of setup is assigning each pin its job. Second, most peripherals power up <b>switched off to save energy</b>, so you must <b>enable a peripheral's clock</b> before its registers do anything at all. Writing to a UART whose clock is still off, and wondering why nothing comes out, is one of the most common first-day bugs.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>The "micro" is the integration: you don't wire up separate CPU, RAM and I/O chips — one cheap, reliable part does the lot.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=what+is+inside+a+microcontroller+architecture+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: inside a microcontroller</a>
+        <div class="terms"><span class="term">CPU core (Cortex-M)</span><span class="term">flash = code</span><span class="term">RAM = variables</span><span class="term">peripherals</span><span class="term">GPIO pins</span><span class="term">internal bus</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="found">
+      <div class="s-top"><span class="s-no">03</span><span class="s-tag">Foundations · key idea</span></div>
+      <h3>Firmware "writes to a register" and a pin moves</h3>
+      <p class="gist"><b>Analogy:</b> light switches on a wall — writing a 1 to a bit flips that pin's switch to ON.</p>
+      <div class="answer">
+        <p>Here's the mental shift that makes embedded click: <b>to the CPU, hardware looks like memory</b>. Each peripheral exposes <b>control registers</b> — special addresses that aren't storage at all, they're wired straight into the silicon, so reading or writing them <em>is</em> the hardware action. A GPIO block, for instance, has a mode register (is this pin an input or an output?), an output register whose bits map one-to-one to pins, and an input register that reflects the live voltage on each pin.</p>
+        <p>So writing a 1 into bit 5 of the output register drives pin 5 to a <b>high voltage</b> (typically 3.3&nbsp;V); writing 0 pulls it <b>low</b> (0&nbsp;V). In code you treat the address as a pointer — <code>*(volatile uint32_t*)0x40020014 = 0x20;</code> — though in practice you use the vendor's register struct, so it reads <code>GPIOA-&gt;ODR |= (1&lt;&lt;5);</code>, which is the same write in friendlier form. This is <b>memory-mapped I/O</b>, and it's exactly why <code>volatile</code> matters: it forbids the compiler from caching, reordering, or "optimizing away" accesses to something that can change on its own.</p>
+        <p>One subtlety worth meeting early: <code>ODR |= (1&lt;&lt;5)</code> is a <b>read-modify-write</b> — read the whole register, flip one bit, write it back. If an interrupt changes a different bit of that register in the gap, its change is lost. That's why chips like STM32 add a dedicated <b>set/reset register (BSRR)</b> that flips only the bits you name in a single atomic write, with no read at all. It's a small thing, but it's the very same lost-update trap you'll meet again with shared variables and interrupts.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · a register value → 8 physical pins</div>
+        <canvas class="sim" data-sim="regpin" data-c="#3A6EA5" aria-label="Register to pin simulation"></canvas>
+        <div class="ctrls" data-sim="regpin"></div>
+      </div>
+      <p class="simnote">Drag the register value. Each bit you turn on drives its pin high and lights that LED — writing the number is the hardware action.</p>
+      <div class="milciv"><b>Why it matters</b>The <code>volatile</code> keyword shows up here: it tells the compiler "this address can change on its own — never optimize away my reads and writes."</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=memory+mapped+io+registers+embedded+gpio+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: memory-mapped I/O</a>
+        <div class="terms"><span class="term">control registers</span><span class="term">memory-mapped I/O</span><span class="term">a bit = a pin</span><span class="term">volatile</span><span class="term">HAL wrappers</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="found">
+      <div class="s-top"><span class="s-no">04</span><span class="s-tag">Foundations</span></div>
+      <h3>You blink an LED (GPIO)</h3>
+      <p class="gist"><b>Analogy:</b> the "Hello, World!" of hardware — proof that your code can touch the physical world.</p>
+      <div class="answer">
+        <p>"Blink" sounds trivial, but it exercises the whole stack, which is why it's everyone's first program. The full recipe: <b>enable the GPIO port's clock</b>, <b>configure the pin as an output</b> (in its mode register, usually push-pull), then in a loop <b>set the pin high, wait, set it low, wait</b>. The pin voltage becomes a <b>square wave</b> and the LED turns on and off. (The LED also needs a series <b>current-limiting resistor</b>, and depending on wiring the pin either <em>sources</em> current to light it or <em>sinks</em> it — a classic wiring gotcha that leaves a beginner's LED dark or always-on.)</p>
+        <p>The interesting part is the "wait." Beginners reach for a <b>busy-loop delay</b> like <code>for(i=0;i&lt;1000000;i++);</code> — it technically works, but it's bad practice on two counts: it burns 100% of the CPU doing nothing, and its real duration depends on the clock speed and the compiler's optimization level, so the same code blinks at different rates on different builds (turn optimization up and an empty loop can even vanish entirely). The grown-up way is a <b>hardware timer</b> (or an RTOS delay), so the CPU stays free and the timing is exact and clock-independent.</p>
+        <p>Get blink working and you've quietly proven a great deal: your toolchain compiles and flashes, the chip boots and runs your code, the clock is configured, and your pin wiring is correct. That's why "does the LED blink?" is the embedded engineer's smoke test on any new board.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · blink rate → the square wave on the pin</div>
+        <canvas class="sim" data-sim="blink" data-c="#3A6EA5" aria-label="LED blink simulation"></canvas>
+        <div class="ctrls" data-sim="blink"></div>
+      </div>
+      <p class="simnote">Change the blink rate and watch both the LED and the square-wave voltage it produces on the pin.</p>
+      <div class="milciv"><b>Why it matters</b>Blink faster than about 50 times a second and your eye stops seeing flicker — that's the doorway to PWM dimming later in this guide.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=blink+an+LED+microcontroller+GPIO+tutorial"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: blink an LED</a>
+        <div class="terms"><span class="term">configure pin as output</span><span class="term">set high/low in a loop</span><span class="term">square wave</span><span class="term">"hello world" of embedded</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="found">
+      <div class="s-top"><span class="s-no">05</span><span class="s-tag">Foundations</span></div>
+      <h3>The clock — why everything depends on it</h3>
+      <p class="gist"><b>Analogy:</b> a drummer setting the beat — every instruction and every peripheral marches to the clock.</p>
+      <div class="answer">
+        <p>Digital logic needs a heartbeat, and the whole chip marches to it. The source is an <b>oscillator</b>: either an external <b>crystal</b> — very accurate and stable (a few parts per million) — or a cheaper <b>internal RC oscillator</b> that needs no extra components but drifts with temperature and voltage. That accuracy isn't academic: UART bit timing is derived from the clock, so a drifty internal oscillator can push your baud rate far enough off to corrupt every byte — which is exactly why serial links often insist on a real crystal.</p>
+        <p>That base frequency is usually too low, so a <b>PLL</b> (phase-locked loop) multiplies it up — an 8&nbsp;MHz crystal might become a 168&nbsp;MHz system clock. From there a <b>clock tree</b> fans the clock out through a chain of <b>prescalers</b> (dividers) to the CPU and to each internal bus and peripheral, so different parts can run at different speeds (CPU fast, a slow sensor bus divided down). Everything is measured in <b>clock cycles</b> — instructions, timer ticks, the width of each UART bit — so the clock literally defines both your speed and your sense of time.</p>
+        <p>Running fast has a price. Flash memory can't feed a fast CPU instantly, so you must insert <b>wait states</b>; and higher frequency means more power and heat. That trade is the whole story of battery life: microcontrollers <b>gate</b> (switch off) the clocks to unused peripherals and drop into <b>low-power / stop modes</b> that slow or halt the clock entirely, waking on an interrupt. Configuring the clock tree correctly is one of the first genuinely fiddly steps on any new chip — and "check the clock" is a reflex whenever timing is mysteriously wrong.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Get the clock config wrong and everything is subtly wrong — your UART talks at the wrong speed, your delays are off. "Check the clock" is an early debugging reflex.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=microcontroller+clock+PLL+oscillator+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: clocks &amp; PLLs</a>
+        <div class="terms"><span class="term">crystal / RC oscillator</span><span class="term">PLL multiplies</span><span class="term">system clock</span><span class="term">clock tree</span><span class="term">cycles = time</span><span class="term">speed vs power</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="found">
+      <div class="s-top"><span class="s-no">06</span><span class="s-tag">Foundations · key idea</span></div>
+      <h3>An interrupt fires</h3>
+      <p class="gist"><b>Analogy:</b> a doorbell — instead of checking the door every few seconds, you get on with life and the bell interrupts you when someone arrives.</p>
+      <div class="answer">
+        <p>An <b>interrupt</b> is the hardware's way of tapping the CPU on the shoulder. When an event fires — a byte arrives on UART, a timer expires, a pin changes — the interrupt controller signals the core, which finishes its current instruction, <b>automatically saves its state</b>, and jumps to a dedicated function: the <b>Interrupt Service Routine (ISR)</b>. When the ISR returns, the CPU restores that state and continues exactly where it was, as if nothing happened. On a Cortex-M this is remarkably tidy — the hardware itself pushes the key registers onto the stack (so you can write ISRs in plain C) and looks up the ISR's address in the <b>vector table</b>, all with low and, crucially, <em>deterministic</em> latency, which is a big reason these chips are trusted in real-time systems.</p>
+        <p>The alternative is <b>polling</b>: sitting in a loop endlessly asking "is there a byte yet? is there a byte yet?" That wastes cycles, and it can still miss a brief event that comes and goes between checks. Interrupts invert it — the CPU does useful work (or sleeps to save power) and is woken only when something actually happens. That efficiency is why almost everything time-sensitive is interrupt-driven.</p>
+        <p>The golden rule is <b>keep ISRs short</b>. While an ISR runs, it delays other interrupts of equal or lower priority, so a long handler quietly wrecks the timing of everything else. The standard pattern is: the ISR does the bare minimum — grab the byte, set a <code>volatile</code> flag, or push data into a buffer — and the main loop does the real work later, when it's convenient. That hand-off is powerful, but because the ISR and <code>main()</code> now share data and can interrupt each other, it's the birthplace of race-condition bugs (a whole scenario of its own further on).</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · interrupts preempt the main loop</div>
+        <canvas class="sim" data-sim="irq" data-c="#3A6EA5" aria-label="Interrupt simulation"></canvas>
+        <div class="ctrls" data-sim="irq"></div>
+      </div>
+      <p class="simnote">Raise the interrupt rate and watch the CPU keep jumping out of <code>main()</code> into the ISR (red) and back.</p>
+      <div class="milciv"><b>Why it matters</b>Polling vs interrupts is a core design choice: polling is simple but wastes cycles; interrupts are efficient but add complexity. Most real firmware uses both.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=interrupts+vs+polling+embedded+ISR+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: interrupts vs polling</a>
+        <div class="terms"><span class="term">interrupt</span><span class="term">ISR</span><span class="term">save/restore context</span><span class="term">poll vs interrupt</span><span class="term">keep ISRs short</span><span class="term">set-a-flag</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ ARM & CORTEX-M ============ -->
+  <section class="track" data-track="arm">
+    <div class="track-head">
+      <div class="tno">Track 02 — The ARM Cortex-M world</div>
+      <h2>ARM &amp; the chip families</h2>
+      <p>Almost every modern microcontroller runs an ARM Cortex-M core. Knowing what ARM actually is — and what changes (and doesn't) between STM32, TI, NXP and Microchip — saves a lot of confusion.</p>
+    </div>
+
+    <article class="scenario" data-cat="arm">
+      <div class="s-top"><span class="s-no">07</span><span class="s-tag">ARM</span></div>
+      <h3>What ARM is, and why it's everywhere</h3>
+      <p class="gist"><b>Analogy:</b> ARM designs the engine; dozens of companies build the cars around it.</p>
+      <div class="answer">
+        <p>ARM is unusual: it designs CPU cores but doesn't manufacture a single chip. It sells the design — an <b>IP core</b> — under licence to chipmakers, who wrap that core with their own flash, RAM and peripherals and fabricate the actual part. The <b>Cortex-M</b> family is its microcontroller line, and it's a range: <b>M0/M0+</b> are tiny, cheap and ultra-low-power; <b>M3/M4</b> add performance and (on M4) DSP maths for signal processing; <b>M7</b> is high-performance; <b>M33</b> adds TrustZone security. They all share one instruction set (Thumb-2), so an STM32, an NXP Kinetis and a TI part built on the same core run the same compiled code.</p>
+        <p>Crucially, ARM standardizes more than the CPU: the interrupt controller (<b>NVIC</b>), the SysTick timer, and the debug interface (<b>SWD/JTAG</b> via CoreSight) are part of the core, so those work the same everywhere. On top, ARM publishes <b>CMSIS</b>, a common software layer with consistent register definitions and helper functions. The payoff is a huge shared <b>ecosystem</b> — the same GCC/Clang compilers, debuggers, and RTOSes support every Cortex-M — which is why the skills you learn on one chip transfer to the next.</p>
+        <p>Worth not confusing: <b>Cortex-M</b> (microcontrollers — bare metal or a small RTOS, deterministic, low power) is a different line from <b>Cortex-A</b> (application processors that run Linux/Android in your phone). This whole guide lives in the Cortex-M world.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>This is why "I know STM32" mostly transfers to NXP or TI — the core, the interrupt controller (NVIC), and the debug interface (SWD) are shared ARM pieces.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=what+is+ARM+cortex-m+architecture+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: what is ARM Cortex-M</a>
+        <div class="terms"><span class="term">ARM licenses cores</span><span class="term">Cortex-M family</span><span class="term">same core, many vendors</span><span class="term">CMSIS</span><span class="term">low-power / deterministic</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="arm">
+      <div class="s-top"><span class="s-no">08</span><span class="s-tag">ARM</span></div>
+      <h3>You pick STM32 vs TI vs NXP vs Microchip</h3>
+      <p class="gist"><b>Analogy:</b> same engine, different dashboards — the driving feels familiar, the knobs are arranged differently.</p>
+      <div class="answer">
+        <p>All four sell Cortex-M parts, so the CPU core and instruction set are common ground. What actually differs is everything <em>around</em> the core: the <b>peripherals</b> (how many timers, ADC channels, CAN or Ethernet controllers), the pin counts and packages, the flash/RAM sizes, the vendor's <b>libraries and tools</b>, and their areas of strength. ST's STM32 has the broadest hobby-to-industrial range and the STM32Cube tools; NXP is strong in automotive and higher-end i.MX; TI has specialties like C2000 for motor/power control and famously low-power lines; Microchip brings the PIC/SAM families and MPLAB. You pick largely by <b>ecosystem and fit</b> — available parts, documentation quality, community, and which peripherals your product needs.</p>
+        <p>The real transferable skills are reading a <b>datasheet</b> (the electrical facts and pinout) and a <b>reference manual</b> (how each peripheral's registers work). With those, moving to a new vendor is mostly learning a different peripheral library and register map, not relearning embedded. A practical note: vendor <b>HAL</b> layers are convenient for getting started but can be bulky and occasionally leaky, so many experienced engineers drop closer to the registers (or use the lighter LL/CMSIS layer) when they need speed, size, or full control.</p>
+        <p>One more real-world driver: <b>supply and scalability</b>. Vendors offer pin-compatible families so you can move to a bigger or smaller chip without redesigning the board, and second-source availability (can you actually buy it in volume?) has become a first-class selection factor after recent shortages.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Job posts say "STM32 or TI or NXP or equivalent" precisely because the transferable skill is the ARM core plus datasheet literacy, not any one vendor's library.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=STM32+vs+NXP+vs+TI+microcontroller+families+comparison"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: comparing MCU families</a>
+        <div class="terms"><span class="term">same Cortex-M core</span><span class="term">different peripherals/pins</span><span class="term">HAL / SDK per vendor</span><span class="term">datasheet + reference manual</span><span class="term">ecosystem choice</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="arm">
+      <div class="s-top"><span class="s-no">09</span><span class="s-tag">ARM</span></div>
+      <h3>Bare-metal super-loop vs an RTOS</h3>
+      <p class="gist"><b>Analogy:</b> a to-do list you run top-to-bottom (bare metal) vs a manager juggling several jobs by giving each a turn (RTOS).</p>
+      <div class="answer">
+        <p>The simplest firmware is <b>bare metal</b>: a <code>while(1)</code> "super-loop" that runs task A, then B, then C, forever, with interrupts handling anything urgent. It's simple, has almost no overhead, and is easy to reason about. But it strains when several things must happen on <em>different</em> schedules. If task B occasionally takes a long time, tasks A and C wait for it — you get <b>jitter</b> and missed deadlines — and to keep everything responsive you end up chopping each job into little state-machine steps so nothing hogs the loop. Manageable for small systems, increasingly painful as they grow.</p>
+        <p>An <b>RTOS</b> (real-time operating system, e.g. FreeRTOS, Zephyr) changes the model. You write each activity as its own <b>task</b> — an independent function with its <em>own stack</em> — and a <b>scheduler</b> decides which task runs on the one CPU at any instant. Here's the actual mechanism, because it's the part that's usually glossed over: only one task truly runs at a time, and switching between them is a <b>context switch</b> — the kernel saves every CPU register of the current task (onto its stack) and restores the next task's saved registers, so that task resumes exactly where it paused. In a <b>preemptive</b> RTOS this switch is driven by a periodic timer tick (the <b>SysTick</b>) and by events: on each tick, or whenever a higher-priority task becomes ready, the scheduler immediately switches to the highest-priority <b>ready</b> task. ("Real-time" is precisely this guarantee — an urgent task <b>preempts</b> a less urgent one so deadlines are met, rather than waiting its turn.)</p>
+        <p>The other half is how tasks cooperate without busy-waiting. Instead of spinning in a loop, a task <b>blocks</b>: it calls something like <code>vTaskDelay()</code> or "wait for this queue," which tells the scheduler "I have nothing to do until X," so the CPU runs other tasks (or sleeps) meanwhile. Tasks then pass data and synchronize through kernel objects — <b>queues</b> (send messages between tasks safely), <b>semaphores</b> (signal that an event happened, often from an ISR to a task), and <b>mutexes</b> (one-at-a-time access to a shared resource). This is what makes concurrent firmware clean instead of a tangle of flags.</p>
+        <p>It isn't free. Each task needs its own <b>stack</b> (RAM adds up fast), the scheduler adds overhead and some timing variability, and you inherit classic concurrency hazards — most famously <b>priority inversion</b>, where a high-priority task is stuck waiting on a mutex held by a low-priority one that itself never gets to run; RTOSes fix it with <b>priority inheritance</b>. So the honest rule: reach for an RTOS when you have several genuinely concurrent activities on different timelines; stay <b>bare metal</b> when the system is small, when every microsecond and byte counts, or when you need the utmost determinism — which is also why safety-critical avionics often stays bare-metal or uses a specially <b>certified</b> RTOS rather than a stock one.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · one core, three tasks, a scheduler taking turns</div>
+        <canvas class="sim" data-sim="rtos" data-c="#1E8AA8" aria-label="RTOS scheduler simulation"></canvas>
+        <div class="ctrls" data-sim="rtos"></div>
+      </div>
+      <p class="simnote">Watch the scheduler hand each task a slice of the one CPU. A smaller slice feels smoother but spends more time switching.</p>
+      <div class="milciv"><b>Why it matters</b>Bare metal suits simple, ultra-constrained, or timing-critical loops; an RTOS suits many concurrent activities. Safety-critical code often stays deliberately simple and deterministic.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=bare+metal+vs+RTOS+embedded+FreeRTOS+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: bare metal vs RTOS</a>
+        <div class="terms"><span class="term">super-loop (bare metal)</span><span class="term">RTOS + scheduler</span><span class="term">tasks / priorities / preemption</span><span class="term">real-time = guaranteed timing</span><span class="term">queues / semaphores</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="arm">
+      <div class="s-top"><span class="s-no">10</span><span class="s-tag">ARM</span></div>
+      <h3>The interrupt controller (NVIC) and priorities</h3>
+      <p class="gist"><b>Analogy:</b> an emergency-room triage nurse — the most urgent interrupt jumps the queue.</p>
+      <div class="answer">
+        <p>Every Cortex-M ships with an <b>NVIC</b> (Nested Vectored Interrupt Controller) baked into the core. It manages all the interrupt sources and lets you give each one a <b>priority</b>. "<b>Nested</b>" means a higher-priority interrupt can preempt a lower-priority ISR that's already running, then control returns to the interrupted one — interrupts stack up and unwind by urgency. "<b>Vectored</b>" means every interrupt has its own handler address in the <b>vector table</b>, so when one fires the hardware jumps straight to the right function with no dispatch code of yours in the way.</p>
+        <p>A few details that bite in practice. Priority is <b>numerically inverted</b> — a <em>lower</em> number means <em>higher</em> urgency (priority 0 is the most urgent), which catches everyone at least once. Priorities split into a <b>preemption</b> level (can this interrupt bump a running one?) and a <b>sub-priority</b> (tie-break when two are pending). The NVIC also optimizes back-to-back interrupts with <b>tail-chaining</b> — it skips the needless "restore then immediately re-save" between two pending ISRs — which keeps latency low and predictable.</p>
+        <p>Two things to get right. To make a short section of code safe from interrupts (a "critical section"), you briefly mask interrupts using <code>PRIMASK</code> or, better, <code>BASEPRI</code> (which blocks only interrupts below a chosen level) — the disciplined alternative to the read-modify-write races mentioned earlier. And if you use an RTOS, ISRs that call kernel functions must sit at or below a specific priority boundary; get that wrong and you'll see rare, baffling corruption. As always, a long low-priority ISR that stalls a critical one is a classic real-time bug — which loops back to "keep ISRs short."</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Deterministic, prioritized interrupt latency is a big reason Cortex-M dominates real-time and safety systems — you can reason about worst-case response time.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=ARM+cortex-m+NVIC+interrupt+priority+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: the NVIC explained</a>
+        <div class="terms"><span class="term">NVIC</span><span class="term">interrupt priorities</span><span class="term">nested / preemption</span><span class="term">vector table</span><span class="term">deterministic latency</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ SERIAL BUSES ============ -->
+  <section class="track" data-track="serial">
+    <div class="track-head">
+      <div class="tno">Track 03 — Talking to other chips</div>
+      <h2>Serial buses: UART, SPI &amp; I²C</h2>
+      <p>Chips gossip over a few wires, one bit at a time. UART, SPI and I²C are the three you'll meet first — each a different trade between number of wires, speed, and how many devices can share the line.</p>
+    </div>
+
+    <article class="scenario" data-cat="serial">
+      <div class="s-top"><span class="s-no">11</span><span class="s-tag">Serial</span></div>
+      <h3>You send a byte over UART</h3>
+      <p class="gist"><b>Analogy:</b> two people agreeing to speak at a fixed pace with no metronome — as long as both keep the same rhythm, they understand each other.</p>
+      <div class="answer">
+        <p>UART sends a byte one bit at a time over a single wire (plus a shared ground), and its defining feature is that there's <b>no clock wire</b> — it's <em>asynchronous</em>. The line idles high; a <b>START</b> bit (a high-to-low transition) announces "a byte is coming," then come the 8 <b>data bits</b> (usually LSB first), an optional <b>parity</b> bit, and one or two <b>STOP</b> bits (high). This is written as "8N1" — 8 data bits, No parity, 1 stop bit — the most common setup you'll see.</p>
+        <p>With no shared clock, how does the receiver land in the middle of each bit? It knows the agreed <b>baud rate</b> (say 115200 bits/sec), so it knows how long a bit lasts. When it sees the START edge it waits half a bit-time to reach the <em>centre</em> of that bit, then steps one bit-time at a time, sampling each bit at its middle — typically <b>oversampling</b> at 16× internally to stay aligned. Because timing is the only synchronization, if the two sides' clocks differ by more than a few percent the sampling drifts off and the byte is garbled — which is why an accurate clock and an exactly-matching baud rate matter so much.</p>
+        <p>Practically it's <b>full-duplex</b> over two data lines, <b>TX</b> and <b>RX</b>, which must <b>cross over</b> — one device's TX to the other's RX — and share a common ground; swapping TX and RX is the classic "no comms" wiring bug. Some links add <b>RTS/CTS flow control</b> so a busy receiver can say "pause." UART is ideal for point-to-point: a sensor to an MCU, or an MCU to a PC over a USB-serial adapter. What it can't do is address several devices on one bus — that's exactly what SPI's chip-selects and I²C's addresses are for.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · one UART frame, bit by bit</div>
+        <canvas class="sim" data-sim="uart" data-c="#2F8055" aria-label="UART simulation"></canvas>
+        <div class="ctrls" data-sim="uart"></div>
+      </div>
+      <p class="simnote">Pick a byte and watch the frame — idle high, START, 8 data bits (LSB first), STOP. No clock wire: the agreed speed alone tells the receiver where each bit is.</p>
+      <div class="milciv"><b>Why it matters</b>If characters arrive as garbage, the number-one cause is a <b>baud-rate mismatch</b> — both sides must be set to exactly the same speed.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=UART+protocol+explained+start+stop+bits+baud+rate"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: UART explained</a>
+        <div class="terms"><span class="term">no clock wire</span><span class="term">start / data / stop bits</span><span class="term">baud rate</span><span class="term">LSB first</span><span class="term">TX / RX</span><span class="term">parity</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="serial">
+      <div class="s-top"><span class="s-no">12</span><span class="s-tag">Serial</span></div>
+      <h3>You talk to a chip over SPI</h3>
+      <p class="gist"><b>Analogy:</b> a conductor (the master) waving a baton (the clock) so the whole orchestra plays in perfect time.</p>
+      <div class="answer">
+        <p>SPI's trick is a shared <b>clock</b> wire, so timing is never in doubt: the master drives <b>SCLK</b> and every tick clocks exactly one bit. It uses up to four wires — SCLK (clock), <b>MOSI</b> (master-out/slave-in data), <b>MISO</b> (master-in/slave-out data), and <b>CS</b> (chip-select, which goes low to activate one device). Under the hood both sides are <b>shift registers</b> ticked by the same clock: on each edge the master shifts a bit out on MOSI while shifting a bit in on MISO, and the slave does the mirror image. So data flows <b>both ways at once</b> (full-duplex) — every transfer is simultaneously a send and a receive.</p>
+        <p>The one thing you must match is the <b>SPI mode</b>, set by two bits: <b>CPOL</b> (is the clock idle high or low?) and <b>CPHA</b> (is data sampled on the first clock edge or the second?). Their four combinations are "modes 0–3," and master and slave must agree or every bit is read at the wrong instant. Notice what SPI deliberately <em>lacks</em>: no addresses (you pick a device with its CS line), no acknowledgements, and no built-in error checking — it's fast and bare, and any integrity checking is up to you.</p>
+        <p>That bareness makes SPI the choice for <b>high-speed</b> parts — displays, SD cards, flash memory, fast ADCs — often running at tens of MHz. To put several devices on one bus you share SCLK/MOSI/MISO and give each its own CS; only the selected slave drives MISO while the others <b>tri-state</b> (let the line float). The cost is a dedicated CS pin per device, so SPI scales to many devices less neatly than I²C's two-wire addressing — a direct wires-for-speed trade against I²C.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · clock, data lines, chip-select</div>
+        <canvas class="sim" data-sim="spi" data-c="#2F8055" aria-label="SPI simulation"></canvas>
+        <div class="ctrls" data-sim="spi"></div>
+      </div>
+      <p class="simnote">The clock ticks each bit across; CS frames the transfer. CPOL/CPHA set exactly when the receiver reads — the red dots.</p>
+      <div class="milciv"><b>Why it matters</b>More wires than UART or I²C, but the shared clock makes SPI the go-to for high-speed parts like SD cards and displays.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=SPI+protocol+explained+MOSI+MISO+clock+chip+select"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: SPI explained</a>
+        <div class="terms"><span class="term">shared clock (SCLK)</span><span class="term">MOSI / MISO</span><span class="term">chip-select (CS)</span><span class="term">full-duplex</span><span class="term">fast</span><span class="term">CPOL/CPHA (mode)</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="serial">
+      <div class="s-top"><span class="s-no">13</span><span class="s-tag">Serial</span></div>
+      <h3>You share two wires with many chips over I²C</h3>
+      <p class="gist"><b>Analogy:</b> a party-line telephone — many devices share just two wires, and you call each one by its address.</p>
+      <div class="answer">
+        <p>I²C squeezes a whole bus of chips onto just two shared wires — <b>SDA</b> (data) and <b>SCL</b> (clock) — by giving every device an <b>address</b>. A transfer goes: the master issues a <b>START</b> (a special SDA-falls-while-SCL-high transition), sends the 7-bit <b>address</b> plus a read/write bit, and the addressed device answers with an <b>ACK</b> — it pulls SDA low for one clock to say "that's me, carry on." Data bytes then flow, each one ACK'd, until the master issues a <b>STOP</b>. A <b>repeated START</b> lets it change direction mid-conversation (write a register number, then read that register back) without ever releasing the bus.</p>
+        <p>Because every device shares the wires, the pins are <b>open-drain with pull-ups</b> (the next scenario), so anyone can pull a line low without a short. That also enables two neat tricks: a slow slave can <b>stretch the clock</b> (hold SCL low to mean "wait, I'm not ready yet"), and if two masters start at once they harmlessly <b>arbitrate</b> using the same dominant-low idea CAN uses. Speeds come in tiers — standard 100&nbsp;kHz, fast 400&nbsp;kHz, fast-plus 1&nbsp;MHz.</p>
+        <p>So I²C trades speed for wiring simplicity: slower than SPI, but you can hang a dozen sensors on the same two wires, which is why it dominates for low-speed parts (temperature sensors, IMUs, EEPROMs, small displays). The gotchas newcomers hit are memorable: forgetting the pull-ups (nothing works at all), <b>address clashes</b> (two identical fixed addresses need an address-select pin or a bus multiplexer), and a bus left "stuck" low when a transfer is interrupted in the middle of a byte.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · START, address, ACK, STOP on two wires</div>
+        <canvas class="sim" data-sim="i2c" data-c="#2F8055" aria-label="I2C simulation"></canvas>
+        <div class="ctrls" data-sim="i2c"></div>
+      </div>
+      <p class="simnote">Change the address and watch the frame: START, 7 address bits, the R/W bit, the ACK, then STOP. Two wires serve a whole bus of chips.</p>
+      <div class="milciv"><b>Why it matters</b>Two wires for many sensors is I²C's superpower; the price is lower speed and a little more protocol overhead (addresses, ACKs).</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=I2C+protocol+explained+SDA+SCL+address+ACK"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: I²C explained</a>
+        <div class="terms"><span class="term">two wires (SDA/SCL)</span><span class="term">addresses</span><span class="term">START / STOP</span><span class="term">ACK</span><span class="term">open-drain + pull-ups</span><span class="term">many devices, slower</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="serial">
+      <div class="s-top"><span class="s-no">14</span><span class="s-tag">Serial · key idea</span></div>
+      <h3>Why shared buses use open-drain &amp; pull-ups</h3>
+      <p class="gist"><b>Analogy:</b> everyone can let go of a rope (a spring pulls it up = HIGH) or yank it down (LOW) — but nobody can force it up, so nobody ever fights.</p>
+      <div class="answer">
+        <p>On a shared bus, if one chip pushed the line high while another pulled it low, they'd fight — a direct short from supply to ground that wastes power and can damage pins. The fix is the <b>open-drain</b> output. Inside the chip the pin connects to a single transistor (an N-channel FET) whose only power is to <b>connect the pin to ground</b> — pulling it LOW — or to switch off and <b>let the pin float</b>. There is literally no transistor to push it high; the transistor's "drain" terminal is left open, which is where the name comes from (the older bipolar version is "open-collector"). A single external <b>pull-up resistor</b> to the supply gently raises the line HIGH whenever every chip has let go.</p>
+        <p>The result is a <b>wired-AND</b>: the bus reads HIGH only if <em>all</em> devices release it, and LOW the instant <em>any</em> one pulls down — with no possibility of a fight, however many chips share the wire. That's exactly what lets I²C's SDA/SCL lines, shared interrupt lines, and reset lines be driven by many devices at once.</p>
+        <p>There's a real design trade in the pull-up value. The wire has <b>capacitance</b>, and it charges up through that resistor, so a <em>weak</em> (large) pull-up makes the rising edge lazy — the classic reason an I²C bus won't run faster — while a <em>strong</em> (small) pull-up sharpens the edge but draws more current every time the line is pulled low. Two bonuses fall out: because the high level is set by whatever the pull-up connects to, open-drain makes simple <b>voltage level-shifting</b> possible, and it's why "did you fit the pull-ups, and are they the right value?" is the first question whenever a shared bus misbehaves.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · two drivers + a pull-up = wired-AND</div>
+        <canvas class="sim" data-sim="opendrain" data-c="#2F8055" aria-label="Open-drain simulation"></canvas>
+        <div class="ctrls" data-sim="opendrain"></div>
+      </div>
+      <p class="simnote">Toggle each chip. Any chip pulling low makes the whole bus low; it's high only when both let go. That's wired-AND.</p>
+      <div class="milciv"><b>Why it matters</b>"Did you add the pull-ups?" is one of the first questions asked when an I²C bus won't talk.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=open+drain+pull+up+resistor+I2C+wired+AND+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: open-drain &amp; pull-ups</a>
+        <div class="terms"><span class="term">open-drain (pull low or release)</span><span class="term">pull-up resistor</span><span class="term">wired-AND</span><span class="term">no bus fights</span><span class="term">required for I²C</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="serial">
+      <div class="s-top"><span class="s-no">15</span><span class="s-tag">Serial</span></div>
+      <h3>UART vs SPI vs I²C — which one and why?</h3>
+      <p class="gist"><b>Analogy:</b> a phone call (UART, one-to-one), a fast wired hookup with a conductor (SPI), and a shared party line (I²C).</p>
+      <div class="answer">
+        <p>All three move bytes between chips on one board; they differ along a few axes worth holding in your head: number of <b>wires</b>, whether there's a shared <b>clock</b> (synchronous) or not (asynchronous), <b>speed</b>, how many <b>devices</b> can share the bus, whether devices are <b>addressed</b>, and whether there's any built-in <b>error checking</b>. <b>UART</b> — 2 wires, asynchronous, one-to-one, moderate speed, optional parity; the simplest, and the natural pick for a device-to-PC or peer link. <b>SPI</b> — SCLK + MOSI + MISO + a CS per device, synchronous, the fastest (tens of MHz), full-duplex, no addressing or error check; the go-to for displays, flash and fast ADCs. <b>I²C</b> — two shared wires, synchronous, addressed with ACKs, slower (100k–1M), many devices; ideal for a handful of low-speed sensors.</p>
+        <p>A quick decision rule: need raw <b>speed</b>, or a display/flash chip → SPI; need <b>many devices on few wires</b> → I²C; need a <b>simple point-to-point</b> link or a PC console → UART. In real designs you use all three on one board — an I²C bus of sensors, an SPI flash, and a UART debug console — each chosen for its trade-off, not out of habit.</p>
+        <p>Their shared limitation is the thing to remember: these are <b>short-range, on-board</b> buses with single-ended wires and little error handling. Once a signal must travel meters through electrical noise, or between separate modules in a car or a machine, they give out — which is exactly where the tougher <b>differential</b> buses of the next track (CAN, or RS-485) take over.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Real boards mix all three: an I²C bus of sensors, an SPI flash chip, and a UART to a debug console — each chosen for its trade-off.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=UART+vs+SPI+vs+I2C+comparison+when+to+use"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: UART vs SPI vs I²C</a>
+        <div class="terms"><span class="term">UART: 2-wire, no clock, 1:1</span><span class="term">SPI: fast, CS per device</span><span class="term">I²C: 2-wire, addressed, many</span><span class="term">pick by speed vs wires vs count</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="serial">
+      <div class="s-top"><span class="s-no">16</span><span class="s-tag">Serial</span></div>
+      <h3>A byte arrives corrupted</h3>
+      <p class="gist"><b>Analogy:</b> a smudged letter in the mail — you need a way to notice it arrived wrong, and maybe ask for a resend.</p>
+      <div class="answer">
+        <p>On real hardware, bytes <em>do</em> arrive wrong. Electrical noise couples onto wires, grounds bounce, a nearby motor or radio induces glitches, static (ESD) zaps a line, or the two clocks drift enough that a bit is sampled at the wrong instant. So robust firmware never assumes the bytes are perfect — it layers checks. The cheapest is a <b>parity</b> bit: it forces the count of 1s to be odd or even, catching any single-bit flip (its limit: two flips cancel out, so it misses even numbers of errors). UART hardware also raises <b>framing</b> errors (the STOP bit wasn't where expected — usually a baud mismatch), <b>overrun</b> errors (a new byte arrived before you read the last one), and noise flags.</p>
+        <p>For real messages you step up to a <b>checksum</b> or, far stronger, a <b>CRC</b> (cyclic redundancy check) computed over the whole payload and sent alongside it; the receiver recomputes it and compares, and any mismatch means "throw this away." Because detection alone doesn't recover the lost data, protocols pair it with <b>acknowledge-and-retransmit</b> (ARQ): the sender resends anything the receiver didn't confirm, so a corrupted frame is simply sent again.</p>
+        <p>The real point for a newcomer is the mindset shift. On a PC, "it mostly works" is fine; on hardware, "mostly" means occasional <em>silent</em> corruption that surfaces as a baffling one-in-a-thousand glitch. Mature firmware is built assuming some bytes will be wrong and detecting it — and in <b>safety-critical</b> systems every message carries a CRC and often a sequence counter, so a corrupted or missing frame is caught and handled rather than blindly acted on.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>In automotive and safety-critical systems every message carries a CRC and often a sequence counter, so a corrupted or missing frame is caught, not blindly acted on.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=parity+checksum+CRC+serial+communication+error+detection"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: parity, checksum &amp; CRC</a>
+        <div class="terms"><span class="term">noise corrupts bytes</span><span class="term">parity bit</span><span class="term">framing error</span><span class="term">checksum / CRC</span><span class="term">detect &amp; re-request</span><span class="term">assume errors happen</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ CAN & NETWORKS ============ -->
+  <section class="track" data-track="can">
+    <div class="track-head">
+      <div class="tno">Track 04 — Buses that go further</div>
+      <h2>CAN, CAN-FD &amp; networked embedded</h2>
+      <p>UART/SPI/I²C connect chips on one board. To link modules across a car or a machine — noisy, long, safety-critical — you need tougher, networked buses. CAN is the classic; Ethernet is increasingly common.</p>
+    </div>
+
+    <article class="scenario" data-cat="can">
+      <div class="s-top"><span class="s-no">17</span><span class="s-tag">CAN</span></div>
+      <h3>A message goes out on a CAN bus</h3>
+      <p class="gist"><b>Analogy:</b> a group intercom on a factory floor — everyone hears every message, and each listener decides what's meant for them.</p>
+      <div class="answer">
+        <p>CAN (Controller Area Network) was built for cars: dozens of modules — engine, brakes, doors — talking over one shared, robust bus across meters of noisy cable. Its robustness starts with <b>differential signaling</b>. Instead of one wire referenced to ground, it uses a twisted pair, <b>CANH</b> and <b>CANL</b>, and the bit is encoded in the <em>voltage difference</em> between them (a few volts apart = dominant, near-equal = recessive). Because electrical noise couples almost equally onto both wires, it moves them together and the <em>difference</em> barely changes — the interference cancels out. (The pair is terminated with 120&nbsp;Ω resistors at each end to prevent reflections.)</p>
+        <p>CAN is <b>message-oriented and broadcast</b>: a frame carries an <b>ID</b> that describes <em>what</em> the message is (engine RPM), not who it's for. Every node hears every frame and uses hardware <b>acceptance filters</b> to keep only the IDs it cares about. A frame is a fixed shape — the ID/arbitration field, a control field, up to 8 data bytes, a <b>CRC</b>, and an <b>ACK</b> slot where any node that received it cleanly pulls the bus dominant to confirm. The all-important electrical rule: a "0" bit is <b>dominant</b> and a "1" is <b>recessive</b>, and dominant physically overrides recessive on the shared wire — the basis of the collision-free arbitration in the next card.</p>
+        <p>Reliability is designed in at every layer: <b>bit-stuffing</b> keeps the signal transitioning so clocks stay synced, malformed frames trigger <b>error frames</b> and automatic retransmission, and each node keeps <b>error counters</b> — a node that misbehaves too often takes <em>itself</em> off the bus (<b>bus-off</b>) so one faulty module can't jam the network. Short frames, CRC-checked, self-policing: reliability first, throughput second.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Your car has a CAN bus (usually several). It's also common in industrial machines, medical devices, and increasingly drones — anywhere modules must talk reliably over distance.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=CAN+bus+explained+differential+signaling+automotive"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: CAN bus explained</a>
+        <div class="terms"><span class="term">differential pair (noise-cancelling)</span><span class="term">broadcast by message ID</span><span class="term">dominant 0 / recessive 1</span><span class="term">short CRC-checked frames</span><span class="term">built for cars</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="can">
+      <div class="s-top"><span class="s-no">18</span><span class="s-tag">CAN · key idea</span></div>
+      <h3>Two CAN nodes transmit at the same time</h3>
+      <p class="gist"><b>Analogy:</b> a polite meeting where, if two people start together, the one with the more urgent topic keeps going and the other instantly yields — no collision, nothing lost.</p>
+      <div class="answer">
+        <p>The clever part is what happens when two nodes start talking at the same instant. On ordinary Ethernet, simultaneous transmits <b>collide</b> — both messages are garbled, everyone detects it, and each backs off a random time and retries, wasting bus time. CAN avoids collisions entirely. As each node transmits its ID bit by bit, it simultaneously <b>listens</b> to what's actually on the wire. Since dominant (0) physically overrides recessive (1), a node that sends a recessive 1 but <em>hears</em> a dominant 0 knows a higher-priority message is present, so it <b>immediately stops</b> and becomes a listener — it lost arbitration cleanly, having corrupted nothing.</p>
+        <p>Because a lower ID number has more leading zeros, the <b>lowest ID always wins</b> and its frame continues uninterrupted; every loser simply retransmits automatically once the bus is free. So the outcome is <b>priority-based, non-destructive arbitration</b> — the highest-priority message (say, a brake command with a low ID) always gets through first, and not a single bit of bus time is lost to collisions.</p>
+        <p>There's a physical price that's worth understanding: because every node must sample the <em>same</em> arbitration bit at the <em>same</em> time to compare it, the signal has to propagate to the far end of the bus and back within one bit — which ties the maximum <b>bus length</b> to the <b>bit rate</b> (roughly, 1 Mbit/s limits you to ~40 m). This is exactly why CAN-FD, in the next card, keeps the arbitration phase slow but speeds up only the data phase.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · bit-by-bit arbitration, lowest ID wins</div>
+        <canvas class="sim" data-sim="canarb" data-c="#A9721A" aria-label="CAN arbitration simulation"></canvas>
+        <div class="ctrls" data-sim="canarb"></div>
+      </div>
+      <p class="simnote">Give two nodes different IDs and watch them compare bit by bit. The lower ID wins the wire; the other backs off and retries — no data lost.</p>
+      <div class="milciv"><b>Why it matters</b>Assigning message IDs sets priority: safety-critical messages get low IDs so they always win arbitration. It's a deliberate design decision.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=CAN+bus+arbitration+explained+dominant+recessive"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: CAN arbitration</a>
+        <div class="terms"><span class="term">dominant 0 beats recessive 1</span><span class="term">listen while sending</span><span class="term">lowest ID wins</span><span class="term">non-destructive arbitration</span><span class="term">priority by ID</span><span class="term">loser retries</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="can">
+      <div class="s-top"><span class="s-no">19</span><span class="s-tag">CAN</span></div>
+      <h3>You need more data: CAN-FD</h3>
+      <p class="gist"><b>Analogy:</b> same road and rules, wider lanes and a faster stretch — you move more cars without rebuilding the highway.</p>
+      <div class="answer">
+        <p>Classic CAN tops out around 1 Mbit/s and 8 data bytes per message — fine for simple signals, but cramped for modern cars streaming lots of data, and inefficient (each tiny 8-byte frame carries a fixed overhead of ID, CRC and ACK). <b>CAN-FD</b> (Flexible Data-rate) keeps everything good about CAN — the differential bus, the priority arbitration, the error handling — and relaxes the two limits: up to <b>64 data bytes</b> per frame, and a much <b>faster bit rate during the data phase</b>.</p>
+        <p>Why can only the data phase speed up? During <b>arbitration</b>, every node must compare the same bit at the same time across the whole bus, so that phase is stuck at the slow, length-limited rate from the previous card. But once one node has <em>won</em> arbitration, it's the only one driving the bus — no one else needs to compare bits — so the data and CRC can be clocked several times faster without any propagation problem. CAN-FD switches to the fast rate right after arbitration and back to slow for the acknowledgement. Bigger payloads also mean the fixed per-frame overhead is amortized over more data, so throughput rises on two fronts.</p>
+        <p>The practical upshot: much more bandwidth (useful for richer sensor data and even in-vehicle firmware updates) while reusing existing CAN wiring, tools and mental model. That easy, high-value upgrade is why it's now standard in newer vehicles and why job posts pair "CAN/CAN-FD" — and why the broader trend is CAN-FD for control plus Automotive Ethernet (next card) for the heavy data.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>"CAN/CAN-FD" on a JD signals modern automotive/industrial work — more data per frame without giving up CAN's reliability.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=CAN+FD+vs+classic+CAN+explained+flexible+data+rate"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: CAN-FD explained</a>
+        <div class="terms"><span class="term">flexible data rate</span><span class="term">up to 64 bytes/frame</span><span class="term">faster during data phase</span><span class="term">same arbitration</span><span class="term">reuses CAN wiring</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="can">
+      <div class="s-top"><span class="s-no">20</span><span class="s-tag">CAN</span></div>
+      <h3>An embedded device joins an Ethernet network</h3>
+      <p class="gist"><b>Analogy:</b> the same networking your laptop uses, shrunk onto a chip for machines that must move a lot of data.</p>
+      <div class="answer">
+        <p>When a device needs real bandwidth or must join a normal network, it uses <b>Ethernet</b>, and the work splits into clean layers. The <b>MAC</b> (media access controller, usually built into the MCU) deals with Ethernet <b>frames</b> — addressing, framing, the CRC. The <b>PHY</b> (a separate physical-layer chip) does the analog job: turning those bits into the actual line signals on the twisted pair and recovering them at the other end. MAC and PHY exchange data over an <b>MII/RMII</b> bus and are configured over a little side channel called <b>MDIO</b>. Above the MAC runs a <b>TCP/IP stack</b> (like lwIP), which adds ARP, IP, UDP/TCP and gives your code familiar <b>sockets</b> to speak web and networking protocols.</p>
+        <p>The catch for embedded use is timing: standard Ethernet is <b>best-effort</b>, not real-time — frames can be delayed or queued unpredictably, which is fine for a camera stream but not for a brake command. That's why safety-relevant systems either keep hard control on CAN or add <b>TSN</b> (time-sensitive networking), a set of extensions that reserve bandwidth and schedule traffic so critical frames arrive on time. In cars and factories you'll also meet <b>single-pair Ethernet</b> (10BASE-T1S/T1L), which brings Ethernet down to two wires like CAN.</p>
+        <p>So the real choice is bandwidth versus determinism and simplicity. Ethernet is heavier — more memory, a network stack, more complexity — but it's how cameras, controllers and gateways move large data and reach the outside world; CAN stays the reliable, simple, deterministic backbone for control. Modern vehicles increasingly run <em>both</em>: Automotive Ethernet for the data-heavy links, CAN/CAN-FD for the control messages.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>CAN for reliable low-bandwidth control messages; Ethernet for high-bandwidth data (video, firmware updates, telemetry). Many systems use both.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=embedded+ethernet+MAC+PHY+explained+microcontroller"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: embedded Ethernet (MAC/PHY)</a>
+        <div class="terms"><span class="term">MAC (in MCU) + PHY (chip)</span><span class="term">MII / RMII</span><span class="term">TCP/IP stack (lwIP)</span><span class="term">high bandwidth</span><span class="term">automotive Ethernet / TSN</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ ANALOG EDGE ============ -->
+  <section class="track" data-track="analog">
+    <div class="track-head">
+      <div class="tno">Track 05 — The analog edge</div>
+      <h2>Signals &amp; the analog world</h2>
+      <p>The real world is smooth and analog — temperatures, voltages, sound — but the CPU only understands numbers. This track is the boundary: turning analog into digital and back, and the messy reality of real signals.</p>
+    </div>
+
+    <article class="scenario" data-cat="analog">
+      <div class="s-top"><span class="s-no">21</span><span class="s-tag">Analog</span></div>
+      <h3>You read a voltage with an ADC</h3>
+      <p class="gist"><b>Analogy:</b> sampling a song by writing down the volume every fraction of a second, rounded to the nearest notch on a dial.</p>
+      <div class="answer">
+        <p>An <b>ADC</b> turns a smooth voltage into numbers the CPU can use — a sensor reading, a battery level, a microphone. It does two separate things. It <b>samples</b> in time: a "sample-and-hold" circuit briefly grabs the input voltage and freezes it so it can be measured. And it <b>quantizes</b> in value: it rounds that frozen voltage to the nearest of a fixed set of levels. The commonest type in microcontrollers, a <b>SAR</b> (successive-approximation) ADC, does the quantizing as a binary search — it guesses the top bit, uses an internal DAC and a comparator to ask "is the input above half-scale?", keeps or drops that bit, then the next bit, and so on down, one bit per clock, until it has the full number.</p>
+        <p><b>Resolution</b> (bits) sets how many levels — 8-bit = 256, 12-bit = 4096 — and a <b>reference voltage</b> sets the top of the scale, so one step (one LSB) is Vref ÷ 2^bits (e.g. 3.3&nbsp;V over 4096 ≈ 0.8&nbsp;mV). That has real consequences: your reading is only as clean and accurate as your reference, so a noisy or drifting Vref directly becomes noisy, wrong numbers — a very common cause of "jittery" ADC readings.</p>
+        <p>Two classic traps to respect. Too <b>few bits</b> gives a coarse, steppy reading that can't resolve small changes. Too <b>low a sample rate</b> gives <b>aliasing</b>, where a signal faster than half your sample rate folds down and masquerades as a slower, wrong one — so you sample at least twice the highest frequency present (the <b>Nyquist</b> rule) and often add an <b>anti-aliasing</b> low-pass filter <em>before</em> the ADC to kill anything above that. Two everyday tricks: give the input time to settle (the ADC's sampling capacitor needs a low-impedance source), and <b>oversample and average</b> several readings to buy extra effective bits and beat down noise.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · sampling, quantizing &amp; aliasing</div>
+        <canvas class="sim" data-sim="adc" data-c="#7A4F9E" aria-label="ADC simulation"></canvas>
+        <div class="ctrls" data-sim="adc"></div>
+      </div>
+      <p class="simnote">Drop the sample rate below twice the signal frequency and watch aliasing appear — the samples trace a completely wrong, slower wave.</p>
+      <div class="milciv"><b>Why it matters</b>Datasheets brag "12-bit ADC at 1 MSPS." Now both numbers mean something: value precision (bits) and how fast it samples (samples per second).</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+an+ADC+works+sampling+quantization+nyquist+aliasing"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how an ADC works</a>
+        <div class="terms"><span class="term">sample in time + quantize in value</span><span class="term">resolution (bits → levels)</span><span class="term">reference voltage</span><span class="term">Nyquist / aliasing</span><span class="term">samples per second</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="analog">
+      <div class="s-top"><span class="s-no">22</span><span class="s-tag">Analog</span></div>
+      <h3>You dim an LED or drive a motor with PWM</h3>
+      <p class="gist"><b>Analogy:</b> flicking a light switch on and off so fast that the bulb looks half-bright — your eye (and a motor) feels the average.</p>
+      <div class="answer">
+        <p>Many things need an analog level — dim an LED, set a motor speed, position a servo — but a digital pin only does full-on or full-off. <b>PWM</b> (pulse-width modulation) fakes an analog level by switching the pin on and off very fast and varying the <b>duty cycle</b>: the fraction of each cycle that's ON. 50% = half power on average, 10% = dim, 90% = bright. Because the switching is far faster than the LED, motor or your eye can react, they all respond only to the <em>average</em>.</p>
+        <p>A <b>hardware timer</b> generates it for free: a counter ramps from 0 up to a "period" value and repeats (that sets the <b>frequency</b>), and a <b>compare</b> register decides the point in each ramp where the pin flips from high to low (that sets the <b>duty cycle</b>). Once configured, the timer produces the waveform with zero CPU involvement — you just write a new compare value to change the level. Pick the frequency to sit above what the load can follow: above ~1&nbsp;kHz to avoid visible LED flicker and audible motor whine, while a motor's own inductance smooths the current.</p>
+        <p>Why is it so efficient? A switching transistor is either fully <b>on</b> (almost no voltage across it) or fully <b>off</b> (no current through it), and power wasted as heat is voltage × current — so either way it dissipates almost nothing. Contrast a linear approach (a dimmer resistor or a linear regulator), which burns the "extra" voltage as heat. That efficiency is why PWM drives motor controllers, LED dimmers and switching power supplies. And if you genuinely need a smooth voltage rather than a fast switch, a simple <b>RC low-pass filter</b> on a PWM pin averages it into an analog level — a cheap stand-in for a DAC (last card of this track).</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · duty cycle → average → brightness</div>
+        <canvas class="sim" data-sim="pwm" data-c="#7A4F9E" aria-label="PWM simulation"></canvas>
+        <div class="ctrls" data-sim="pwm"></div>
+      </div>
+      <p class="simnote">Slide the duty cycle. The square wave's ON-fraction sets the average (dashed line) and the LED's brightness.</p>
+      <div class="milciv"><b>Why it matters</b>A servo is told its angle by PWM pulse width; a motor's speed is set by PWM duty; screen brightness is often PWM. It's everywhere.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=PWM+explained+duty+cycle+LED+motor+servo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: PWM explained</a>
+        <div class="terms"><span class="term">duty cycle = ON fraction</span><span class="term">average power</span><span class="term">switch fast (sees average)</span><span class="term">efficient (fully on/off)</span><span class="term">servos, motors, dimming</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="analog">
+      <div class="s-top"><span class="s-no">23</span><span class="s-tag">Analog</span></div>
+      <h3>A fast signal gets ugly (signal integrity)</h3>
+      <p class="gist"><b>Analogy:</b> shout down a long garden hose and the echo comes back muddled — wires do the same to fast signals.</p>
+      <div class="answer">
+        <p>On paper a digital signal is a clean square wave; at speed, real wires misbehave. The reason is that a sharp edge is made of many <b>high-frequency harmonics</b>, and a wire is not an ideal conductor — it has resistance, capacitance and inductance. So edges get a finite <b>rise time</b> (they slope instead of jumping), and if the trace is long enough that the edge takes a meaningful time to travel it, the wire behaves like a <b>transmission line</b>: the signal partly <b>reflects</b> back from any impedance mismatch at the far end, and those reflections add up as <b>ringing</b> (overshoot and wobble). Meanwhile a fast-switching neighbor couples onto the line as <b>crosstalk</b>, and switching currents make the ground and supply <b>bounce</b>.</p>
+        <p>This is <b>signal integrity</b>, and it's why fast buses need care that slow ones don't: <b>termination</b> resistors to swallow reflections, a solid <b>ground plane</b> to give currents a clean return path, <b>decoupling capacitors</b> right at each chip to steady the supply, matched trace lengths, and simply keeping fast wires short. Slew-rate-limited outputs (softening the edges deliberately) also help.</p>
+        <p>It's exactly why the oscilloscope exists. A logic analyzer will happily report "the bit was 1," but only a scope shows the ugly analog truth — a rounded, ringing, noisy edge that crosses the logic threshold twice, or sags below it, and gets misread once in a while. That's the signature of the nastiest bugs: "the code is provably right, yet it fails one time in a thousand, and worse on a longer cable." When you hear that, signal integrity is the prime suspect.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>A common newbie mistake is a long, messy breadboard jumper for a fast SPI clock. It works slow and mysteriously fails fast — the wire ruins the edges.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=signal+integrity+ringing+reflections+termination+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: signal integrity basics</a>
+        <div class="terms"><span class="term">rise time</span><span class="term">ringing / reflections</span><span class="term">termination</span><span class="term">crosstalk</span><span class="term">noise</span><span class="term">matched lengths / ground plane</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="analog">
+      <div class="s-top"><span class="s-no">24</span><span class="s-tag">Analog</span></div>
+      <h3>A button press registers five times (debounce)</h3>
+      <p class="gist"><b>Analogy:</b> a light switch that sparks and chatters for a few milliseconds before it truly settles — flip it once, the wire says "on-off-on-off-on."</p>
+      <div class="answer">
+        <p>Press a mechanical button and its metal contacts don't close cleanly — the springy metal literally makes and breaks contact several times over a few milliseconds before settling. Here's the mismatch: that chatter lasts ~1–20&nbsp;ms, but your microcontroller reads the pin in microseconds, so it sees not one press but dozens of on-off transitions. A naive "count each press" or "toggle on each change" then fires many times for one physical push, and a menu jumps three items or a toggle ends up in the wrong state.</p>
+        <p><b>Debouncing</b> is the fix, and there are two common software shapes. One: on the first change, note the time and ignore further changes until the signal has stayed <b>stable</b> for, say, 20&nbsp;ms, then accept it. Two (very robust): sample the pin on a periodic timer and only accept a new state after several <em>consecutive</em> identical reads — a tiny state machine that ignores brief blips. In <b>hardware</b> you can add a small <b>RC filter</b> to slow the edge, usually paired with a <b>Schmitt-trigger</b> input, whose built-in <b>hysteresis</b> (different thresholds for rising and falling) stops the slow, noisy edge from oscillating as it crosses the switching point.</p>
+        <p>The same idea applies to any noisy mechanical or slow edge — reed switches, rotary encoders, limit switches. And a specific trap: wiring a button straight to an <b>interrupt</b> makes the bounce fire the interrupt many times per press, so buttons on interrupts still need debouncing (or a hardware filter). It's a rite of passage — the first time a button "does weird things," bounce is almost always why.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · raw bouncy signal vs debounced</div>
+        <canvas class="sim" data-sim="debounce" data-c="#7A4F9E" aria-label="Debounce simulation"></canvas>
+        <div class="ctrls" data-sim="debounce"></div>
+      </div>
+      <p class="simnote">The raw signal (top) chatters on every press; the debounced output (bottom) waits for it to settle, so one press = one clean event.</p>
+      <div class="milciv"><b>Why it matters</b>Any real product with buttons debounces them. It's the small thing that separates "works on my desk" from "works for users."</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=button+debounce+explained+switch+bounce+embedded"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: button debounce</a>
+        <div class="terms"><span class="term">contact bounce (ms of chatter)</span><span class="term">one press looks like many</span><span class="term">wait-for-stable</span><span class="term">RC filter / Schmitt trigger</span><span class="term">debounce in SW or HW</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="analog">
+      <div class="s-top"><span class="s-no">25</span><span class="s-tag">Analog</span></div>
+      <h3>You output a real analog voltage (DAC)</h3>
+      <p class="gist"><b>Analogy:</b> the reverse of the ADC — turning numbers back into a real, smoothly varying voltage.</p>
+      <div class="answer">
+        <p>Sometimes you need a true analog output — generate an audio waveform, produce a precise control voltage, drive an analog meter. A <b>DAC</b> does the reverse of an ADC: it takes a number and produces a matching voltage, code ÷ 2^bits × Vref. Inside, a common design is an <b>R-2R resistor ladder</b> that gives each bit a precisely weighted contribution to the output — the top bit adds half of full-scale, the next a quarter, and so on — so the digital code sums into the right voltage. (Audio parts instead use <b>delta-sigma</b> DACs, which trade resolution in value for very high switching speed.)</p>
+        <p>Feed a DAC a stream of numbers fast enough and it traces any waveform you like — a sine, a voice. Two limits mirror the ADC: more <b>bits</b> means finer voltage steps, and the <b>update rate</b> caps the highest output frequency you can build (Nyquist again). The raw output is a tiny staircase, so a <b>reconstruction low-pass filter</b> smooths it into the intended smooth curve. Watch the DAC's <b>drive strength</b> too — an unbuffered output sags if you load it, so precision uses often add an op-amp buffer.</p>
+        <p>Many small microcontrollers have no true DAC and instead fake analog output with <b>PWM plus an RC filter</b> (the trick from the PWM card): cheap and perfectly fine for dimming or slow control, though it trades ripple against response speed and isn't as clean as a real DAC for audio or precision. Together, ADC in and DAC out are the two doors between the CPU's digital world and the smooth analog reality of sensors and actuators.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>ADC in, DAC out: together they're the bridge between the CPU's digital world and the smooth analog reality of sensors and actuators.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+a+DAC+works+digital+to+analog+converter+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: how a DAC works</a>
+        <div class="terms"><span class="term">DAC = numbers → voltage</span><span class="term">reverse of ADC</span><span class="term">bits = voltage steps</span><span class="term">output filter smooths steps</span><span class="term">PWM+filter as cheap substitute</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ DEBUG TOOLS ============ -->
+  <section class="track" data-track="debug">
+    <div class="track-head">
+      <div class="tno">Track 06 — Debugging the invisible</div>
+      <h2>Debuggers, scopes &amp; logic analyzers</h2>
+      <p>You can't see electricity or read a running CPU's mind. Embedded debugging is the craft of making the invisible visible — halting the chip, and watching wires with the right instrument.</p>
+    </div>
+
+    <article class="scenario" data-cat="debug">
+      <div class="s-top"><span class="s-no">26</span><span class="s-tag">Debug</span></div>
+      <h3>You connect a debugger over SWD/JTAG</h3>
+      <p class="gist"><b>Analogy:</b> a doctor's window into the patient — a few pins let you pause the CPU, take its pulse, and read its memory while it runs.</p>
+      <div class="answer">
+        <p>A debugger reaches the chip through a dedicated <b>debug port</b> — usually <b>SWD</b> (2 wires) or <b>JTAG</b> (4–5 wires) — via a hardware <b>probe</b> (ST-Link, J-Link) sitting between your PC and the board. The key fact is that the debug logic (ARM calls it CoreSight) is <b>built into the silicon</b>, wired directly to the CPU's core, so it can stop and inspect the running chip without any special code from you. Through it you can <b>halt</b> the CPU, read and write its registers and memory <em>while it's stopped</em> (and often read memory live while it runs), set breakpoints, <b>single-step</b>, and program new firmware into flash.</p>
+        <p>On the PC side there's a small stack: your IDE or <b>GDB</b> talks to a server like <b>OpenOCD</b> or pyOCD, which drives the probe, which speaks SWD/JTAG to the chip. "Flashing" is just this path writing your binary into flash memory through the debug port. Many chips also expose an <b>SWO</b> trace pin that streams <code>printf</code>-style output back to your PC with almost no overhead — a debug print without a spare UART.</p>
+        <p>Why this is <em>the</em> core embedded skill: a microcontroller has no screen, no keyboard, and no <code>print</code> unless you build one. The debugger is your only real window into what the chip is doing — load the program, pause at a suspect line, read the variables, step forward and watch reality diverge from what you expected. Get comfortable here and everything else in this track becomes a supporting act.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>The probe (ST-Link/J-Link) plus SWD/JTAG is your lifeline; wiring it up correctly is often the very first thing you do on a new board.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=SWD+JTAG+debugging+embedded+ST-Link+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: SWD/JTAG debugging</a>
+        <div class="terms"><span class="term">debug port (SWD / JTAG)</span><span class="term">probe (ST-Link / J-Link)</span><span class="term">halt CPU</span><span class="term">read/write registers + memory</span><span class="term">breakpoints</span><span class="term">flash firmware</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="debug">
+      <div class="s-top"><span class="s-no">27</span><span class="s-tag">Debug</span></div>
+      <h3>JTAG vs SWD</h3>
+      <p class="gist"><b>Analogy:</b> JTAG is a long inspection walkway that can chain many chips; SWD is a compact two-wire door into one chip.</p>
+      <div class="answer">
+        <p><b>JTAG</b> (the IEEE 1149.1 standard) is older and more general — and it wasn't originally for debugging at all. It was invented for <b>boundary-scan</b>: shifting test patterns through a chip's pins to check that every solder joint on a board is good, without a bed of nails. It uses several pins (TCK, TMS, TDI, TDO) and a little state machine (the TAP), and its data-in/data-out pins let you <b>daisy-chain</b> multiple chips onto one path — handy on complex boards.</p>
+        <p><b>SWD</b> (Serial Wire Debug) is ARM's slimmed-down alternative for debugging a single core: it collapses the interface to just two wires — <b>SWDIO</b> (bidirectional data) and <b>SWCLK</b> (clock) — reusing the same physical pins JTAG's TMS/TCK sit on, and it can add an <b>SWO</b> pin for trace output. Two pins instead of five is precious on small packages, where every pin is a peripheral you'd otherwise lose.</p>
+        <p>Both routes reach the exact same debug logic (the CoreSight DAP) inside the core, so they give identical debug power. In practice, on modern ARM microcontrollers <b>SWD is the default</b> — it does everything you need with two pins — and JTAG earns its keep where you must chain several devices or actually need boundary-scan for manufacturing test. Most probes speak both, so you rarely have to choose consciously.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>"SWD or JTAG" on a JD just means "can you connect a debugger and work at the register level" — the everyday embedded debug interface.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=JTAG+vs+SWD+difference+explained+embedded"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: JTAG vs SWD</a>
+        <div class="terms"><span class="term">JTAG (4–5 pins, daisy-chain)</span><span class="term">boundary-scan</span><span class="term">SWD (2 pins, ARM)</span><span class="term">same core debug logic</span><span class="term">SWD usual on Cortex-M</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="debug">
+      <div class="s-top"><span class="s-no">28</span><span class="s-tag">Debug</span></div>
+      <h3>You set a breakpoint and single-step</h3>
+      <p class="gist"><b>Analogy:</b> a pause button and a frame-by-frame slow-motion for your running program.</p>
+      <div class="answer">
+        <p>A <b>breakpoint</b> tells the chip "stop when you reach this instruction." There are two flavors. A <b>software breakpoint</b> works by temporarily replacing the target instruction with a special <code>BKPT</code> opcode — cheap and unlimited, but only usable in RAM, since you can't casually rewrite flash. So for code running from flash (the normal case) the debugger uses <b>hardware breakpoints</b>: a handful of comparator units in the core that watch the program counter and halt the CPU the instant it matches an address, without touching the code. That hardware is finite — typically only about 4–8 on a Cortex-M — which is why the debugger sometimes says "out of breakpoints," and why you ration them.</p>
+        <p>Once halted you can read every variable and register, then <b>single-step</b>: run exactly one line (step-<em>over</em> a function call, or step-<em>into</em> it) and stop again, watching state change one move at a time. <b>Watchpoints</b> use a separate data-watch unit to stop on <em>data</em> instead of code — "halt the moment this variable changes" or "when this address is written" — which is gold for finding what's corrupting a value.</p>
+        <p>The method is: pause just before the suspected crime, then step and watch which line first breaks your assumption. One caution worth knowing early — halting the CPU <b>changes its timing</b>. A bug that depends on real-time behavior (a race with an interrupt, a peripheral that keeps running while the core is stopped) can vanish or shift when you break on it. That's the classic "<b>heisenbug</b>," and it's exactly when you fall back to non-intrusive tools — SWO trace, or a scope/logic analyzer on the pins.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Halting, inspecting, and single-stepping is what turns "it doesn't work and I've no idea why" into a methodical hunt.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=breakpoints+single+step+debugging+embedded+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: breakpoints &amp; stepping</a>
+        <div class="terms"><span class="term">breakpoint (halt at an address)</span><span class="term">hardware breakpoint units</span><span class="term">single-step</span><span class="term">inspect variables / registers</span><span class="term">watchpoint (halt on data change)</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="debug">
+      <div class="s-top"><span class="s-no">29</span><span class="s-tag">Debug</span></div>
+      <h3>You put a signal on an oscilloscope</h3>
+      <p class="gist"><b>Analogy:</b> a heart monitor for a wire — it draws the exact voltage, moment by moment, wiggles and all.</p>
+      <div class="answer">
+        <p>An <b>oscilloscope</b> plots <b>voltage vertically</b> against <b>time horizontally</b> — the true analog shape of a signal. It's how you see what a wire is really doing: the height and cleanliness of an edge, noise, ringing, exact timing between two signals, or whether a signal is even present. Two specs govern what it can show honestly: <b>bandwidth</b> (it must comfortably exceed the signal's harmonics, or fast edges get rounded off and you're fooled), and <b>sample rate</b> and memory depth (how finely and how long it can capture).</p>
+        <p>The <b>trigger</b> is what makes a fast, repeating signal look frozen instead of a blur. You tell the scope a condition — most simply "each time the signal rises through this level" — and it begins each sweep at that same point, so successive traces overlay perfectly and stand still. Smarter triggers (on a pulse that's too narrow, or a specific edge) let you catch a rare <b>glitch</b> among millions of good cycles.</p>
+        <p>Reach for a scope for analog questions a digital tool can't answer: is this 3.3&nbsp;V rail actually clean, or riddled with switching noise? Is my crystal really oscillating at 8&nbsp;MHz? Why is this SPI edge so lazy? One thing to respect — the <b>probe</b> itself matters and slightly loads the circuit: use the ×10 setting for high-speed signals, and keep the little ground lead short, because a long ground turns real ringing measurements into ringing the probe invented.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · voltage vs time, with a trigger</div>
+        <canvas class="sim" data-sim="scope" data-c="#B0517E" aria-label="Oscilloscope simulation"></canvas>
+        <div class="ctrls" data-sim="scope"></div>
+      </div>
+      <p class="simnote">Add noise and move the trigger level. The trigger re-draws the trace at the same crossing each time, which is what makes a live signal look stable.</p>
+      <div class="milciv"><b>Why it matters</b>A scope answers "what is the electricity actually doing?" — indispensable when firmware looks right but the hardware misbehaves.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+to+use+an+oscilloscope+basics+trigger+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: oscilloscope basics</a>
+        <div class="terms"><span class="term">voltage vs time</span><span class="term">analog truth</span><span class="term">trigger (freezes repeating signals)</span><span class="term">see edges / noise / timing</span><span class="term">is the signal even there?</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="debug">
+      <div class="s-top"><span class="s-no">30</span><span class="s-tag">Debug</span></div>
+      <h3>You put a bus on a logic analyzer</h3>
+      <p class="gist"><b>Analogy:</b> a printout for many digital wires at once — it ignores exact voltage and just reads the 1s and 0s, then translates the conversation.</p>
+      <div class="answer">
+        <p>A <b>logic analyzer</b> captures many digital lines at once and shows them as clean 1/0 waveforms. Internally it does something simple: for each channel it compares the voltage against a threshold — above = 1, below = 0 — and records that stream fast into deep memory. It deliberately throws away the analog detail a scope keeps, and spends that budget instead on <b>many channels</b> (8, 16, 32…) and, crucially, <b>protocol decode</b>: tell it "these three lines are SPI" and it reassembles the edges into START bits, addresses, ACKs and actual byte values. "Some wiggles" becomes "the master wrote 0x3C, the slave ACKed, then returned 0x41."</p>
+        <p>You can also <b>trigger on a pattern</b> — start capturing only when the address equals 0x3C, or when a chip-select goes low — so you catch the exact transaction you care about. That makes it the perfect tool for bus bugs and for timing relationships across many lines at once: is the data even going out? Is the address right? Did the device ACK? Do these ten control lines change in the correct order? (The UART animation earlier in this guide is essentially a one-line logic-analyzer view.) Cheap USB units (Saleae and clones, driven by software like sigrok) put this within everyone's reach.</p>
+        <p>Its blind spot is the flip side of its strength: because it only sees 1 or 0, a marginal, ringing, half-height edge that's actually causing your trouble reads as a perfectly clean bit. So a logic analyzer tells you <em>what</em> the bits are, not <em>whether the electricity is healthy</em> — which is why it pairs with, rather than replaces, the scope.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>For protocol bugs (I²C not responding, SPI bytes wrong), a logic analyzer with decode is faster than any amount of staring at code.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=logic+analyzer+protocol+decode+I2C+SPI+tutorial"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: logic analyzer + decode</a>
+        <div class="terms"><span class="term">many digital channels</span><span class="term">1/0, not analog detail</span><span class="term">protocol decode (I²C/SPI/UART)</span><span class="term">see addresses / ACKs / bytes</span><span class="term">best for bus debugging</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="debug">
+      <div class="s-top"><span class="s-no">31</span><span class="s-tag">Debug</span></div>
+      <h3>Oscilloscope vs logic analyzer — which do you grab?</h3>
+      <p class="gist"><b>Analogy:</b> a microscope (scope: deep detail on a little) vs a wide-angle lens (analyzer: the whole scene, less detail).</p>
+      <div class="answer">
+        <p>They answer different questions, so keep both on the bench. Reach for a <b>scope</b> for analog questions on a few signals: signal quality, noise, exact voltage, edge shape, is-it-even-there, and any genuinely analog sensor. Reach for a <b>logic analyzer</b> for digital questions across many signals: what bytes crossed this bus, are the addresses and ACKs right, how do ten control lines line up in time, and let it decode the protocol for you.</p>
+        <p>They shine <em>together</em>, and a typical hunt shows why. An I²C sensor is silent. The logic analyzer decodes nothing — so is it the wiring or the electricity? You put the scope on SCL and see the "high" only creeps up to 2&nbsp;V with a lazy, rounded edge: the pull-up is too weak for the bus capacitance. Fix the resistor, the edges snap clean, and <em>now</em> the logic analyzer happily decodes the address and the ACK. Scope proved the physical layer healthy; analyzer read the conversation.</p>
+        <p>So the framing is depth versus breadth: "is the signal clean and present?" → scope; "what is the bus actually saying, and is the timing right across many lines?" → analyzer. (A <b>mixed-signal scope</b>, or MSO, combines a few analog channels with a bunch of digital ones for exactly this reason.) And remember the trap from the last card: digital tools happily report clean bits over an ugly analog edge — so when a bug defies the logic analyzer, put a scope on the wire.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Cheap USB logic analyzers made bus debugging accessible to everyone; a basic scope is still the other half of a starter bench.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=oscilloscope+vs+logic+analyzer+when+to+use+which"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: scope vs logic analyzer</a>
+        <div class="terms"><span class="term">scope = analog detail, few channels</span><span class="term">LA = many channels + decode</span><span class="term">pick by the question</span><span class="term">clean-and-present vs what-is-it-saying</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ FIRMWARE <-> HARDWARE ============ -->
+  <section class="track" data-track="fwhw">
+    <div class="track-head">
+      <div class="tno">Track 07 — Where firmware meets hardware</div>
+      <h2>Firmware ↔ hardware interaction</h2>
+      <p>The heart of embedded: your C code and the physical chip are one system. The trickiest bugs live in the seam between them, and the best engineers reason up and down both layers at once.</p>
+    </div>
+
+    <article class="scenario" data-cat="fwhw">
+      <div class="s-top"><span class="s-no">32</span><span class="s-tag">Firmware↔HW · key idea</span></div>
+      <h3>One line of C becomes a voltage on a pin</h3>
+      <p class="gist"><b>Analogy:</b> a chain of translators — your English (C) becomes the CPU's language (machine code), becomes a register write, becomes a voltage on a pin.</p>
+      <div class="answer">
+        <p>Let's trace one line of C all the way to a wiggling wire. You write <code>GPIOA-&gt;ODR |= (1&lt;&lt;5);</code>. The <b>toolchain</b> processes it in stages: the compiler turns it into assembly, the assembler into <b>machine code</b>, and the <b>linker</b> — guided by a <b>linker script</b> that knows the chip's memory map — places your code in flash and your variables in RAM and resolves every address, producing an <code>.elf</code> (and a <code>.hex</code>/<code>.bin</code> to flash). That one C line becomes just a few instructions: load the register's value, OR in bit 5, store it back.</p>
+        <p>At runtime the <b>store</b> instruction puts a word onto the internal bus at a specific address. But that address isn't RAM — it's a <b>GPIO register</b>, so the write lands in the pin-driver hardware and flips bit 5. In a push-pull output that bit switches a pair of <b>transistors</b> (one to the 3.3&nbsp;V rail, one to ground) so the pin is connected to 3.3&nbsp;V — the very voltage your meter reads. Every embedded action is this same chain: <b>C → assembly → machine code → bus write → register → transistor → pin voltage</b> (and the reverse for inputs).</p>
+        <p>Being fluent up and down this ladder is what makes someone effective, because a bug can hide on any rung: the C logic can be right while the pin is configured wrong; the register can hold the right value while the copper trace to it is broken. Embedded engineers move between "what does my code say," "what's in the register," and "what's the voltage on the pin" constantly — and the next card is exactly how to use that ladder to corner a bug.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>This is the "firmware–hardware interaction" a JD asks about: seeing that a variable, a register, a peripheral, and a physical voltage are one event at different heights.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=from+C+code+to+hardware+register+gpio+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: from C to a pin</a>
+        <div class="terms"><span class="term">C → machine code → register → pin</span><span class="term">compiler</span><span class="term">register = hardware</span><span class="term">one event at many levels</span><span class="term">reason up &amp; down the stack</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="fwhw">
+      <div class="s-top"><span class="s-no">33</span><span class="s-tag">Firmware↔HW · key idea</span></div>
+      <h3>Something's broken — firmware or hardware?</h3>
+      <p class="gist"><b>Analogy:</b> the tap won't run — is it the plumbing (hardware), or did you forget to open the valve (firmware)? You must be able to check both.</p>
+      <div class="answer">
+        <p>The signature embedded skill is deciding whether a bug lives in the <b>firmware</b> or the <b>hardware</b> — and the way to do it is to <b>divide and conquer</b> along the chain from the last card, checking one rung at a time. Take "the LED won't light." Walk the ladder: (1) Does my code even reach that line? Set a <b>breakpoint</b> — if it never hits, the bug is upstream in the logic. (2) Is the peripheral set up? Read the config registers: is the <b>GPIO clock enabled</b> and the pin in output mode (the two most common misconfigurations)? (3) Does the output register actually hold the bit? Read <b>ODR</b> in the debugger. (4) Does the pin have the voltage? Put a <b>meter or scope</b> on it. (5) Does the downstream part respond? Scope its side.</p>
+        <p>The decisive boundary is between step (3) and (4): if the register says HIGH but the pin reads LOW, the silicon-to-copper handoff is the issue — it's <b>hardware</b> (a mux setting, a dead pin, a broken trace). If the register is right and the pin is right but the LED is still dark, look further out (LED backwards, no current-limiting path, bad ground). And check the boring things first — <b>power and ground</b> — because a startling share of "firmware" bugs are a floating ground, a brown-out, or a pin that isn't actually connected.</p>
+        <p>This cross-layer reasoning — "I've proven the firmware is correct all the way to the pin, so from here it's a hardware question" — is precisely what a debugging job description means, and it's why the trade needs both a debugger (to see inside the chip) and bench instruments (to see the electricity outside it).</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>The wrong instinct is to only stare at code. Half of embedded bugs are hardware (wiring, a floating pin, a dead sensor, power) — found with instruments, not the editor.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=debugging+embedded+firmware+vs+hardware+which+layer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: firmware vs hardware bugs</a>
+        <div class="terms"><span class="term">is it firmware or hardware?</span><span class="term">bisect the stack</span><span class="term">debugger checks code + register</span><span class="term">scope/meter checks pin + circuit</span><span class="term">cross-layer reasoning</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="fwhw">
+      <div class="s-top"><span class="s-no">34</span><span class="s-tag">Firmware↔HW</span></div>
+      <h3>A peripheral moves data by DMA</h3>
+      <p class="gist"><b>Analogy:</b> hiring a courier to move boxes between two rooms so the boss (CPU) can keep working instead of carrying each box.</p>
+      <div class="answer">
+        <p>Moving a lot of data — samples from an ADC, bytes from UART, a screen buffer to a display — one byte at a time would keep the CPU busy doing nothing clever, and worse, an interrupt per byte can't keep up at high rates. <b>DMA</b> (direct memory access) is a small dedicated engine that shuttles data between a peripheral and memory (or memory to memory) <b>without the CPU touching each byte</b>. You configure a <b>channel</b> once — source address, destination address, count, and whether to auto-increment the pointers — and let it run.</p>
+        <p>Here's the mechanism. When a peripheral has a byte ready (or needs one), it raises a <b>DMA request</b>. The DMA controller <b>arbitrates</b> for the internal bus, moves the word, bumps its pointers, decrements the count, and goes quiet until the next request. Because DMA and the CPU share that bus, DMA effectively "<b>steals</b>" the odd bus cycle from the CPU — far cheaper than an interrupt each time. When the whole block is done (or half-done) it raises a single interrupt. For endless streams you use <b>circular</b> or <b>ping-pong (double) buffering</b>: DMA refills buffer A while your code processes buffer B, then they swap on the half/full-transfer interrupt — continuous audio or ADC capture with the CPU barely involved.</p>
+        <p>This is how a modest CPU hits high throughput — streaming audio, continuous sampling, fast SPI displays. The trade is that you've added a second master to memory, so the classic traps appear: the buffer must live in <b>DMA-accessible RAM</b>; you must not read or write a buffer <em>while</em> DMA is mid-transfer (a data race); and on chips with a data <b>cache</b>, the CPU and DMA can see stale copies unless you clean/invalidate the cache at the right moments — a subtle bug that bites people moving up to bigger parts.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · DMA moves data while the CPU stays free</div>
+        <canvas class="sim" data-sim="dma" data-c="#B5642E" aria-label="DMA simulation"></canvas>
+        <div class="ctrls" data-sim="dma"></div>
+      </div>
+      <p class="simnote">Toggle DMA. On: the courier moves the bytes and the CPU bar stays green (free). Off: the CPU is stuck copying and goes red (busy).</p>
+      <div class="milciv"><b>Why it matters</b>"Set it up and let it run in the background" is DMA's whole appeal — a favorite for anything streaming data at speed.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=DMA+direct+memory+access+embedded+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: DMA explained</a>
+        <div class="terms"><span class="term">DMA engine moves data</span><span class="term">no CPU per byte</span><span class="term">configure source/dest/count</span><span class="term">interrupt on done</span><span class="term">CPU stays free</span><span class="term">high throughput</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="fwhw">
+      <div class="s-top"><span class="s-no">35</span><span class="s-tag">Firmware↔HW · key idea</span></div>
+      <h3>An ISR and main() corrupt a shared variable</h3>
+      <p class="gist"><b>Analogy:</b> two people editing the same shopping list without talking — both add an item at once, and one gets overwritten and lost.</p>
+      <div class="answer">
+        <p>The most famous embedded bug. An ISR and your main loop both touch the same variable — say both do <code>count++</code>. That innocent <code>++</code> is really three machine steps: <b>read</b> count into a register, <b>add</b> one, <b>write</b> it back. If the interrupt fires in the gap — main reads the value, the ISR runs and increments and writes, then main writes back its now-stale value — the ISR's update is silently <b>lost</b>. That's a <b>race condition</b>, and because it only triggers when the interrupt lands in that narrow window, it strikes rarely and randomly, which is exactly what makes it maddening.</p>
+        <p>The single biggest misconception to clear up: <code>volatile</code> does <em>not</em> fix this. All <code>volatile</code> does is force the compiler to actually re-read the variable from memory each time and not optimize the accesses away — necessary so main() notices a change an ISR makes, but it does <b>nothing</b> to make the read-modify-write indivisible. The interrupt can still split the three steps. So you need <b>volatile <span style="font-style:normal">and</span> atomicity</b>, not one or the other.</p>
+        <p>To make the update indivisible you either wrap it in a <b>critical section</b> — briefly disable interrupts around the read-modify-write, keeping it as short as possible — or use a genuine <b>atomic</b> operation (on Cortex-M, the <code>LDREX</code>/<code>STREX</code> exclusive instructions, or the CMSIS atomic helpers). There's a second, sneakier form too: even a single <em>write</em> to a multi-byte value or a pair of related fields can be caught half-done ("<b>tearing</b>"), so anything wider than the CPU can update in one go needs the same protection. Under an RTOS the same rule applies between tasks, using a <b>mutex</b> or a <b>queue</b>. And because halting on a breakpoint changes timing, a race often <em>hides</em> from the debugger — "it works 99% of the time" is the tell-tale, and non-intrusive tools (trace, a scope on a marker pin) are how you catch it.</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · shared counter, with and without protection</div>
+        <canvas class="sim" data-sim="race" data-c="#B5642E" aria-label="Race condition simulation"></canvas>
+        <div class="ctrls" data-sim="race"></div>
+      </div>
+      <p class="simnote">Leave it unprotected and watch counts quietly go missing when an interrupt lands mid-update. Toggle protection and the count stays correct.</p>
+      <div class="milciv"><b>Why it matters</b>This is why the interrupt card warned that ISRs sharing data is where bugs live. Concurrency bugs are rare, random, and the hardest to reproduce.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=race+condition+interrupt+shared+variable+volatile+critical+section"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: interrupt race conditions</a>
+        <div class="terms"><span class="term">shared variable ISR + main</span><span class="term">count++ = read-modify-write</span><span class="term">interrupted mid-update = lost update</span><span class="term">volatile</span><span class="term">critical section / atomic</span><span class="term">"works 99% of the time"</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="fwhw">
+      <div class="s-top"><span class="s-no">36</span><span class="s-tag">Firmware↔HW</span></div>
+      <h3>The board just freezes (a hard fault)</h3>
+      <p class="gist"><b>Analogy:</b> the blue screen of the microcontroller world — the CPU hits something illegal and throws up its hands.</p>
+      <div class="answer">
+        <p>When the CPU is asked to do something impossible — dereference a bad pointer, execute garbage, access memory it isn't allowed to — it raises a <b>fault</b>. Cortex-M actually has a few specific faults (MemManage, BusFault, UsageFault), and if one of those isn't handled it "escalates" to the catch-all <b>HardFault</b>: the core abandons normal execution and jumps to the fault handler. By default that handler is an empty <code>while(1)</code> loop, which is why the visible symptom is just "the board froze."</p>
+        <p>The skill is turning that dead end into an address and a reason. Two things help. First, the fault-status registers (<b>CFSR</b>/<b>HFSR</b>) contain bits that say <em>why</em> it faulted — bad memory access, undefined instruction, unaligned access, and so on. Second, when the fault happened the hardware <b>stacked a frame</b> of registers (R0–R3, R12, LR, PC, xPSR) onto the stack, and the stacked <b>PC</b> is the address of the offending instruction. So a proper fault handler grabs that stacked frame, prints the PC and the fault flags, and you look the PC up in your <code>.elf</code> to land on the exact line — minutes instead of hours.</p>
+        <p>The usual culprits for a newcomer: a <b>null or uninitialized pointer</b>; a <b>stack overflow</b>, where the stack quietly grows down past its bounds into other memory and corrupts it (deep recursion or a big local array will do it) — catchable with an MPU stack guard or an RTOS's stack-checking; a use-after-free or wild pointer; and unaligned or out-of-range accesses. The lasting lesson: don't leave the default freeze in place — a fault handler that reports where and why is one of the highest-return things you can add to a project.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>"It just hangs" is often a HardFault. Learning to decode the stacked registers turns a frozen board into a fixable bug.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=ARM+cortex-m+hardfault+debugging+stacked+registers+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: debugging a HardFault</a>
+        <div class="terms"><span class="term">HardFault (illegal operation)</span><span class="term">jumps to fault handler</span><span class="term">default = infinite loop (freeze)</span><span class="term">stacked registers show where</span><span class="term">bad pointer / stack overflow / misalignment</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ SAFETY-CRITICAL ============ -->
+  <section class="track" data-track="safety">
+    <div class="track-head">
+      <div class="tno">Track 08 — When failure is not an option</div>
+      <h2>Safety-critical: DO-178C &amp; friends</h2>
+      <p>In avionics a bug can cost lives, so the industry doesn't just test more — it follows rigorous standards that dictate how software and hardware are developed and proven. Here's what those acronyms actually mean.</p>
+    </div>
+
+    <article class="scenario" data-cat="safety">
+      <div class="s-top"><span class="s-no">37</span><span class="s-tag">Safety</span></div>
+      <h3>Why safety-critical software is a different world</h3>
+      <p class="gist"><b>Analogy:</b> building a bridge vs sketching an app — when lives ride on it, "move fast and break things" is exactly the wrong instinct.</p>
+      <div class="answer">
+        <p>Ordinary software ships, breaks, and gets patched. Safety-critical software — in aircraft, spacecraft, medical devices, cars — can't, because a failure can kill and there's no "push an update after it crashes." So the mindset flips from testing to <b>assurance</b>: producing documented <em>evidence</em> that the software does what it should <em>and nothing it shouldn't</em>. That second half is the hard part — ordinary testing shows a behavior is <em>present</em>, but here you must also give confidence that unintended behavior is <em>absent</em> (no surprise side effects, no dead or unreachable code that could run in a corner case).</p>
+        <p>That reshapes how you engineer. Requirements are captured and <b>traced</b> to design, to code, and to the tests that verify them; everything is reviewed; failure modes are analyzed up front; and verification is done with <b>independence</b> (the person checking isn't the person who wrote it, at the highest levels). The code itself is written to be <b>predictable</b>: teams avoid dynamic memory allocation, unbounded recursion and other constructs whose worst-case time or memory can't be bounded, so behavior is deterministic and analyzable. And the rigor <b>scales with the danger</b> — the more catastrophic a failure would be, the more evidence you must produce (the whole point of the DAL in the next card).</p>
+        <p>This is why avionics teams move deliberately and generate mountains of documentation, plans and records: the <b>artifacts are the product</b> as much as the binary, because a certification authority (the FAA, EASA) has to be convinced the thing is safe <em>before</em> it ever flies. It's a genuine culture shift — far less code per day, far more analysis, review and traceability — in exchange for software you would trust your life to.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>For a newcomer the culture shock is real: far less code per day, far more analysis, review and traceability. The reward is a system you'd trust your life to.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=safety+critical+software+development+avionics+DO-178C+introduction"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: intro to safety-critical software</a>
+        <div class="terms"><span class="term">failure can kill → prove, don't just test</span><span class="term">rigor scales with danger</span><span class="term">requirements→code→tests traceability</span><span class="term">reviews + failure analysis</span><span class="term">certification (FAA/EASA)</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="safety">
+      <div class="s-top"><span class="s-no">38</span><span class="s-tag">Safety · key idea</span></div>
+      <h3>DO-178C sets the software's assurance level</h3>
+      <p class="gist"><b>Analogy:</b> airport security tiers — a nail clipper and a chemistry set get very different scrutiny. Software that could crash a plane gets the most.</p>
+      <div class="answer">
+        <p>DO-178C is the master standard for airborne software — "Software Considerations in Airborne Systems and Equipment Certification." Its core idea is to match rigor to the consequences of failure. Each software function is assigned a <b>Design Assurance Level (DAL)</b> from A to E based on the effect if it fails: <b>A</b> = Catastrophic (could cause loss of the aircraft), <b>B</b> = Hazardous, <b>C</b> = Major, <b>D</b> = Minor, <b>E</b> = No safety effect. That level then sets how many <b>objectives</b> you must satisfy — Level A carries the most (on the order of 70), many of which must be met with <b>independence</b> — and they ratchet down to essentially none at Level E.</p>
+        <p>The most-cited example of that rigor is structural coverage. At lower levels you must show your tests reached every <b>statement</b> and every <b>branch</b>; at Level A you additionally need <b>MC/DC</b> (Modified Condition/Decision Coverage), which demands that every individual condition in a compound decision has been shown to <em>independently</em> flip the outcome. It's demanding on purpose — it flushes out logic that was never actually exercised, and any code the tests can't reach (dead code) has to be justified or removed.</p>
+        <p>Crucially, DO-178C governs <b>process and evidence</b>, not a coding style. You produce and keep a defined set of artifacts — plans (like the PSAC), requirements, design, source, test cases and results, structural-coverage and traceability data, plus configuration-management and quality-assurance records — all linked together to demonstrate the software is as trustworthy as its DAL demands. (DO-178C also brought companion supplements for tool qualification, model-based development, object-oriented code and formal methods, reflecting how people actually build software now.)</p>
+      </div>
+      <div class="simwrap">
+        <div class="simcap">Sim · failure severity → DAL → amount of rigor</div>
+        <canvas class="sim" data-sim="dal" data-c="#B23A48" aria-label="DO-178C DAL simulation"></canvas>
+        <div class="ctrls" data-sim="dal"></div>
+      </div>
+      <p class="simnote">Slide from a catastrophic failure down to no effect and watch the DAL — and the amount of verification work — drop with it.</p>
+      <div class="milciv"><b>Why it matters</b>When avionics folk say "this is a Level A function," they mean it carries the highest assurance burden — the most rigor, testing, and proof.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=DO-178C+explained+design+assurance+levels+DAL+software"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: DO-178C &amp; DALs</a>
+        <div class="terms"><span class="term">DO-178C = airborne software standard</span><span class="term">DAL A–E</span><span class="term">level set by failure severity</span><span class="term">more level = more objectives</span><span class="term">MC/DC coverage (Level A)</span><span class="term">process + evidence + traceability</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="safety">
+      <div class="s-top"><span class="s-no">39</span><span class="s-tag">Safety</span></div>
+      <h3>The V-model &amp; requirements traceability</h3>
+      <p class="gist"><b>Analogy:</b> mirror-image staircases — you walk down defining and building, then climb back up testing each step against the one it mirrors.</p>
+      <div class="answer">
+        <p>Safety-critical projects usually follow the <b>V-model</b>. Down the left you progressively refine — system requirements → software requirements → architecture/design → code — and each step is <b>reviewed</b> before you descend (requirements reviews, design reviews, code reviews against a coding standard). Up the right you verify, and each verification level <b>mirrors</b> the design level across from it: unit tests check the code against low-level requirements, integration tests check the design, and system tests check the high-level requirements. Left side builds it; right side proves it, rung for rung.</p>
+        <p>The glue holding the two sides together is <b>bidirectional traceability</b>. <em>Forward</em>: every requirement links down to the design and code that implement it and the tests that verify it — so nothing is left unimplemented or untested. <em>Backward</em>: every piece of code and every test links back up to a requirement — so there's <b>no code without a requirement</b> (unexpected code is a red flag), and any "derived" requirement the design introduces is fed back to the safety assessment to check it created no new hazard. Structural-coverage analysis then closes the loop, catching anything the tests didn't reach. Much of this is managed in requirements tools (DOORS and the like), and verification is done with <b>independence</b> at high DALs.</p>
+        <p>This is why so much of the effort is specifying, reviewing and linking rather than typing code: the auditable evidence that <em>every</em> requirement is implemented and verified — and that nothing extra snuck in — is exactly what gets the system <b>certified</b>. It's precisely the "development and verification practices" a safety-critical job description is pointing at.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Traceability is the backbone: a reviewer or auditor can pick any requirement and follow it to the code and the test that proves it — and flag any code that answers to no requirement.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=V-model+requirements+traceability+safety+critical+software"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: the V-model &amp; traceability</a>
+        <div class="terms"><span class="term">V-model (define/build down, verify up)</span><span class="term">each test mirrors a level</span><span class="term">requirements traceability</span><span class="term">no code without a requirement</span><span class="term">evidence for certification</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="safety">
+      <div class="s-top"><span class="s-no">40</span><span class="s-tag">Safety</span></div>
+      <h3>DO-254 — the same rigor for the hardware</h3>
+      <p class="gist"><b>Analogy:</b> DO-178C's twin for the circuit — the same "prove it's safe" discipline, applied to complex hardware chips.</p>
+      <div class="answer">
+        <p>Software isn't the only thing that can fail — complex electronic hardware can too. <b>DO-254</b> ("Design Assurance Guidance for Airborne Electronic Hardware") is the hardware counterpart to DO-178C, and it targets <b>complex</b> hardware in particular: FPGAs, ASICs and PLDs, whose internal logic <em>you design</em> by writing <b>HDL</b> (Verilog or VHDL). That's the key insight — describing an FPGA in HDL is essentially "programming hardware," a design activity every bit as error-prone as writing C, so it earns the same treatment: assurance levels tied to failure consequences, a disciplined requirements→design→implementation→verification lifecycle, and traceability throughout. (Simple, off-the-shelf parts are handled by lighter means.)</p>
+        <p>The verification looks different from software's, though: you prove an FPGA design mostly through <b>simulation</b> of the HDL against its requirements, plus techniques like elemental analysis and, increasingly, formal methods — rather than by running tests on a CPU. But the philosophy and the paperwork mirror DO-178C closely.</p>
+        <p>For a firmware engineer this matters because you sit right between the two worlds. Your firmware runs on hardware that itself had to be assured, and the <b>interface</b> between them (an ICD — who owns which register, what each signal means, timing) has to line up exactly across DO-178C (software) and DO-254 (hardware). Because HDL design is a close cousin of firmware, the skills and the rigorous mindset transfer readily between them.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>DO-178C for the code, DO-254 for the complex hardware it runs on — together they cover both halves of an avionics system.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=DO-254+explained+airborne+electronic+hardware+FPGA"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: DO-254 explained</a>
+        <div class="terms"><span class="term">DO-254 = airborne hardware assurance</span><span class="term">counterpart to DO-178C</span><span class="term">for FPGAs / ASICs</span><span class="term">assurance levels + lifecycle</span><span class="term">firmware sits between the two</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="safety">
+      <div class="s-top"><span class="s-no">41</span><span class="s-tag">Safety</span></div>
+      <h3>DO-160 — will the box survive the sky?</h3>
+      <p class="gist"><b>Analogy:</b> a brutal fitness test before the box is allowed on a plane — shake it, freeze it, cook it, zap it, and see if it still works.</p>
+      <div class="answer">
+        <p>A device can be flawlessly coded and still fail in the air because of its <b>environment</b>. <b>DO-160</b> ("Environmental Conditions and Test Procedures for Airborne Equipment") is the standard battery of environmental tests every piece of airborne equipment must pass, and it is thorough to the point of brutality. Its many sections each punish the box a different way: temperature extremes and rapid <b>altitude</b>/decompression changes, temperature <b>variation</b>, humidity, operational and crash-safety <b>shock</b>, <b>vibration</b>, waterproofness, fluids, sand and dust, fungus, salt fog, <b>power-input</b> disturbances and voltage spikes, induced-signal and <b>RF susceptibility</b>, RF <b>emissions</b>, electrostatic discharge, <b>lightning</b> (both induced transients and direct effects), and fire/flammability.</p>
+        <p>Which specific tests, and how severe, are <b>tailored to where the unit lives</b> on the aircraft — a box in the temperature-controlled cockpit faces a gentler profile than one bolted near an engine or out in a wing, so equipment is qualified to categories that match its installation. Testing is done on representative units in environmental chambers, shakers and EMC labs, and the current revision is <b>DO-160G</b>.</p>
+        <p>For an engineer, DO-160 reaches back into design decisions made long before any test: you pick components <b>rated</b> for the temperature range, add <b>shielding</b> and filtering to pass EMC, choose sealed <b>connectors</b>, apply conformal coating against humidity, and plan the <b>thermal</b> path — because the box must ultimately survive the sky, not merely work on a warm bench. This is a different kind of failure from a logic bug, which is why it's a separate standard from DO-178C and DO-254.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>DO-178C and DO-254 prove the design is correct; DO-160 proves the physical box survives the harsh reality of flight. Different failure, different standard.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=DO-160+environmental+testing+avionics+explained"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: DO-160 environmental testing</a>
+        <div class="terms"><span class="term">DO-160 = environmental test standard</span><span class="term">temp / altitude / vibration / humidity</span><span class="term">EMI/EMC + lightning</span><span class="term">survive real flight conditions</span><span class="term">current revision DO-160G</span></div>
+      </div>
+    </article>
+
+    <article class="scenario" data-cat="safety">
+      <div class="s-top"><span class="s-no">42</span><span class="s-tag">Safety · the big picture</span></div>
+      <h3>ARP4754A &amp; ARP4761 — the whole-aircraft view</h3>
+      <p class="gist"><b>Analogy:</b> the zoomed-out master plan — before you build any one box, you work out how the whole aircraft can fail and what each part must guarantee.</p>
+      <div class="answer">
+        <p>DO-178C and DO-254 assure individual pieces; <b>ARP4754A</b> and <b>ARP4761</b> sit above them at the whole-aircraft-system level and are where the DALs actually come from. <b>ARP4754A</b> ("Guidelines for Development of Civil Aircraft and Systems") describes top-down development: capture aircraft-level requirements, break them into system and item requirements, and flow them down to the software (DO-178C) and hardware (DO-254) that implement them. <b>ARP4761</b> supplies the <b>safety-assessment</b> methods that drive it.</p>
+        <p>Those methods form a loop worth knowing by name. A <b>Functional Hazard Assessment (FHA)</b> asks, for each function, "what happens if this is lost or misbehaves?" and classifies the severity (catastrophic, hazardous, …). A <b>Preliminary System Safety Assessment (PSSA)</b> then works <em>top-down</em> — often using <b>Fault Tree Analysis (FTA)</b>, reasoning backward from each hazard to the combinations of failures that could cause it — to allocate safety requirements and set each item's <b>DAL</b>, and to decide how much <b>redundancy</b> the architecture needs. A <b>System Safety Assessment (SSA)</b> later works <em>bottom-up</em> (with methods like FMEA) to verify the built system actually meets those targets, and a <b>Common Cause Analysis</b> checks that "redundant" channels can't be knocked out by one shared fault. The severity classes tie to quantitative failure-probability targets — famously, catastrophic failures must be shown to be extremely improbable, on the order of 10⁻⁹ per flight hour — which is what forces redundant, independent designs.</p>
+        <p>So the whole pyramid reads top to bottom: assess hazards and set assurance levels (<b>ARP4761 / ARP4754A</b>) → build the software and hardware to those levels (<b>DO-178C / DO-254</b>) → prove the physical box survives its environment (<b>DO-160</b>). One currency note for interviews: the JD lists ARP4754A and ARP4761, but both were revised in 2023 to <b>ARP4754B</b> and <b>ARP4761A</b> — good to mention if it comes up.</p>
+      </div>
+      <div class="milciv"><b>Why it matters</b>Picture a pyramid: safety assessment and system development at the top (ARP4761 / ARP4754A) set the assurance levels that DO-178C, DO-254 and DO-160 then satisfy for each part.</div>
+      <div class="foot-row">
+        <a class="ytlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=ARP4754A+ARP4761+aircraft+system+safety+assessment+FHA+FTA"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.2a2.7 2.7 0 0 0-1.9-1.9C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.65.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.45 5.2a2.7 2.7 0 0 0 1.9 1.9c1.75.4 8.65.4 8.65.4s6.9 0 8.65-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12zM10 15.5v-7l6 3.5z"/></svg>Watch: ARP4754A &amp; ARP4761</a>
+        <div class="terms"><span class="term">ARP4754A = whole-system development</span><span class="term">top-down requirements</span><span class="term">ARP4761 = safety assessment (FHA/FTA/FMEA)</span><span class="term">hazards → assurance levels</span><span class="term">now ARP4754B / ARP4761A (2023)</span></div>
+      </div>
+    </article>
+  </section>
+
+  <p class="noresult" id="noresult">No scenarios match that. Clear the search or pick another track.</p>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>How to use this:</b> read the analogy first, then the explanation, then <b>play with the sliders</b> until the mechanism feels obvious — that's what the animations are for. Every card has a "Watch" button that opens a curated YouTube search so you can see the real thing on real hardware.<br>
+    Interactive field guide for newcomers · microcontroller basics → ARM → serial buses → CAN → analog → debugging → firmware-hardware interaction → safety-critical avionics. Animations are teaching models, not cycle-accurate simulators.
+  </div>
+</footer>
+
+<script>
+(function(){
+  /* ---------- theme ---------- */
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  /* ---------- palette from CSS ---------- */
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#151b1f';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#63717a';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#8a97a0';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#d3dbdf';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f1f4f5';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8';
+  }
+  refreshPalette();
+
+  /* ---------- helpers ---------- */
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+  /* ---------- SIM registry ----------
+     each: { controls:[{k,label,min,max,step,val,unit,regen,btn}], init(s,w,h), step(s,dt), draw(ctx,w,h,s) }
+     s = { p:{}, t, accent, canvasW, canvasH, ...state } */
+  var SIMS={};
+
+  /* REGPIN — memory-mapped register drives physical pins */
+  SIMS.regpin={
+    controls:[{k:'val',label:'Register value (you write this)',min:0,max:255,step:1,val:32,fmt:function(v){v=Math.round(v)&255;return '0x'+('0'+v.toString(16).toUpperCase()).slice(-2);}}],
+    draw:function(ctx,w,h,s){
+      var v=Math.round(s.p.val)&255, n=8, gap=8;
+      var boxW=Math.min((Math.min(w-36,380)-gap*(n-1))/n,42), tot=boxW*n+gap*(n-1), x0=(w-tot)/2, yb=46;
+      txt(ctx,'GPIO output register  =  0x'+('0'+v.toString(16).toUpperCase()).slice(-2)+'   ('+('00000000'+v.toString(2)).slice(-8)+')', x0, 26, PAL.muted,11);
+      for(var i=0;i<n;i++){
+        var bit=(v>>(7-i))&1, x=x0+i*(boxW+gap);
+        ctx.fillStyle=bit?s.accent:PAL.surf; rr(ctx,x,yb,boxW,30,5); ctx.fill();
+        ctx.strokeStyle=PAL.line;ctx.lineWidth=1; rr(ctx,x,yb,boxW,30,5); ctx.stroke();
+        txt(ctx,String(bit),x+boxW/2,yb+20,bit?'#fff':PAL.muted,15,'center');
+        txt(ctx,'P'+(7-i),x+boxW/2,yb-7,PAL.faint,9,'center');
+        var lx=x+boxW/2, ly=yb+30;
+        ctx.strokeStyle=bit?s.accent:PAL.line;ctx.lineWidth=bit?2:1;ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(lx,ly+30);ctx.stroke();
+        var ledY=ly+44;
+        ctx.beginPath();ctx.arc(lx,ledY,9,0,7);
+        if(bit){ctx.fillStyle=PAL.warn;ctx.shadowColor=PAL.warn;ctx.shadowBlur=14;}else{ctx.fillStyle=PAL.surf;ctx.shadowBlur=0;}
+        ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=PAL.line;ctx.lineWidth=1;ctx.beginPath();ctx.arc(lx,ledY,9,0,7);ctx.stroke();
+      }
+      txt(ctx,'each bit is one physical pin · 1 = HIGH (LED on) · 0 = LOW · writing the number IS the hardware action', x0, h-14, PAL.faint,10.5);
+    }
+  };
+
+  /* BLINK — configure a pin, toggle it in a loop */
+  SIMS.blink={
+    controls:[{k:'hz',label:'Blink rate',min:1,max:10,step:1,val:2,unit:' Hz'}],
+    init:function(s){s.buf=[];},
+    step:function(s,dt){ s.on=(Math.floor(s.t*s.p.hz)%2)===0; s.buf.push(s.on?1:0); if(s.buf.length>260)s.buf.shift(); },
+    draw:function(ctx,w,h,s){
+      var lx=54, ly=h*0.5;
+      ctx.beginPath();ctx.arc(lx,ly,20,0,7);
+      if(s.on){ctx.fillStyle=PAL.warn;ctx.shadowColor=PAL.warn;ctx.shadowBlur=22;}else{ctx.fillStyle=PAL.surf;ctx.shadowBlur=0;}
+      ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=PAL.line;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(lx,ly,20,0,7);ctx.stroke();
+      txt(ctx,s.on?'HIGH':'LOW',lx,ly+42,s.on?PAL.warn:PAL.muted,12,'center');
+      txt(ctx,'LED',lx,ly-30,PAL.faint,10,'center');
+      var px0=112,px1=w-16,top=h*0.5-42,bot=h*0.5+42,n=s.buf.length;
+      txt(ctx,'the pin voltage over time = a square wave',px0,22,PAL.muted,10.5);
+      ctx.strokeStyle=PAL.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px0,bot);ctx.lineTo(px1,bot);ctx.stroke();
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();
+      for(var i=0;i<n;i++){var x=px0+(px1-px0)*(i/260);var y=s.buf[i]?top:bot;if(i===0)ctx.moveTo(x,y);else{ctx.lineTo(x,s.buf[i-1]?top:bot);ctx.lineTo(x,y);}}
+      ctx.stroke();
+      txt(ctx,'1',px0-8,top+4,PAL.faint,9,'right');txt(ctx,'0',px0-8,bot+4,PAL.faint,9,'right');
+    }
+  };
+
+  /* IRQ — an interrupt preempts the main loop */
+  SIMS.irq={
+    controls:[{k:'rate',label:'Interrupts per second',min:0,max:6,step:1,val:2},{k:'len',label:'ISR length',min:5,max:40,step:1,val:15,unit:'%'}],
+    init:function(s){s.buf=[];s.nextT=0.5;s.inIsr=0;},
+    step:function(s,dt){
+      if(s.p.rate>0 && s.t>=s.nextT){ s.inIsr=Math.min(0.33,(s.p.len/100)/s.p.rate); s.nextT=s.t+1/s.p.rate; }
+      var running=s.inIsr>0?1:0; if(s.inIsr>0)s.inIsr-=dt;
+      s.buf.push(running); if(s.buf.length>280)s.buf.shift();
+    },
+    draw:function(ctx,w,h,s){
+      var x0=16,x1=w-16,laneY=h*0.5,n=s.buf.length;
+      txt(ctx,'CPU execution — who is running right now?',x0,24,PAL.muted,11);
+      txt(ctx,'main() loop',x0,laneY-24,PAL.cool,11);
+      txt(ctx,'ISR (the interrupt handler)',x0,laneY+42,PAL.bad,11);
+      var barY=laneY-14,barH=28;
+      for(var i=0;i<n;i++){var x=x0+(x1-x0)*(i/280),wseg=(x1-x0)/280+0.8;ctx.fillStyle=s.buf[i]?PAL.bad:PAL.cool;ctx.fillRect(x,barY,wseg,barH);}
+      ctx.strokeStyle=PAL.line;ctx.lineWidth=1;ctx.strokeRect(x0,barY,x1-x0,barH);
+      txt(ctx, s.inIsr>0?'interrupt fired — CPU jumps to the ISR, then returns to main':'running the main loop — waiting for the next interrupt', x0, h-14, s.inIsr>0?PAL.bad:PAL.muted,11);
+    }
+  };
+
+  /* RTOS — a scheduler time-slices tasks on one core */
+  SIMS.rtos={
+    controls:[{k:'q',label:'Time slice',min:1,max:20,step:1,val:6,unit:' ms'}],
+    init:function(s){s.buf=[];s.cur=0;s.acc=0;},
+    step:function(s,dt){ s.acc+=dt*1000; if(s.acc>=s.p.q){s.acc=0;s.cur=(s.cur+1)%3;} s.buf.push(s.cur); if(s.buf.length>280)s.buf.shift(); },
+    draw:function(ctx,w,h,s){
+      var cols=[PAL.cool,PAL.good,PAL.warn],names=['Task A (read sensor)','Task B (run control)','Task C (log data)'];
+      var x0=16,x1=w-16,n=s.buf.length;
+      txt(ctx,'one CPU core, 3 tasks — the RTOS gives each a short turn',x0,22,PAL.muted,11);
+      for(var t=0;t<3;t++){
+        var y=42+t*48;
+        txt(ctx,names[t],x0,y-6,cols[t],11);
+        ctx.strokeStyle=PAL.line;ctx.lineWidth=1;ctx.strokeRect(x0,y,x1-x0,26);
+        for(var i=0;i<n;i++){ if(s.buf[i]===t){var x=x0+(x1-x0)*(i/280),wseg=(x1-x0)/280+0.8;ctx.fillStyle=cols[t];ctx.fillRect(x,y,wseg,26);} }
+      }
+      txt(ctx,'only one runs at a time; switching is so fast they feel simultaneous. Smaller slice = smoother but more overhead.',x0,h-12,PAL.faint,10.5);
+    }
+  };
+
+  /* UART — one byte, no clock wire */
+  SIMS.uart={
+    controls:[
+      {k:'byte',label:'Byte to send',min:0,max:255,step:1,val:65,fmt:function(v){v=Math.round(v)&255;return "'"+(v>=32&&v<127?String.fromCharCode(v):'.')+"'  "+v;}},
+      {k:'baud',label:'Speed',min:1,max:8,step:1,val:3}
+    ],
+    init:function(s){s.x=0;},
+    step:function(s,dt){ s.x+=dt*s.p.baud*55; },
+    draw:function(ctx,w,h,s){
+      var v=Math.round(s.p.byte)&255;
+      var bits=[{v:0,l:'START',c:PAL.bad}];
+      for(var b=0;b<8;b++) bits.push({v:(v>>b)&1,l:'d'+b,c:s.accent});
+      bits.push({v:1,l:'STOP',c:PAL.good}); bits.push({v:1,l:'idle',c:PAL.faint});
+      var L=bits.length, bw=Math.max(34,Math.min(52,(w-40)/9)), top=50, bot=h-56, x0=18, xend=w-16;
+      txt(ctx,'UART sends a byte with NO clock wire — timing alone (the baud rate) tells the receiver where each bit is.',x0,22,PAL.muted,10.5);
+      ctx.save();ctx.beginPath();ctx.rect(x0,top-30,xend-x0,bot-top+58);ctx.clip();
+      var k0=Math.floor(s.x/bw)-1,k1=Math.floor((s.x+(xend-x0))/bw)+1;
+      for(var k=k0;k<=k1;k++){ var idx=((k%L)+L)%L, sx=x0+k*bw-s.x, b=bits[idx];
+        ctx.strokeStyle=PAL.line;ctx.globalAlpha=.5;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx,top-8);ctx.lineTo(sx,bot+8);ctx.stroke();ctx.globalAlpha=1;
+        if(b.l)txt(ctx,b.l,sx+bw/2,top-18,b.c,9.5,'center');
+        ctx.fillStyle=PAL.faint;ctx.beginPath();ctx.arc(sx+bw/2,(b.v?top:bot),2.4,0,7);ctx.fill();
+      }
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2.4;ctx.beginPath();
+      for(var xx=x0;xx<=xend;xx++){var cx=(xx-x0)+s.x;var i2=((Math.floor(cx/bw))%L+L)%L;var y=bits[i2].v?top:bot;if(xx===x0)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);}
+      ctx.stroke();ctx.restore();
+      txt(ctx,'1',x0-4,top+4,PAL.faint,9,'right');txt(ctx,'0',x0-4,bot+4,PAL.faint,9,'right');
+      txt(ctx,"LSB-first (d0 first). Try 65 = 'A' = 0100 0001. Dots = where the receiver samples each bit.",x0,h-14,PAL.faint,10.5);
+    }
+  };
+
+  /* SPI — a clock wire clocks every bit */
+  SIMS.spi={
+    controls:[
+      {k:'byte',label:'MOSI byte (MSB first)',min:0,max:255,step:1,val:181,fmt:function(v){v=Math.round(v)&255;return '0b'+('00000000'+v.toString(2)).slice(-8);}},
+      {k:'cpol',label:'CPOL (idle clock)',min:0,max:1,step:1,val:0},
+      {k:'cpha',label:'CPHA (sample edge)',min:0,max:1,step:1,val:0}
+    ],
+    init:function(s){s.x=0;},
+    step:function(s,dt){ s.x+=dt*44; },
+    draw:function(ctx,w,h,s){
+      var v=Math.round(s.p.byte)&255, cpol=Math.round(s.p.cpol), cpha=Math.round(s.p.cpha);
+      var L=12, bw=Math.max(30,Math.min(48,(w-56)/L)), x0=48, xend=w-14, yCS=44, yK=92, yM=152, amp=16;
+      txt(ctx,'SPI adds a CLOCK wire — the master ticks it and every tick clocks one bit. Fast, full-duplex.',12,22,PAL.muted,10.5);
+      txt(ctx,'CS',10,yCS+4,PAL.muted,10);txt(ctx,'SCLK',8,yK+4,PAL.muted,10);txt(ctx,'MOSI',8,yM+4,PAL.muted,10);
+      ctx.save();ctx.beginPath();ctx.rect(x0,30,xend-x0,h-38);ctx.clip();
+      function slot(k){return ((k%L)+L)%L;}
+      function inData(k){var m=slot(k);return m>=2&&m<10;}
+      function bitOf(k){return (v>>(7-(slot(k)-2)))&1;}
+      ctx.strokeStyle=PAL.warn;ctx.lineWidth=2;ctx.beginPath();
+      for(var xx=x0;xx<=xend;xx++){var k=Math.floor(((xx-x0)+s.x)/bw);var y=inData(k)?yCS+8:yCS-8;if(xx===x0)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);}ctx.stroke();
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();
+      for(var xx=x0;xx<=xend;xx++){var cx=(xx-x0)+s.x;var k=Math.floor(cx/bw);var fr=(cx-k*bw)/bw;var lvl;if(inData(k)){var ph=fr<0.5;lvl=cpol?!ph:ph;}else{lvl=cpol?1:0;}var y=lvl?yK-amp:yK+amp;if(xx===x0)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);}ctx.stroke();
+      ctx.strokeStyle=PAL.good;ctx.lineWidth=2;ctx.beginPath();
+      for(var xx=x0;xx<=xend;xx++){var cx=(xx-x0)+s.x;var k=Math.floor(cx/bw);var b=inData(k)?bitOf(k):0;var y=b?yM-amp:yM+amp;if(xx===x0)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);}ctx.stroke();
+      var k0=Math.floor(s.x/bw)-1,k1=Math.floor((s.x+(xend-x0))/bw)+1;
+      for(var k=k0;k<=k1;k++){ if(!inData(k))continue; var sx=x0+k*bw-s.x; var ex=sx+(cpha?bw*0.5:0);
+        ctx.fillStyle=PAL.bad;ctx.beginPath();ctx.arc(ex,yK,3,0,7);ctx.fill();
+        txt(ctx,String(bitOf(k)),sx+bw/2,yM+amp+16,PAL.good,10,'center');
+      }
+      ctx.restore();
+      txt(ctx,'red dots = the moment the receiver reads a bit (set by CPOL/CPHA — the "SPI mode").',12,h-12,PAL.faint,10.5);
+    }
+  };
+
+  /* I2C — two shared wires, addresses, ACK */
+  SIMS.i2c={
+    controls:[
+      {k:'addr',label:'7-bit address',min:0,max:127,step:1,val:60,fmt:function(v){return '0x'+(Math.round(v)&127).toString(16).toUpperCase();}},
+      {k:'rw',label:'direction',min:0,max:1,step:1,val:0,fmt:function(v){return v?'Read':'Write';}}
+    ],
+    init:function(s){s.hx=0;},
+    step:function(s,dt){ s.hx+=dt*0.14; if(s.hx>1)s.hx=0; },
+    draw:function(ctx,w,h,s){
+      var addr=Math.round(s.p.addr)&127, rw=Math.round(s.p.rw);
+      var cells=[{l:'START',t:'start'}];
+      for(var i=6;i>=0;i--) cells.push({l:'A'+i,t:'bit',v:(addr>>i)&1});
+      cells.push({l:'R/W',t:'bit',v:rw}); cells.push({l:'ACK',t:'ack',v:0}); cells.push({l:'STOP',t:'stop'});
+      var n=cells.length, x0=42, xend=w-14, cw=(xend-x0)/n, ySDA=72, ySCL=148, amp=15;
+      txt(ctx,'I²C: just 2 shared wires — SDA (data) + SCL (clock) — with addresses so many chips share them.',12,20,PAL.muted,10.5);
+      txt(ctx,'SDA',10,ySDA+4,PAL.muted,10);txt(ctx,'SCL',10,ySCL+4,PAL.muted,10);
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();
+      for(var i=0;i<n;i++){var cx=x0+i*cw,c=cells[i];
+        if(c.t==='bit'||c.t==='ack'){ctx.moveTo(cx,ySCL+amp);ctx.lineTo(cx+cw*0.5,ySCL+amp);ctx.lineTo(cx+cw*0.5,ySCL-amp);ctx.lineTo(cx+cw,ySCL-amp);ctx.lineTo(cx+cw,ySCL+amp);}
+        else{ctx.moveTo(cx,ySCL-amp);ctx.lineTo(cx+cw,ySCL-amp);}
+      }
+      ctx.stroke();
+      ctx.strokeStyle=PAL.good;ctx.lineWidth=2;ctx.beginPath();
+      for(var i=0;i<n;i++){var cx=x0+i*cw,c=cells[i];
+        if(c.t==='start'){ctx.moveTo(cx,ySDA-amp);ctx.lineTo(cx+cw*0.5,ySDA-amp);ctx.lineTo(cx+cw*0.5,ySDA+amp);ctx.lineTo(cx+cw,ySDA+amp);}
+        else if(c.t==='stop'){ctx.moveTo(cx,ySDA+amp);ctx.lineTo(cx+cw*0.5,ySDA+amp);ctx.lineTo(cx+cw*0.5,ySDA-amp);ctx.lineTo(cx+cw,ySDA-amp);}
+        else{var y=c.v?ySDA-amp:ySDA+amp;ctx.moveTo(cx,y);ctx.lineTo(cx+cw,y);}
+      }
+      ctx.stroke();
+      for(var i=0;i<n;i++){var cx=x0+i*cw,c=cells[i];var col=(c.t==='start'||c.t==='stop')?PAL.warn:(c.t==='ack'?PAL.bad:PAL.faint);txt(ctx,c.l,cx+cw/2,ySDA-amp-8,col,9,'center');}
+      var hxp=x0+s.hx*(xend-x0);ctx.strokeStyle=PAL.bad;ctx.globalAlpha=.45;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(hxp,38);ctx.lineTo(hxp,ySCL+amp+6);ctx.stroke();ctx.globalAlpha=1;
+      txt(ctx,'START = SDA drops while SCL high · ACK = receiver pulls SDA low to say "got it" · STOP = SDA rises while SCL high',12,h-12,PAL.faint,9.5);
+    }
+  };
+
+  /* OPENDRAIN — wired-AND with a pull-up */
+  SIMS.opendrain={
+    controls:[{btn:true,k:'a',label:'Toggle Chip A (pull low)'},{btn:true,k:'b',label:'Toggle Chip B (pull low)'}],
+    init:function(s){s.a=false;s.b=false;},
+    onbtn:function(s,k){ s[k]=!s[k]; },
+    draw:function(ctx,w,h,s){
+      var low=s.a||s.b, busY=h*0.5-6, x0=44, x1=w-52;
+      txt(ctx,'"Open-drain": a chip can only pull the wire LOW, or let go. A pull-up resistor makes it HIGH when all let go.',12,20,PAL.muted,10.5);
+      txt(ctx,'Vcc',x1+6,32,PAL.muted,10);
+      ctx.strokeStyle=PAL.line;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,30);ctx.lineTo(x1,50);ctx.stroke();
+      ctx.strokeStyle=PAL.warn;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x1,50);for(var i=0;i<6;i++){ctx.lineTo(x1+(i%2?6:-6),52+i*5);}ctx.lineTo(x1,84);ctx.stroke();
+      ctx.strokeStyle=PAL.line;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,84);ctx.lineTo(x1,busY);ctx.stroke();
+      txt(ctx,'pull-up',x1+6,70,PAL.warn,9);
+      ctx.strokeStyle=low?PAL.bad:PAL.good;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x0,busY);ctx.lineTo(x1,busY);ctx.stroke();
+      txt(ctx,'BUS = '+(low?'LOW (0)':'HIGH (1)'),(x0+x1)/2,busY-14,low?PAL.bad:PAL.good,13,'center');
+      [['A',s.a,x0+60],['B',s.b,x0+170]].forEach(function(d){
+        var dx=d[2],on=d[1];
+        ctx.strokeStyle=on?PAL.bad:PAL.line;ctx.lineWidth=on?2.5:1.5;ctx.beginPath();ctx.moveTo(dx,busY);ctx.lineTo(dx,busY+40);ctx.stroke();
+        ctx.strokeStyle=PAL.line;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(dx-9,busY+46);ctx.lineTo(dx+9,busY+46);ctx.moveTo(dx-5,busY+50);ctx.lineTo(dx+5,busY+50);ctx.stroke();
+        txt(ctx,'Chip '+d[0],dx,busY+68,on?PAL.bad:PAL.muted,10.5,'center');
+        txt(ctx,on?'pulling LOW':'let go',dx,busY+82,on?PAL.bad:PAL.faint,9.5,'center');
+      });
+      txt(ctx,'This is exactly why I²C works: any chip may pull the line low; it is HIGH only when everyone releases.',12,h-12,PAL.faint,10);
+    }
+  };
+  /* CANARB — bit-by-bit arbitration, dominant 0 wins */
+  SIMS.canarb={
+    controls:[{k:'a',label:'Node A id',min:0,max:31,step:1,val:6},{k:'b',label:'Node B id',min:0,max:31,step:1,val:11}],
+    init:function(s){s.rev=0;s.acc=0;s.hold=0;},
+    step:function(s,dt){ s.acc+=dt; if(s.rev<5){ if(s.acc>0.6){s.acc=0;s.rev++;} } else { s.hold+=dt; if(s.hold>1.8){s.hold=0;s.rev=0;} } },
+    draw:function(ctx,w,h,s){
+      var A=Math.round(s.p.a)&31,B=Math.round(s.p.b)&31,N=5;
+      var x0=118,cw=Math.min(52,(w-x0-16)/N),yA=52,yBus=104,yB=156,box=30;
+      txt(ctx,'CAN: two nodes may talk at once. "0" is dominant and beats "1". The lower id wins the wire.',12,22,PAL.muted,10.5);
+      txt(ctx,'Node A  '+A,10,yA+box/2+4,PAL.cool,11);
+      txt(ctx,'the wire',10,yBus+box/2+4,PAL.muted,11);
+      txt(ctx,'Node B  '+B,10,yB+box/2+4,PAL.warn,11);
+      var aOut=true,bOut=true,loserA=-1,loserB=-1,busArr=[];
+      for(var p=0;p<N;p++){var ab=(A>>(N-1-p))&1,bb=(B>>(N-1-p))&1;var bus=(aOut?ab:1)&(bOut?bb:1);busArr[p]=bus;
+        if(aOut&&ab===1&&bus===0){aOut=false;loserA=p;} if(bOut&&bb===1&&bus===0){bOut=false;loserB=p;}}
+      var aAlive=true,bAlive=true;
+      for(var p=0;p<N;p++){ var x=x0+p*cw, ab=(A>>(N-1-p))&1, bb=(B>>(N-1-p))&1;
+        if(p<s.rev){
+          ctx.globalAlpha=aAlive?1:.32;ctx.fillStyle=ab?PAL.surf:PAL.cool;rr(ctx,x,yA,box,box,5);ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=PAL.line;ctx.lineWidth=1;rr(ctx,x,yA,box,box,5);ctx.stroke();txt(ctx,String(ab),x+box/2,yA+box/2+5,ab?PAL.muted:'#fff',13,'center');
+          ctx.fillStyle=busArr[p]?PAL.surf:s.accent;rr(ctx,x,yBus,box,box,5);ctx.fill();ctx.strokeStyle=PAL.line;rr(ctx,x,yBus,box,box,5);ctx.stroke();txt(ctx,String(busArr[p]),x+box/2,yBus+box/2+5,busArr[p]?PAL.muted:'#fff',13,'center');
+          ctx.globalAlpha=bAlive?1:.32;ctx.fillStyle=bb?PAL.surf:PAL.warn;rr(ctx,x,yB,box,box,5);ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=PAL.line;rr(ctx,x,yB,box,box,5);ctx.stroke();txt(ctx,String(bb),x+box/2,yB+box/2+5,bb?PAL.muted:'#fff',13,'center');
+          if(loserA===p){txt(ctx,'A backs off',x+box/2,yA-8,PAL.bad,9,'center');aAlive=false;}
+          if(loserB===p){txt(ctx,'B backs off',x+box/2,yB+box+15,PAL.bad,9,'center');bAlive=false;}
+        } else { ctx.strokeStyle=PAL.line;ctx.globalAlpha=.35;rr(ctx,x,yA,box,box,5);ctx.stroke();rr(ctx,x,yBus,box,box,5);ctx.stroke();rr(ctx,x,yB,box,box,5);ctx.stroke();ctx.globalAlpha=1; }
+      }
+      if(s.rev>=N){ var win=A<B?'A':(B<A?'B':'tie'); txt(ctx, win==='tie'?'same id — a real collision; ids must be unique':'Node '+win+' wins (lowest id) and keeps sending; the loser retries later — no data lost.', x0, h-12, win==='tie'?PAL.bad:PAL.good,10.5); }
+      else txt(ctx,'comparing bit by bit, most-significant first…',x0,h-12,PAL.faint,10.5);
+    }
+  };
+
+  /* ADC — sampling + quantization + aliasing */
+  SIMS.adc={
+    controls:[{k:'freq',label:'Signal frequency',min:1,max:12,step:1,val:3,unit:' Hz'},{k:'rate',label:'Sample rate',min:2,max:60,step:1,val:24,unit:'/s'},{k:'bits',label:'Resolution',min:1,max:4,step:1,val:3,unit:'-bit'}],
+    init:function(s){s.ph=0;},
+    step:function(s,dt){ s.ph+=dt; },
+    draw:function(ctx,w,h,s){
+      var x0=16,x1=w-16,top=42,bot=h-40,mid=(top+bot)/2,amp=(bot-top)/2-6,levels=Math.pow(2,Math.round(s.p.bits)),f=s.p.freq,T=1.6;
+      txt(ctx,'An ADC turns a smooth analog voltage into numbers — sampling in time, rounding to fixed levels.',x0,22,PAL.muted,10.5);
+      ctx.strokeStyle=PAL.line;ctx.globalAlpha=.5;ctx.lineWidth=1;
+      for(var q=0;q<levels;q++){var y=bot-(q+0.5)/levels*(bot-top);ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();}
+      ctx.globalAlpha=1;
+      function sig(tt){return Math.sin(2*Math.PI*f*tt+s.ph*2);}
+      ctx.strokeStyle=PAL.faint;ctx.lineWidth=1.4;ctx.beginPath();
+      for(var xx=x0;xx<=x1;xx++){var tt=(xx-x0)/(x1-x0)*T;var y=mid-sig(tt)*amp;if(xx===x0)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);}ctx.stroke();
+      var pts=[];
+      for(var i=0;;i++){var tt=i/s.p.rate;if(tt>T)break;var x=x0+tt/T*(x1-x0);var val=sig(tt);var q=Math.round((val+1)/2*(levels-1));var qy=bot-(q+0.5)/levels*(bot-top);pts.push([x,qy,mid-val*amp]);}
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();
+      for(var i=0;i<pts.length;i++){if(i===0)ctx.moveTo(pts[i][0],pts[i][1]);else{ctx.lineTo(pts[i][0],pts[i-1][1]);ctx.lineTo(pts[i][0],pts[i][1]);}}ctx.stroke();
+      for(var i=0;i<pts.length;i++){ctx.fillStyle=PAL.bad;ctx.beginPath();ctx.arc(pts[i][0],pts[i][2],2.6,0,7);ctx.fill();}
+      txt(ctx,levels+' levels ('+Math.round(s.p.bits)+'-bit) · '+Math.round(s.p.rate)+' samples/s',x0,h-12,PAL.faint,10.5);
+      if(s.p.rate<2*f) txt(ctx,'rate too low → ALIASING: the samples invent a wrong, slower wave',x1,h-12,PAL.bad,10.5,'right');
+    }
+  };
+
+  /* PWM — duty cycle → average → brightness */
+  SIMS.pwm={
+    controls:[{k:'duty',label:'Duty cycle',min:0,max:100,step:1,val:50,unit:'%'},{k:'freq',label:'Frequency',min:1,max:12,step:1,val:4}],
+    init:function(s){s.x=0;},
+    step:function(s,dt){ s.x+=dt*s.p.freq*40; },
+    draw:function(ctx,w,h,s){
+      var d=s.p.duty/100,px0=16,px1=w-150,top=50,bot=h-46,period=Math.max(26,240/s.p.freq);
+      txt(ctx,'PWM switches a pin fully ON then OFF very fast. The % of ON-time sets the average power delivered.',px0,22,PAL.muted,10.5);
+      ctx.save();ctx.beginPath();ctx.rect(px0,top-6,px1-px0,bot-top+16);ctx.clip();
+      ctx.strokeStyle=s.accent;ctx.lineWidth=2;ctx.beginPath();
+      for(var xx=px0;xx<=px1;xx++){var cx=(xx-px0)+s.x;var ph=(cx%period)/period;var y=ph<d?top:bot;if(xx===px0)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);}ctx.stroke();ctx.restore();
+      var avgY=bot-(bot-top)*d;ctx.strokeStyle=PAL.bad;ctx.setLineDash([5,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(px0,avgY);ctx.lineTo(px1,avgY);ctx.stroke();ctx.setLineDash([]);
+      txt(ctx,'average',px0+4,avgY-5,PAL.bad,9.5);
+      var lx=w-72,ly=h*0.5;
+      ctx.beginPath();ctx.arc(lx,ly,26,0,7);ctx.fillStyle=PAL.warn;ctx.globalAlpha=0.12+0.88*d;ctx.shadowColor=PAL.warn;ctx.shadowBlur=6+30*d;ctx.fill();ctx.globalAlpha=1;ctx.shadowBlur=0;
+      ctx.strokeStyle=PAL.line;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(lx,ly,26,0,7);ctx.stroke();
+      txt(ctx,Math.round(s.p.duty)+'%',lx,ly+48,PAL.muted,12,'center');txt(ctx,'brightness',lx,ly-38,PAL.faint,10,'center');
+      txt(ctx,'the same trick dims LEDs, sets a servo angle, and controls motor speed.',px0,h-12,PAL.faint,10.5);
+    }
+  };
+
+  /* DEBOUNCE — bouncy raw vs clean debounced */
+  SIMS.debounce={
+    controls:[{k:'bounce',label:'Contact bounce',min:0,max:100,step:1,val:55,unit:'%'},{k:'win',label:'Debounce wait',min:0,max:100,step:1,val:50,unit:'%'}],
+    init:function(s){s.raw=[];s.cln=[];s.cur=0;s.stable=0;},
+    step:function(s,dt){
+      var pressed=(Math.floor(s.t/1.6)%2)===0;
+      var sinceEdge=s.t-Math.floor(s.t/1.6)*1.6;
+      var raw=pressed?1:0;
+      if(sinceEdge<(s.p.bounce/100*0.35)) raw=Math.random()<0.5?1:0;
+      if(raw!==s.cur){ s.stable+=dt; if(s.stable>(0.02+s.p.win/100*0.35)){s.cur=raw;s.stable=0;} } else s.stable=0;
+      s.raw.push(raw);s.cln.push(s.cur); if(s.raw.length>300){s.raw.shift();s.cln.shift();}
+    },
+    draw:function(ctx,w,h,s){
+      var x0=16,x1=w-16,n=s.raw.length;
+      txt(ctx,'A mechanical button "bounces" — its metal contacts chatter for a few ms before settling.',x0,22,PAL.muted,10.5);
+      function lane(buf,y,col,lbl){ txt(ctx,lbl,x0,y-22,col,10); var top=y-13,bot=y+13; ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+        for(var i=0;i<n;i++){var x=x0+(x1-x0)*(i/300);var yy=buf[i]?top:bot;if(i===0)ctx.moveTo(x,yy);else{ctx.lineTo(x,buf[i-1]?top:bot);ctx.lineTo(x,yy);}}ctx.stroke(); }
+      lane(s.raw,h*0.36,PAL.bad,'raw button signal (bouncy)');
+      lane(s.cln,h*0.74,s.accent,'debounced signal (clean)');
+      txt(ctx,'without debouncing, one press looks like many — your handler fires several times.',x0,h-10,PAL.faint,10.5);
+    }
+  };
+
+  /* SCOPE — oscilloscope: voltage vs time */
+  SIMS.scope={
+    controls:[{k:'noise',label:'Noise',min:0,max:100,step:1,val:20,unit:'%'},{k:'trig',label:'Trigger level',min:-100,max:100,step:1,val:0,unit:'%'},{k:'tb',label:'Timebase',min:1,max:10,step:1,val:4}],
+    init:function(s){s.ph=0;},
+    step:function(s,dt){ s.ph+=dt; },
+    draw:function(ctx,w,h,s){
+      var x0=16,x1=w-16,top=36,bot=h-28,mid=(top+bot)/2,amp=(bot-top)/2-6;
+      ctx.strokeStyle=PAL.line;ctx.globalAlpha=.5;ctx.lineWidth=1;
+      for(var gx=x0;gx<=x1+1;gx+=(x1-x0)/10){ctx.beginPath();ctx.moveTo(gx,top);ctx.lineTo(gx,bot);ctx.stroke();}
+      for(var gy=top;gy<=bot+1;gy+=(bot-top)/6){ctx.beginPath();ctx.moveTo(x0,gy);ctx.lineTo(x1,gy);ctx.stroke();}
+      ctx.globalAlpha=1;
+      txt(ctx,'An oscilloscope shows VOLTAGE vs TIME — the true analog shape, noise and all.',x0,22,PAL.muted,10.5);
+      var trigY=mid-(s.p.trig/100)*amp;ctx.strokeStyle=PAL.warn;ctx.setLineDash([4,4]);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x0,trigY);ctx.lineTo(x1,trigY);ctx.stroke();ctx.setLineDash([]);txt(ctx,'trigger',x1-4,trigY-5,PAL.warn,9,'right');
+      var f=s.p.tb;ctx.strokeStyle=s.accent;ctx.lineWidth=1.8;ctx.beginPath();
+      for(var xx=x0;xx<=x1;xx++){var tt=(xx-x0)/(x1-x0);var base=Math.sin(2*Math.PI*f*tt+s.ph*3);var nz=(Math.random()*2-1)*(s.p.noise/100)*0.5;var y=mid-(base+nz)*amp;if(xx===x0)ctx.moveTo(xx,y);else ctx.lineTo(xx,y);}ctx.stroke();
+      txt(ctx,'the "trigger" re-draws the trace each time the signal crosses that level, so it looks stable.',x0,h-10,PAL.faint,10.5);
+    }
+  };
+
+  /* DMA — moving data without the CPU */
+  SIMS.dma={
+    controls:[{btn:true,k:'dma',label:'Toggle DMA on / off'},{k:'rate',label:'Data speed',min:1,max:10,step:1,val:5}],
+    init:function(s){s.dma=true;s.pk=[];s.spawn=0;},
+    onbtn:function(s){ s.dma=!s.dma; },
+    step:function(s,dt){ s.spawn+=dt*s.p.rate; if(s.spawn>1){s.spawn=0;s.pk.push({x:0});} s.pk.forEach(function(p){p.x+=dt*0.4*s.p.rate;}); s.pk=s.pk.filter(function(p){return p.x<1;}); },
+    draw:function(ctx,w,h,s){
+      var perX=62,memX=w-62,y=h*0.42,cpuY=h*0.8;
+      txt(ctx,'DMA is a helper that copies data between a peripheral and memory WITHOUT the CPU touching each byte.',12,20,PAL.muted,10.5);
+      function box(x,lbl,col){ctx.fillStyle=PAL.surf;rr(ctx,x-42,y-20,84,40,7);ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.5;rr(ctx,x-42,y-20,84,40,7);ctx.stroke();txt(ctx,lbl,x,y+5,col,11,'center');}
+      box(perX,'UART',PAL.cool);box(memX,'RAM',PAL.good);
+      ctx.strokeStyle=PAL.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(perX+42,y);ctx.lineTo(memX-42,y);ctx.stroke();
+      s.pk.forEach(function(p){var x=(perX+42)+((memX-42)-(perX+42))*p.x;ctx.fillStyle=s.accent;rr(ctx,x-6,y-6,12,12,3);ctx.fill();});
+      txt(ctx,s.dma?'DMA channel moves the bytes':'CPU copies each byte by hand',(perX+memX)/2,y-32,s.dma?PAL.good:PAL.bad,11,'center');
+      txt(ctx,'CPU',24,cpuY+4,PAL.muted,11);
+      var bx=60,bw=w-76;ctx.strokeStyle=PAL.line;ctx.lineWidth=1;ctx.strokeRect(bx,cpuY-12,bw,24);
+      if(s.dma){ctx.fillStyle=PAL.good;rr(ctx,bx,cpuY-12,bw,24,3);ctx.fill();txt(ctx,'FREE — running your real code',bx+bw/2,cpuY+5,'#fff',11,'center');}
+      else{ctx.fillStyle=PAL.bad;rr(ctx,bx,cpuY-12,bw,24,3);ctx.fill();txt(ctx,'BUSY — stuck copying bytes',bx+bw/2,cpuY+5,'#fff',11,'center');}
+      txt(ctx,'Toggle DMA: with it the CPU is free for real work; without it, moving data eats all its time.',12,h-10,PAL.faint,10.5);
+    }
+  };
+
+  /* RACE — ISR vs main shared-counter race */
+  SIMS.race={
+    controls:[{btn:true,k:'prot',label:'Toggle protection (critical section)'},{k:'irq',label:'Interrupt rate',min:1,max:10,step:1,val:6}],
+    init:function(s){s.exp=0;s.act=0;s.prot=false;s.mAcc=0;s.iAcc=0;s.flash=0;s.lost=0;},
+    onbtn:function(s){ s.prot=!s.prot; },
+    step:function(s,dt){
+      s.mAcc+=dt;s.iAcc+=dt*s.p.irq*0.4;s.flash*=0.9;
+      while(s.mAcc>0.12){s.mAcc-=0.12;s.exp++;s.act++;}
+      while(s.iAcc>1){s.iAcc-=1;s.exp++; if(!s.prot&&Math.random()<0.6){s.lost++;s.flash=1;} else s.act++; }
+      if(s.exp>99999){s.exp=0;s.act=0;s.lost=0;}
+    },
+    draw:function(ctx,w,h,s){
+      txt(ctx,'main() and an interrupt both do count++ — really read → add → write. If they interleave, one update vanishes.',12,20,PAL.muted,10.5);
+      var cx=w*0.5;
+      txt(ctx,'shared variable  count',cx,56,PAL.muted,12,'center');
+      ctx.fillStyle=s.flash>0.25?PAL.bad:PAL.surf;rr(ctx,cx-72,68,144,50,8);ctx.fill();ctx.strokeStyle=PAL.line;ctx.lineWidth=1.5;rr(ctx,cx-72,68,144,50,8);ctx.stroke();
+      txt(ctx,String(s.act),cx,105,s.flash>0.25?'#fff':PAL.ink,26,'center');
+      txt(ctx,'should be',cx-90,150,PAL.muted,11,'right');txt(ctx,String(s.exp),cx-82,150,PAL.good,15);
+      txt(ctx,'lost updates',cx+30,150,PAL.muted,11);txt(ctx,String(s.lost),cx+134,150,s.lost?PAL.bad:PAL.muted,15);
+      txt(ctx, s.prot?'PROTECTED — the interrupt is briefly blocked during count++, so nothing is lost':'UNPROTECTED — eventually an interrupt lands mid-update and a count disappears', 12, h-12, s.prot?PAL.good:PAL.bad,11);
+    }
+  };
+
+  /* DAL — DO-178C design assurance levels */
+  SIMS.dal={
+    controls:[{k:'sev',label:'If the software fails, the effect is…',min:0,max:4,step:1,val:0,fmt:function(v){return ['Catastrophic','Hazardous','Major','Minor','No effect'][Math.round(v)];}}],
+    draw:function(ctx,w,h,s){
+      var sev=Math.round(s.p.sev),dal=['A','B','C','D','E'][sev];
+      var effect=['Catastrophic — could cause loss of the aircraft','Hazardous — serious or fatal injury to a few','Major — discomfort, higher crew workload','Minor — slight nuisance','No effect on safety at all'][sev];
+      var obj=[71,69,62,26,0][sev],cols=[PAL.bad,'#d1662a',PAL.warn,PAL.good,PAL.faint];
+      txt(ctx,'DO-178C: the worse a failure would be, the more rigor the software needs. That level is the "DAL".',14,22,PAL.muted,10.5);
+      ctx.fillStyle=cols[sev];ctx.font='700 60px "IBM Plex Sans",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillText('DAL '+dal,w*0.5,104);
+      txt(ctx,effect,w*0.5,130,PAL.ink,12.5,'center');
+      var bx=44,bw=w-88,by=158;
+      txt(ctx,'verification objectives to satisfy',bx,by-8,PAL.muted,10.5);
+      ctx.fillStyle=PAL.surf;rr(ctx,bx,by,bw,18,5);ctx.fill();
+      if(obj>0){ctx.fillStyle=cols[sev];rr(ctx,bx,by,bw*(obj/71),18,5);ctx.fill();}
+      txt(ctx, obj===0?'~0 — no assurance work required':('about '+obj+' objectives'), bx, by+36, cols[sev],11);
+      txt(ctx,'DAL A (most critical) needs the most reviews, tests, and even MC/DC structural code coverage.',14,h-12,PAL.faint,10.5);
+    }
+  };
+
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var host=document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||230;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  /* ---------- filter / search ---------- */
+  var q=document.getElementById('q');
+  var chips=[].slice.call(document.querySelectorAll('.chip'));
+  var scenarios=[].slice.call(document.querySelectorAll('.scenario'));
+  var sections=[].slice.call(document.querySelectorAll('section.track'));
+  var countEl=document.getElementById('count');
+  var activeCat='all';
+  scenarios.forEach(function(s){ s._text=(s.textContent||'').toLowerCase(); });
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase(); var shown=0;
+    scenarios.forEach(function(s){ var okC=activeCat==='all'||s.getAttribute('data-cat')===activeCat; var okT=!term||s._text.indexOf(term)!==-1; var vis=okC&&okT; s.hidden=!vis; if(vis)shown++; });
+    sections.forEach(function(sec){ var any=[].some.call(sec.querySelectorAll('.scenario'),function(s){return !s.hidden;}); sec.hidden=!any; });
+    countEl.innerHTML='<b>'+shown+'</b> shown';
+    document.body.classList.toggle('empty',shown===0);
+  }
+  chips.forEach(function(c){ c.addEventListener('click',function(){ activeCat=c.getAttribute('data-cat'); chips.forEach(function(x){x.setAttribute('aria-pressed',x===c?'true':'false');}); apply(); }); });
+  q.addEventListener('input',apply);
+})();
+</script>
+
+</body>
+</html>

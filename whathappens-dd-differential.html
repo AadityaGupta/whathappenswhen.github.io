@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>The Differential — One Input, Two Wheels, Different Speeds, and Why Ice Defeats It · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#6A6250; --accent-ink:#FFFFFF; --accent-wash:#EDEAE2;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#B6AC94; --accent-ink:#241405; --accent-wash:#1E1B15;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#B6AC94; --accent-ink:#241405; --accent-wash:#1E1B15;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 12 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>The Differential: One Input, Two Wheels, Different Speeds &mdash; and Why Ice Defeats It</h1>
+    <p class="dek">Drive two wheels from one engine and a corner becomes a paradox &mdash; the outer wheel must travel farther than the inner, so they cannot turn at the same speed, yet one shaft drives both. The differential is the gear train that squares that circle: it keeps the <em>average</em> of the two wheel speeds locked to the driveshaft while letting them differ freely. The very mechanism that saves your tires in every corner is exactly why one wheel on ice leaves you stranded.</p>
+    <div class="meta">
+      <span>&approx; 17 min read</span>
+      <span>automotive · drivetrains · traction</span>
+      <span>companion to <b>The Involute Gear Tooth</b> and <b>Control Systems</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">Drive a car from one engine and you almost always drive two wheels on one axle &mdash; one driveshaft, two tires &mdash; and on a straight road that is trivial: both wheels roll at the same speed and nobody thinks about it. Turn the wheel, though, and geometry turns on you. The outer wheel sweeps a larger-radius arc than the inner, so in the same stretch of time it must cover more ground and therefore spin faster; tie both wheels rigidly to one shaft and you have forced them to the <em>same</em> speed, so in every corner a tire has to scrub, chirp, and fight its partner &mdash; wasted power, shredded rubber, a car that will not turn cleanly, and brutal stress on the driveline. The constraint is a genuine bind: one source must drive two wheels, yet the two wheels must be free to turn at different speeds, and a rigid connection makes those two demands contradict each other. The escape is one reframe &mdash; stop trying to command each wheel&rsquo;s speed, and instead insert a little gear train that commands only their <em>sum</em>, leaving the split to whatever the road demands &mdash; and from that single move the whole subject falls out: a spider gear that is carried around <em>and</em> free to spin on its own pin, the clean law that the average of the two wheel speeds is pinned to the driveshaft while their difference floats, and the sting in the tail that the same mechanism always hands each wheel <em>equal torque</em>, no matter how the speeds divide. That second fact is the cornering cure and the traction curse in one casting: it is exactly why, with one wheel on ice, the car sits still while a tire whirls. Then the piece turns to the half the textbooks skip: how the diff lives in the driveline, how it bites when it misbehaves, the limited-slips, lockers, brake-based traction control and torque vectoring that exist only to <em>break</em> the equal-torque rule on demand, what to put on the order, and a rear-driven platform&rsquo;s differential chosen end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: a corner demands two different wheel speeds</h2>
+    <p>Start with exactly what you are being asked to do. Power a car &mdash; or any wheeled robot or vehicle &mdash; and you usually drive two wheels on one axle from a single source: one driveshaft turning, two wheels to turn with it. On a straight road the job is nothing: both wheels roll the same distance in the same time, so they spin at the same speed, and a solid bar through both would be fine. The whole problem lives in the corner.</p>
+    <p>In a turn the two wheels trace arcs about the same centre but at different radii &mdash; the outer wheel on the larger circle, the inner on the smaller. In the same slice of time the outer wheel must cover more ground, so it <em>must</em> rotate faster; the inner wheel, covering less, must rotate slower. Tie both rigidly to one shaft and you have forced them to turn at the <em>same</em> speed anyway, which the geometry forbids &mdash; so now at least one tire has to slip, scrub, and fight the other through the whole corner. That is wasted power, shredded rubber, a car that pushes and binds instead of turning cleanly, and a driveline wound up under needless stress. So the constraint sharpens into a real bind: <b>one source must drive two wheels, but the two wheels must be free to turn at different speeds</b> &mdash; and a rigid connection makes those two requirements contradict each other. The question this piece answers is how you satisfy both at once, and the answer is a single reframe.</p>
+
+    <h2><span class="sn">2</span>The reframe: split the torque, free the speeds</h2>
+    <p>The trick is to stop thinking &ldquo;connect the shaft to the wheels&rdquo; and instead slip a little gear train between them that <em>shares</em> the drive while letting the speeds float. Picture the driveshaft turning a big <b>ring gear</b>. The ring carries a small <b>spider (pinion) gear</b> on a pin fixed to the ring, and that spider meshes with two <b>side gears</b>, one bolted to each wheel&rsquo;s axle. Here is the whole magic of that arrangement: the spider can do two things at once. It is <em>carried around</em> by the ring &mdash; which drives both side gears forward together &mdash; and it can also <em>spin on its own pin</em>, which speeds one side gear up by exactly as much as it slows the other down.</p>
+    <p>So the mechanism naturally enforces one clean rule: whatever the ring&rsquo;s speed, the two wheel speeds may be anything that <em>averages</em> to it. Give up commanding each wheel individually and command only their <b>sum</b>, and the split takes care of itself &mdash; the road decides how the difference falls, and the spider just absorbs it by spinning on its pin. That is the reframe in a sentence: a differential is not a device that sets two speeds, it is a device that sets their average and frees their difference. Everything in the rest of the piece &mdash; the cornering miracle, the ice failure, and every traction fix &mdash; is a consequence of that one move.</p>
+
+    <h2><span class="sn">3</span>The core: average speed fixed, torque split equal</h2>
+    <p>Write down the two laws the spider enforces and the entire behaviour is in your hand. Let <span class="m">&omega;<sub>ring</sub></span> be the driveshaft (ring-gear) speed and <span class="m">&omega;<sub>L</sub></span>, <span class="m">&omega;<sub>R</sub></span> the two wheel speeds. Because the spider is carried around by the ring while it is also free to spin on its own pin &mdash; speeding one side gear up by exactly as much as it slows the other down &mdash; the kinematics give one clean constraint:</p>
+    <div class="eq"><span class="m">&omega;<sub>ring</sub> = <span class="frac"><span class="nu">&omega;<sub>L</sub> + &omega;<sub>R</sub></span><span>2</span></span>&nbsp;&nbsp;&rarr;&nbsp;&nbsp;&omega;<sub>L</sub> + &omega;<sub>R</sub> = 2&middot;&omega;<sub>ring</sub></span><span class="lbl">the average speed is pinned to the driveshaft; the difference is free</span></div>
+    <p>Straight ahead, <span class="m">&omega;<sub>L</sub> = &omega;<sub>R</sub> = &omega;<sub>ring</sub></span>. In a corner, if the inner wheel slows by <span class="m">&Delta;</span> the outer speeds up by exactly the same <span class="m">&Delta;</span> &mdash; automatically, with no command from anywhere. That is the whole cornering miracle in one line: the sum is held, the difference is handed to the road.</p>
+    <p>But now look at the <em>torque</em>, and you meet the sting in the tail. The single spider gear pushes on both side gears through meshes at equal radii, so it can only ever deliver the <b>same torque to each wheel</b>, always:</p>
+    <div class="eq"><span class="m">&tau;<sub>L</sub> = &tau;<sub>R</sub> = <span class="frac"><span class="nu">&tau;<sub>ring</sub></span><span>2</span></span></span><span class="lbl">torque is forced equal, regardless of the speeds</span></div>
+    <p>An open differential is, by its very geometry, an <b>equal-torque, free-speed</b> device. Those two facts &mdash; average speed locked, torque always split fifty-fifty &mdash; are the entire behaviour, and the second one is the flaw that &sect;4 turns into &ldquo;stuck on ice.&rdquo;</p>
+    <div class="key">
+      <span class="kl">The whole mechanism in two lines</span>
+      <div class="eq"><span class="m">&omega;<sub>L</sub> + &omega;<sub>R</sub> = 2&middot;&omega;<sub>ring</sub></span></div>
+      <div class="eq"><span class="m">&tau;<sub>L</sub> = &tau;<sub>R</sub> = <span class="frac"><span class="nu">&tau;<sub>ring</sub></span><span>2</span></span></span></div>
+      <p>A differential commands the <b>sum</b> of the wheel speeds, not each wheel: the average is tied to the driveshaft and the difference is left to the road. But it always splits <b>torque equally</b>, no matter how the speeds divide. Equal torque, free speed &mdash; the cornering cure and the traction curse in one mechanism.</p>
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">In a turn, the average is locked to the driveshaft — the difference is free</div>
+      <canvas class="sim" data-sim="cornering" data-c="#6A6250" aria-label="a car cornering, with the inner and outer wheels tracing different-radius arcs at different speeds while the differential keeps their average equal to the driveshaft speed"></canvas>
+      <div class="ctrls" data-sim="cornering"></div>
+    </div>
+    <p class="simnote">Drag the <em>turn radius</em> and the <em>speed</em> and watch the two wheel speeds spread apart: on a tight turn the inner wheel slows and the outer wheel speeds up, exactly in step, while the number that never moves is their <b>average</b> &mdash; it stays glued to the driveshaft, because <span class="m">&omega;<sub>L</sub> + &omega;<sub>R</sub> = 2&middot;&omega;<sub>ring</sub></span>. Straighten the turn and the two readings slide back together onto <span class="m">&omega;<sub>ring</sub></span>; tighten it and they fan out symmetrically either side. No wheel is being commanded &mdash; the spider simply spins on its pin by whatever the corner demands, and the average rides along unchanged. That is the law of &sect;3 made visible.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read the two laws at their ends</h2>
+    <p>The two laws earn their keep at the extremes, and reading them there is the fastest way to see both where the cornering magic comes from and where the whole thing falls on its face.</p>
+    <div class="limit">
+      <b>Limit check — read the two laws at their ends</b>
+      <b>Straight ahead</b> (<span class="m">&omega;<sub>L</sub> = &omega;<sub>R</sub></span>): both wheels turn at <span class="m">&omega;<sub>ring</sub></span>, the spider does not spin on its pin, and the torque splits fifty-fifty. The trivial case. <b>Cornering</b> (inner radius &lt; outer): <span class="m">&omega;<sub>inner</sub> &lt; &omega;<sub>ring</sub> &lt; &omega;<sub>outer</sub></span>, with <span class="m">&omega;<sub>inner</sub> + &omega;<sub>outer</sub> = 2&middot;&omega;<sub>ring</sub></span> &mdash; the spider spins on its pin by exactly the speed difference, and the torque is <em>still</em> fifty-fifty. No scrub, no command: this is the design win. <b>One wheel on ice or in the air</b> (zero traction on one side): now the equal-torque law bites. The slipping wheel can sustain only the tiny torque its friction allows, and because torque is <em>forced</em> equal, the gripping wheel is held to that <em>same</em> tiny torque &mdash; nowhere near enough to move the car. Meanwhile the average law still holds with the body nearly still and the ring turning, so the free wheel <b>spins at ~2&times;&omega;<sub>ring</sub></b> while the good wheel sits dead. You go nowhere, one wheel whirling &mdash; the open differential&rsquo;s signature failure. <b>One wheel fully held</b> (<span class="m">&omega; = 0</span>): the other turns at exactly <span class="m">2&middot;&omega;<sub>ring</sub></span> &mdash; the same arithmetic, pushed to the extreme of the split.
+    </div>
+    <p>That ice case is so important that half the drivetrain world exists to defeat it, and every fix is the same move dressed differently: <b>break the &ldquo;always fifty-fifty&rdquo; torque rule on demand.</b> A <b>limited-slip differential (LSD)</b> adds friction between the side gears &mdash; clutch packs, or a gear-based Torsen design &mdash; so that when the speeds start to diverge, some torque is <em>transferred</em> to the slower, gripping wheel, biasing the drive away from the one that is spinning. A <b>locking differential</b> rigidly couples the two wheels back into a solid axle when commanded &mdash; perfect for straight-line traction off-road, but it reintroduces the cornering scrub, so you lock only when you need it and unlock to steer. <b>Brake-based traction control</b> fakes an LSD with the open diff untouched: sense the spinning wheel and <em>brake it</em>, and because the torque is split equally, braking the slipping side raises the torque the gripping side is allowed to receive. <b>Torque vectoring</b> goes further still, actively sending <em>more</em> torque to the outer wheel in a corner to help the car rotate &mdash; turning the differential from a passive splitter into a handling actuator. And one consequence worth naming before we leave the theory: the differential is also the final <b>gear reduction</b>, its ring-and-pinion stepping engine speed down and turning the drive 90&deg; to the axle &mdash; so it is doing the speed reduction <em>and</em> the split in one housing.</p>
+
+    <div class="simwrap">
+      <div class="simcap">One wheel on ice — equal torque strands you, until you break the rule</div>
+      <canvas class="sim" data-sim="icepatch" data-c="#6A6250" aria-label="an open differential forcing equal torque to both wheels so a wheel on ice spins and the car is stuck, then a limited-slip or lock recovering drive to the gripping wheel"></canvas>
+      <div class="ctrls" data-sim="icepatch"></div>
+    </div>
+    <p class="simnote">Drop the <em>right-wheel grip</em> onto ice and watch the open diff do exactly what the equal-torque law says it must: the torque to <em>both</em> wheels collapses to whatever the ice can hold, the slick wheel spins up toward <span class="m">2&times;&omega;<sub>ring</sub></span>, and the car does not move an inch &mdash; all the drive pouring out of the wheel with the <em>least</em> grip, which feels backwards until you remember the torque is forced equal. Now toggle the <em>limited-slip</em> or the <em>lock</em>: the instant you let the torque be unequal, drive floods back to the gripping left wheel and the car pulls away. The flaw and every cure, in one toggle.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: in the driveline, and how it bites</h2>
+    <p>A differential sits in the driven axle of nearly every car, truck, and many wheeled robots and off-road platforms; an AWD vehicle carries two or three (front, rear, and a centre diff splitting front-to-rear). You rarely design the gears yourself &mdash; you <em>choose the type and the final-drive ratio</em> and tune the traction strategy around it. The selection sequence is fixed, not a flash of insight: pick the <b>final-drive ratio</b> (ring-and-pinion) so the engine&rsquo;s efficient speed lands at your road speed through the gearbox; choose the <b>diff type</b> (open, LSD, locker, or electronic) for the traction and handling you need; and layer <b>traction and stability control</b> on top. When it bites, the symptoms are classic &mdash; and almost every one is really one of the two laws talking:</p>
+    <dl class="speclist">
+      <dt>One wheel spins, car won&rsquo;t move</dt><dd>Ice, mud, or a wheel in the air &mdash; the <b>open-diff flaw</b>. Equal torque means the gripping wheel gets only as much as the slipping wheel can hold, so the slick wheel whirls and you sit still. Fix with an LSD, a locker, or brake-based traction control.</dd>
+      <dt>Tire scrub, chirp, or binding in tight turns</dt><dd>A <b>locked or too-aggressive diff</b> (or a locker left engaged): the wheels are forced to equal speed and must slip through the corner. Unlock for on-road use.</dd>
+      <dt>&ldquo;One-wheel peel&rdquo; launches</dt><dd>An <b>open diff dumping torque out the unloaded inside wheel</b> on hard acceleration. An LSD or torque vectoring keeps both wheels planted and putting power down.</dd>
+      <dt>Whine or howl that changes with speed or throttle</dt><dd><b>Ring-and-pinion mesh</b> &mdash; gear wear, wrong backlash or pinion depth, low lube. The hypoid gears are sensitive to setup; this is exactly the involute / gear-mesh story (Deep Dive #03).</dd>
+      <dt>Clunk on throttle on-and-off</dt><dd><b>Backlash</b> in the ring-and-pinion or driveline lash. Some is normal and necessary; excessive clunk means wear or a setup that has drifted out of spec.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How the split shapes the vehicle</h2>
+    <p>The differential quietly sets a surprising amount of the car&rsquo;s character, and the knobs are not independent. The <b>final-drive ratio</b> trades acceleration against top speed and cruising rpm &mdash; a numerically higher ratio makes the car quicker but buzzier at a cruise. The <b>diff type</b> is a handling and traction decision as much as a traction one: an open diff is cheap, smooth, and efficient but traction-limited; an LSD improves corner-exit traction and stability and <em>changes the handling balance</em> (it can make a car push or rotate depending on whether it is at the front or rear); a locker maximises off-road traction at the cost of on-road manners. <b>Torque-vectoring</b> diffs turn the split itself into an active handling tool, helping the car turn. And because the diff is also the final reduction and the 90&deg; turn, it is a packaging and NVH element too &mdash; the hypoid ring-and-pinion is a known noise source that demands precise setup. So &ldquo;which differential&rdquo; ripples outward into traction, handling balance, efficiency, noise, and even steering feel; it is never just a part in a box.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>Differentials live in every driven car and truck axle, in AWD transfer cases (centre diffs), in performance and off-road vehicles (LSDs and lockers), and in wheeled robots and UGVs that steer by wheel speed &mdash; where a diff, or its deliberate <em>absence</em> as in skid-steer, is a core architectural choice. When you select or tune one, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Final-drive (ring-and-pinion) ratio</dt><dd>Sets acceleration vs top speed vs cruise rpm. Match it to the gearbox and tire size &mdash; for a typical light car, <b>~3.5&ndash;4.1:1</b>.</dd>
+      <dt>Differential type</dt><dd>Open (cheap, smooth, traction-limited), LSD (clutch or Torsen &mdash; traction plus handling), locker (max off-road traction, selectable), or electronic / torque-vectoring (active handling).</dd>
+      <dt>LSD bias ratio / preload / lock %</dt><dd>How much torque it can shift to the gripping wheel, and how aggressively. It tunes traction against harshness and the understeer / oversteer balance &mdash; a chassis knob, not only a traction one.</dd>
+      <dt>Torque capacity &amp; cooling</dt><dd>Must carry peak drive torque (and shock &mdash; a dropped clutch, a kerb strike); LSD clutches and lube generate real heat under abuse.</dd>
+      <dt>Backlash &amp; pinion depth (setup)</dt><dd>The hypoid mesh must be set precisely or it whines and fails. This is a genuine assembly spec with its own ritual, not a given.</dd>
+      <dt>Open vs no-diff (skid-steer) for robots</dt><dd>A diff gives clean rolling but no inherent torque bias; skid-steer (independent wheel drive, no diff) gives tank-turn agility at the cost of scrub &mdash; an architecture fork, not just a part choice.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the datasheet won&rsquo;t tell you</span>
+      <ul>
+        <li><b>An open diff sends torque to the wheel with the LEAST grip, not the most.</b> It feels backwards, but equal torque means the lowest-traction wheel sets the ceiling for both. Every traction fix is really a way to <em>break</em> the equal-torque rule.</li>
+        <li><b>Braking a spinning wheel adds drive to the other one.</b> That is why open-diff plus ABS / traction control works: brake torque on the slipping side lets the diff deliver more to the gripping side. It is an LSD faked with the brakes.</li>
+        <li><b>An LSD changes how the car handles, not just whether it is stuck.</b> More rear lock tends toward oversteer on power; a front LSD fights torque steer and understeer. Treat it as a chassis-tuning knob, not only a traction device.</li>
+        <li><b>A locker is for straight lines &mdash; unlock to corner.</b> Locked, both wheels turn together and <em>must</em> scrub in a turn: fine in dirt, awful (and hard on parts) on grippy pavement.</li>
+        <li><b>The ring-and-pinion setup is fussy and unforgiving.</b> Pinion depth, backlash, and bearing preload must be set to spec &mdash; that is the &ldquo;gear pattern&rdquo; ritual &mdash; or it howls or grenades. This is the involute gear-mesh lesson made physical (Deep Dive #03).</li>
+        <li><b>Robots often skip the diff on purpose.</b> Skid-steer / differential-drive (independently driven wheels, no mechanical diff) buys zero-radius turns and simple control, paying with tire scrub and wasted power in every turn &mdash; the opposite trade from a car&rsquo;s diff.</li>
+        <li><b>&ldquo;Posi&rdquo; isn&rsquo;t magic.</b> An LSD still has a bias limit; on truly one-sided traction (one wheel fully on ice) it can still spin if the grip difference exceeds the bias ratio. Lockers and brake-based TC are what handle the real extreme.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">choosing a driven-axle differential</span></div>
+
+    <h2><span class="sn">9</span>Build it: choosing the differential for a light RWD platform</h2>
+    <p>Enough principle &mdash; here is a real choice walked end to end, so you can copy the shape and reuse it. The goal: a rear-driven platform (think a light RWD car, or a fast outdoor robot) that must corner cleanly <em>and</em> not strand itself when one wheel hits a slick patch. Every line below is one decision that reads straight off the two laws you already own.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a driven-axle diff for a light RWD platform</span>
+      <dl class="speclist">
+        <dt>Confirm you need a diff at all</dt><dd>Two wheels on one driven axle that must corner on grippy ground &rarr; yes, you need the speed split, or you will scrub every corner. (A skid-steer robot would deliberately <em>omit</em> it &mdash; see the forks below.)</dd>
+        <dt>Pick the final-drive ratio</dt><dd>Choose the ring-and-pinion so the motor/engine&rsquo;s efficient speed lands at your cruise road speed through the gearbox; a numerically higher ratio quickens acceleration but raises cruise rpm. From tire rolling radius and a top-speed target, a typical light car lands at <b>~3.5&ndash;4.1:1</b>.</dd>
+        <dt>Choose the diff type for your traction reality</dt><dd>Pure on-road and cost-sensitive &rarr; <b>open</b> plus brake-based traction control (cheap, and the brakes fake the LSD). Mixed or performance &rarr; a <b>limited-slip</b> (clutch or Torsen) with a modest <b>bias ratio (~2&ndash;3:1)</b> to shift torque to the gripping wheel without harshness. Serious off-road &rarr; a <b>selectable locker</b> (lock for the obstacle, unlock to steer).</dd>
+        <dt>Size torque capacity</dt><dd>The diff and its mounts must carry peak drive torque &times; the final-drive ratio, plus shock (a dropped clutch, a kerb strike). Spec with margin, and add cooling for an LSD worked hard.</dd>
+        <dt>Layer the control</dt><dd>On any modern platform, <b>traction / stability control</b> (brake a spinning wheel; cut torque) sits on top and covers the open-diff extreme; add torque vectoring if handling is a selling point.</dd>
+        <dt>For a robot: diff vs skid-steer</dt><dd>Decide this <em>first</em> &mdash; a diff for efficient straight-line running and clean cornering, skid-steer for agility in tight spaces (accepting the scrub). It is an architecture choice, not an afterthought.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a corner, a slick patch, a cruise speed and a tire size hand you the need for a diff, the final-drive ratio, the diff type and bias, the torque capacity, and &mdash; loudly &mdash; the fact that your real safety net for the ice case is the control layer on top, not the open diff underneath. The plug-in set is small and you already have all of it. The kinematic constraint is the one line everything hangs on:</p>
+    <div class="eq"><span class="m">&omega;<sub>L</sub> + &omega;<sub>R</sub> = 2&middot;&omega;<sub>ring</sub></span><span class="lbl">average speed locked to the driveshaft</span></div>
+    <p>Push it to the extremes and the traction story falls straight out &mdash; one wheel held or on ice means the other runs at twice the ring speed:</p>
+    <div class="eq"><span class="m">&omega;<sub>other</sub> = 2&middot;&omega;<sub>ring</sub></span><span class="lbl">one wheel held (or on ice, car still) &rarr; the free wheel spins ~2&times;</span></div>
+    <p>The open diff always splits torque equally, so the lower-grip wheel caps both:</p>
+    <div class="eq"><span class="m">&tau;<sub>L</sub> = &tau;<sub>R</sub> = <span class="frac"><span class="nu">&tau;<sub>ring</sub></span><span>2</span></span></span><span class="lbl">equal torque &rarr; limited by the lower-grip wheel</span></div>
+    <p>An LSD breaks that equality up to its bias ratio, and the final drive sets how engine speed becomes wheel speed, with torque scaling inversely:</p>
+    <div class="eq"><span class="m"><span class="frac"><span class="nu">&tau;<sub>high</sub></span><span>&tau;<sub>low</sub></span></span> &le; bias ratio</span><span class="lbl">how far an LSD can favour the gripping wheel (e.g. 2.5:1)</span></div>
+    <div class="eq"><span class="m">&omega;<sub>wheel</sub> = <span class="frac"><span class="nu">&omega;<sub>engine</sub></span><span>gearbox &times; final-drive</span></span></span><span class="lbl">speed divides by the ratios; wheel torque multiplies by them</span></div>
+    <p>And the brake-based trick is the whole traction-control story in one line: braking the slipping wheel by <span class="m">&tau;<sub>b</sub></span> lets the gripping wheel receive up to about <span class="m">&tau;<sub>b</sub></span> more drive, because the two sides stay equal.</p>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment one wheel finds ice or a tire chirps in the car park:</p>
+    <ol class="recipe">
+      <li><b>Prove the average law by hand.</b> Jack up the driven axle, turn one wheel by hand, and watch the other turn the <em>opposite</em> way at the same speed (ring held) &mdash; the differential&rsquo;s defining behaviour, seen directly.</li>
+      <li><b>Feel the equal-torque flaw.</b> With one wheel on a slick surface, confirm an open diff spins the slick wheel and the car will not move &mdash; then watch traction control (or an LSD) recover it.</li>
+      <li><b>Set the ratio and check cruise rpm.</b> Confirm the final-drive ratio puts the engine/motor at a sane rpm at your target cruise speed and gives the acceleration you want.</li>
+      <li><b>If LSD: set and verify the bias / preload</b> per spec, and test that it shifts torque to the gripping wheel without chattering or harsh cornering.</li>
+      <li><b>If locker: verify lock / unlock, and NEVER lock on grippy pavement at speed</b> &mdash; feel the cornering scrub once so you respect it.</li>
+      <li><b>Set the ring-and-pinion pattern</b> (pinion depth, backlash, bearing preload) to spec and check the gear-contact pattern and noise &mdash; the fussy, failure-prone step.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Open vs LSD vs locker vs torque-vectoring</dt><dd>Open for cost, smoothness, and efficiency (lean on brake-TC); LSD for traction plus handling balance; locker for max off-road straight-line grip (unlock to corner); torque-vectoring for active handling, at cost and complexity.</dd>
+      <dt>Clutch-type vs Torsen (gear) LSD</dt><dd>Clutch-type is tunable and strong but wears and needs a friction modifier; Torsen (gear-based, torque-sensing) is maintenance-light and smooth but gives <em>zero</em> bias when one wheel has <em>zero</em> grip &mdash; it needs a little grip on both sides to work at all.</dd>
+      <dt>Diff vs skid-steer (robots / UGVs)</dt><dd>Diff or Ackermann for efficient rolling and clean cornering; skid-steer for zero-radius agility in tight spaces, paying scrub and energy in every turn.</dd>
+      <dt>Final-drive ratio: numerically high vs low</dt><dd>High (e.g. 4.1) = quicker acceleration, more towing, buzzier cruise; low (e.g. 3.1) = relaxed, efficient cruise, lazier launch. Match it to the use and the tire size.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do on the bench</b>
+      This page gets you the mechanism cold, the right diff <em>type</em> for your traction and handling, a sound final-drive ratio, and the control strategy to layer on top &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% is setup, tuning, and the messy real world. <b>The ring-and-pinion setup is a craft</b> &mdash; pinion depth, backlash, and bearing preload set by reading the gear-contact pattern; done wrong it howls or fails, so follow the service procedure or hand it to a specialist (this is Deep Dive&nbsp;#03&rsquo;s gear-mesh lesson in the metal). <b>Tune the LSD to the chassis, on the road or track</b> &mdash; bias ratio and preload change the understeer / oversteer balance, and the right number comes from testing, not a catalog. <b>Validate traction control at the limit</b> &mdash; one wheel on ice, split-&mu; launches, a wheel lifting mid-corner &mdash; and confirm the brake-TC or LSD actually recovers in <em>your</em> vehicle. And <b>for robots, measure the skid-steer scrub cost</b> (energy, tire wear, odometry error from slip) before committing to no-diff; it is larger than people expect. Tools to stand on: a <b>gear-pattern setup kit and service manual</b> for the ring-and-pinion, a <b>chassis dyno or skid pad</b> for diff and TC tuning, the vehicle&rsquo;s <b>traction / stability-control calibration</b>, and for robots a <b>drivetrain model that accounts for slip</b>. The average-speed and equal-torque laws in Part&nbsp;I never change; the last mile is setting the gears right and tuning the torque split to the surface and the chassis.
+    </div>
+
+    <h2><span class="sn">10</span>The honest last mile &mdash; check yourself</h2>
+    <p>Three questions &mdash; reason them out from the two laws, don&rsquo;t recall them:</p>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">A car with an open differential is stopped with its left wheel on dry pavement and its right wheel on smooth ice. You press the gas; the right wheel spins wildly and the car doesn&rsquo;t move. Using the two laws of the differential, explain exactly why the good left wheel gets almost no drive.</p><p class="a">The open diff forces <b>equal torque</b> to both wheels (<span class="m">&tau;<sub>L</sub> = &tau;<sub>R</sub></span>). The icy right wheel can only sustain the tiny torque its friction allows, so the left wheel is held to that <em>same</em> tiny torque &mdash; far too little to move the car. Meanwhile the average-speed law (<span class="m">&omega;<sub>L</sub> + &omega;<sub>R</sub> = 2&middot;&omega;<sub>ring</sub></span>) is still satisfied with the body still and the ring turning, which it manages by the right wheel spinning at <b>~2&times; the ring speed</b> while the left sits dead. Equal torque, capped by the low-grip wheel, is the whole failure &mdash; and it is exactly why you need to <em>break</em> the equal-torque rule (an LSD, a lock, or braking the spinning wheel) to get out.</p></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">Someone fits a locking differential and leaves it locked all the time, then complains the car chirps its tires and fights the wheel in parking-lot turns. What&rsquo;s happening, and what does locking sacrifice that the open diff provided?</p><p class="a">Locked, both wheels are forced to the <em>same</em> speed &mdash; it is a solid axle again. But in a turn the outer wheel travels farther and therefore wants to turn faster; forced equal, one tire must slip and scrub, which is the chirp and the binding you feel through the wheel. Locking sacrifices exactly the <b>free speed-split</b> (<span class="m">&omega;<sub>L</sub> &ne; &omega;<sub>R</sub></span>) that the open differential gave you for clean cornering. That is why you lock only for straight-line, low-grip traction and <em>unlock to corner</em> &mdash; a locker is a straight-line tool, not a full-time setting.</p></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">Your traction control brakes a spinning wheel and suddenly the other wheel starts pulling the car out of the mud, even though the engine torque didn&rsquo;t change. Why does braking one wheel send more drive to the other through an open diff?</p><p class="a">The open diff splits torque equally, so the drive torque delivered to the gripping wheel can never exceed what the slipping wheel can hold &mdash; that is the ceiling. But <em>brake</em> torque on the slipping wheel raises the reaction that side can now sustain, and since the two sides must stay equal, the gripping wheel can receive that much more drive. Braking the slipping side effectively raises the torque floor the diff passes to the gripping side &mdash; an LSD faked with the brakes, with the engine torque never changing at all.</p></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-harmonic.html"><b>&larr; Prev:</b> Harmonic / Strain-Wave Gearing</a>
+      <a class="nextpill" href="index.html">Back to the Deep Dives index &rarr;</a>
+    </div>
+    <p class="footnote"><b>The Differential — One Input, Two Wheels, Different Speeds, and Why Ice Defeats It.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (one shaft must drive two wheels, yet a corner demands they turn at different speeds) and the one reframe (command the <em>sum</em> of the wheel speeds, not each wheel) from which the kinematic law <span class="m">&omega;<sub>L</sub> + &omega;<sub>R</sub> = 2&middot;&omega;<sub>ring</sub></span> (average locked, difference free), the always-equal torque split <span class="m">&tau;<sub>L</sub> = &tau;<sub>R</sub> = &tau;<sub>ring</sub>/2</span>, the one-wheel-on-ice failure where the free wheel spins at <span class="m">~2&middot;&omega;<sub>ring</sub></span>, the LSD bias limit <span class="m">&tau;<sub>high</sub>/&tau;<sub>low</sub> &le; bias ratio</span>, and the final drive <span class="m">&omega;<sub>wheel</sub> = &omega;<sub>engine</sub>/(gearbox &times; final-drive)</span> all fall out &mdash; then the practitioner&rsquo;s half: how the diff lives in the driveline, how it bites, the limited-slips, lockers, brake-based traction control and torque vectoring that exist only to break the equal-torque rule, what to spec, and a light RWD platform&rsquo;s differential chosen end to end. With live simulations of a car cornering while the wheel speeds spread and their average holds, and of one wheel on ice stranding an open diff until a limited-slip or lock recovers it. The honest truth of it: this gets you the mechanism, the right diff type, a sound ratio, and the control strategy &mdash; the ring-and-pinion setup, the LSD tuning, and the traction-control validation are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The Involute Gear Tooth</b> and <b>Control Systems</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* cornering — the average-speed law in a turn. Top-down: the body follows radius R at speed v,
+     yaw rate = v/R. Inner wheel path radius R−t/2, outer R+t/2 (track t=1.6 m, rolling radius
+     rw=0.3 m). Wheel spins ω_inner=yaw·(R−t/2)/rw, ω_outer=yaw·(R+t/2)/rw; the driveshaft-equivalent
+     ring average ω_ring=yaw·R/rw, so ω_inner+ω_outer=2·ω_ring exactly. Two concentric arcs (inner
+     PAL.cool, outer PAL.gold) with the car (accent body) sliding along; three bars show the two wheel
+     spins straddling the ring average, which always lands on the midpoint. Tighter R spreads them;
+     large R converges to equal (straight-line). Controls read ONLY via s.p.*, unicode literals only. */
+  SIMS.cornering={
+    controls:[
+      {k:'radius',label:'Turn radius',min:3,max:30,step:0.5,val:8,unit:' m'},
+      {k:'speed',label:'Vehicle speed',min:1,max:14,step:0.5,val:6,unit:' m/s'}
+    ],
+    init:function(s,w,h){ s.phi=0; },
+    step:function(s,dt){
+      var R=clamp(s.p.radius,3,30), v=clamp(s.p.speed,1,14);
+      var yaw=v/R;                       // yaw rate (rad/s)
+      s.phi=(s.phi||0)+yaw*dt;           // slide the car along the arc
+    },
+    draw:function(ctx,w,h,s){
+      var tw=1.6, rw=0.3;                               // track width, rolling radius (m)
+      var R=clamp(s.p.radius,3,30), v=clamp(s.p.speed,1,14);
+      var yaw=v/R;
+      var innerR=R-tw/2, outerR=R+tw/2;
+      var wIn=yaw*innerR/rw, wOut=yaw*outerR/rw, wRing=yaw*R/rw;   // spin rates (rad/s)
+      var k=60/(2*Math.PI);
+      var rpmIn=wIn*k, rpmOut=wOut*k, rpmRing=wRing*k;
+
+      // ---- layout ----
+      var gx0=14, gx1=clamp(w*0.52,80,w-120), gy0=26, gy1=h-30;
+      var geoW=Math.max(40,gx1-gx0), geoH=Math.max(40,gy1-gy0);
+      var A=1.0;                                        // half sweep angle (rad)
+      var meanR=clamp(Math.min(geoH/1.32,geoW/2.18),14,400)*0.98;
+      var ccx=clamp((gx0+gx1)/2,gx0+10,gx1-10), ccy=clamp(gy1,gy0+20,h-6);
+      var inPx=meanR*(1-tw/(2*R)), outPx=meanR*(1+tw/(2*R));
+
+      // title + headline readout
+      txt(ctx,'cornering — two wheels, one average',8,13,PAL.muted,10,'left');
+      txt(ctx,'R '+R.toFixed(1)+' m · v '+v.toFixed(1)+' m/s',w-10,13,PAL.ink,8.5,'right');
+
+      function arcPt(rad,phi){ return {x:clamp(ccx+rad*Math.sin(phi),0,w), y:clamp(ccy-rad*Math.cos(phi),0,h)}; }
+      function drawArc(rad,col){
+        ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.globalAlpha=0.9; ctx.beginPath();
+        var N=40,i,p;
+        for(i=0;i<=N;i++){ var phi=-A+2*A*i/N; p=arcPt(rad,phi); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); }
+        ctx.stroke(); ctx.globalAlpha=1;
+      }
+      drawArc(outPx,PAL.gold);
+      drawArc(inPx,PAL.cool);
+
+      // turn centre + radius guide
+      dot(ctx,ccx,ccy,3,PAL.faint);
+      txt(ctx,'turn center',ccx,clamp(ccy+12,10,h-2),PAL.faint,8,'center');
+
+      // car angular position (loops across the arc)
+      var span=2*A, q=(s.phi||0)-span*Math.floor((s.phi||0)/span), phiCar=-A+q;
+      var cp=arcPt(meanR,phiCar), ip=arcPt(inPx,phiCar), op=arcPt(outPx,phiCar);
+      var ang=Math.atan2(Math.sin(phiCar),Math.cos(phiCar));
+
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.4; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(ccx,ccy); ctx.lineTo(cp.x,cp.y); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+
+      // car body (accent) oriented along the tangent
+      var carL=clamp(meanR*0.34,16,30), carW=clamp(outPx-inPx+10,12,22);
+      ctx.save();
+      ctx.translate(clamp(cp.x,0,w),clamp(cp.y,0,h)); ctx.rotate(ang);
+      ctx.fillStyle=PAL.surf; rr(ctx,-carL/2,-carW/2,carL,carW,5); ctx.fill();
+      ctx.strokeStyle=s.accent; ctx.lineWidth=1.8; rr(ctx,-carL/2,-carW/2,carL,carW,5); ctx.stroke();
+      ctx.restore();
+
+      // driven-wheel axle + markers on the true inner/outer arcs
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(ip.x,ip.y); ctx.lineTo(op.x,op.y); ctx.stroke();
+      dot(ctx,ip.x,ip.y,4.5,PAL.cool);
+      dot(ctx,op.x,op.y,4.5,PAL.gold);
+      txt(ctx,'inner',ip.x,clamp(ip.y-7,11,h-2),PAL.cool,7.5,'center');
+      txt(ctx,'outer',op.x,clamp(op.y-7,11,h-2),PAL.gold,7.5,'center');
+
+      // ---- speed bars panel ----
+      var bx0=clamp(gx1+16,gx1+8,w-60), bxw=Math.max(40,(w-12)-bx0);
+      var omax=clamp(wOut*1.18,8,400);
+      txt(ctx,'wheel spin ω (rad/s)',bx0,36,PAL.muted,9,'left');
+      var rows=[
+        {n:'ω_outer',wv:wOut,rp:rpmOut,c:PAL.gold,y:56},
+        {n:'ω_ring',wv:wRing,rp:rpmRing,c:s.accent,y:84},
+        {n:'ω_inner',wv:wIn,rp:rpmIn,c:PAL.cool,y:112}
+      ];
+      var ri,row;
+      for(ri=0;ri<rows.length;ri++){ row=rows[ri];
+        txt(ctx,row.n,bx0,row.y-10,row.c,8.5,'left');
+        txt(ctx,Math.round(row.rp)+' rpm',bx0+bxw,row.y-10,PAL.faint,8,'right');
+        bar(ctx,bx0,row.y,bxw,clamp(row.wv/omax,0,1),row.c,'');
+        txt(ctx,row.wv.toFixed(1),clamp(bx0+bxw*clamp(row.wv/omax,0,1)+4,bx0,bx0+bxw),row.y+3,PAL.ink,7.5,'left');
+      }
+      // ring tip sits on the midpoint of the inner/outer tips
+      var tipO={x:clamp(bx0+bxw*clamp(wOut/omax,0,1),bx0,bx0+bxw),y:56};
+      var tipI={x:clamp(bx0+bxw*clamp(wIn/omax,0,1),bx0,bx0+bxw),y:112};
+      var tipRx=clamp(bx0+bxw*clamp(wRing/omax,0,1),bx0,bx0+bxw);
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.5; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(tipO.x,tipO.y); ctx.lineTo(tipI.x,tipI.y); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      dot(ctx,tipRx,84,3.2,s.accent);
+      txt(ctx,'ring = midpoint',bx0,130,PAL.muted,8,'left');
+      txt(ctx,'ω_inner + ω_outer = 2·ω_ring',bx0,144,s.accent,8.5,'left');
+      txt(ctx,'spread '+(wOut-wIn).toFixed(1)+' rad/s',bx0+bxw,144,PAL.faint,8,'right');
+
+      // caption
+      txt(ctx,'the average is locked to the driveshaft — the difference is free',w/2,h-7,PAL.faint,8,'center');
+    }
+  };
+
+  /* icepatch — the open-diff flaw and the fix. Rear view of the two driven wheels; the right wheel
+     sits on a faint ice patch, the left on dry ground. Engine offers 1 torque unit per wheel.
+     leftMax=1.0 (dry), rightMax=grip/100. OPEN diff forces τ_L=τ_R=min(leftMax,rightMax,1)=rightMax,
+     so total drive = 2·rightMax (tiny on ice); the gripping left wheel barely turns while the ice
+     (right) wheel runs away at 2−carSpd ≈ 2× ring. LIMITED-SLIP/LOCK lets τ_L rise to its own limit
+     (1.0) so total ≈ leftMax+rightMax and both wheels turn at ring speed. Verdict STUCK (open + low
+     grip, car still) vs MOVING. Controls read ONLY via s.p.*, unicode literals only. */
+  SIMS.icepatch={
+    controls:[
+      {k:'grip',label:'Right-wheel grip',min:0,max:100,step:5,val:15,unit:' %'},
+      {k:'mode',label:'Differential',min:0,max:1,step:1,val:0,fmt:function(v){return v?'limited-slip / lock':'open';}}
+    ],
+    init:function(s,w,h){ s.angL=0; s.angR=0; s.dist=0; },
+    step:function(s,dt){
+      var g=clamp(s.p.grip,0,100)/100, locked=clamp(s.p.mode,0,1)>=0.5;
+      var leftMax=1.0, rightMax=g, tauL, tauR;
+      if(locked){ tauL=leftMax; tauR=rightMax; }
+      else { var te=Math.min(leftMax,rightMax,1); tauL=te; tauR=te; }
+      var carSpd=clamp((tauL+tauR)/2,0,1);
+      var wL=locked?carSpd:carSpd, wR=locked?carSpd:(2-carSpd);
+      var spinVis=3.0;
+      s.angL=(s.angL||0)+wL*spinVis*dt;
+      s.angR=(s.angR||0)+wR*spinVis*dt;
+      s.dist=(s.dist||0)+carSpd*dt;
+    },
+    draw:function(ctx,w,h,s){
+      var g=clamp(s.p.grip,0,100)/100, locked=clamp(s.p.mode,0,1)>=0.5;
+      var leftMax=1.0, rightMax=g, tauL, tauR;
+      if(locked){ tauL=leftMax; tauR=rightMax; }
+      else { var te=Math.min(leftMax,rightMax,1); tauL=te; tauR=te; }
+      var total=tauL+tauR;
+      var carSpd=clamp(total/2,0,1);
+      var moving=carSpd>0.18;           // open+low grip (≤15%) reads stuck; lock always moves
+      var wRspin=locked?1:(2-carSpd);                   // right wheel spin, × ring
+
+      // ---- layout ----
+      var wheelR=clamp(h*0.10,16,24);
+      var cy=clamp(h*0.44,80,130), gy=cy+wheelR;
+      var leftX=clamp(w*0.33,40,w*0.45), rightX=clamp(w*0.67,w*0.55,w-40);
+      var midx=(leftX+rightX)/2;
+      var baseTY=cy-wheelR-8, maxTH=clamp(baseTY-26,16,38);
+
+      // title + readouts
+      txt(ctx,'open-diff flaw — one wheel on ice',8,13,PAL.muted,10,'left');
+      txt(ctx,(locked?'lock / LSD':'open')+' · right grip '+Math.round(g*100)+'%',w-10,13,PAL.ink,8.5,'right');
+      txt(ctx,'τ_L '+tauL.toFixed(2)+'  τ_R '+tauR.toFixed(2)+'  Σ '+total.toFixed(2),w-10,24,PAL.muted,8,'right');
+
+      // ground + dry/ice patches
+      var dryX0=clamp(leftX-wheelR-14,0,w), patchW=clamp(2*wheelR+28,10,w);
+      var iceX0=clamp(rightX-wheelR-14,0,w);
+      ctx.fillStyle=PAL.surf; ctx.globalAlpha=0.7; ctx.fillRect(dryX0,gy,clamp(patchW,0,w-dryX0),7); ctx.globalAlpha=1;
+      ctx.fillStyle=PAL.cool; ctx.globalAlpha=0.20; ctx.fillRect(iceX0,gy,clamp(patchW,0,w-iceX0),7); ctx.globalAlpha=1;
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(8,gy); ctx.lineTo(w-8,gy); ctx.stroke();
+      txt(ctx,'dry',clamp(leftX,0,w),clamp(gy+16,10,h-2),PAL.muted,8,'center');
+      txt(ctx,'ICE',clamp(rightX,0,w),clamp(gy+16,10,h-2),PAL.cool,8.5,'center');
+
+      // axle through the differential
+      ctx.strokeStyle=s.accent; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(leftX,cy); ctx.lineTo(rightX,cy); ctx.stroke();
+
+      // torque bars above each wheel (equal when open, biased when locked)
+      function tbar(x,tau,col){
+        var th=clamp(tau,0,1)*maxTH, top=clamp(baseTY-th,10,baseTY);
+        ctx.fillStyle=col; rr(ctx,x-7,top,14,clamp(baseTY-top,0,maxTH),3); ctx.fill();
+        arrow(ctx,x,baseTY+1,x,clamp(cy-wheelR-1,baseTY+1,h),col,1.4);
+        txt(ctx,'τ',x,clamp(top-3,10,h-2),col,8,'center');
+      }
+      tbar(leftX,tauL,s.accent);
+      tbar(rightX,tauR,PAL.cool);
+
+      // wheels (rear view) with spin markers
+      function wheel(x,angle,spin,label){
+        var fast=spin>1.5;
+        ctx.fillStyle=PAL.surf; ctx.strokeStyle=PAL.muted; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.arc(x,cy,wheelR,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        var spokeCol=fast?PAL.bad:(label==='L'?PAL.good:PAL.cool);
+        ctx.strokeStyle=spokeCol; ctx.lineWidth=2;
+        var a,i;
+        for(i=0;i<2;i++){ a=angle+i*Math.PI/2;
+          ctx.beginPath();
+          ctx.moveTo(x+Math.cos(a)*wheelR*0.85,cy+Math.sin(a)*wheelR*0.85);
+          ctx.lineTo(x-Math.cos(a)*wheelR*0.85,cy-Math.sin(a)*wheelR*0.85);
+          ctx.stroke();
+        }
+        dot(ctx,x+Math.cos(angle)*wheelR*0.85,cy+Math.sin(angle)*wheelR*0.85,2.4,spokeCol);
+        // spin-rate arc over the wheel
+        var sweep=clamp(spin,0,2)*1.5;
+        ctx.strokeStyle=spokeCol; ctx.lineWidth=2; ctx.globalAlpha=0.85;
+        ctx.beginPath(); ctx.arc(x,cy,wheelR+5,-Math.PI/2,-Math.PI/2+sweep); ctx.stroke(); ctx.globalAlpha=1;
+        var ea=-Math.PI/2+sweep, ex=x+(wheelR+5)*Math.cos(ea), ey=cy+(wheelR+5)*Math.sin(ea);
+        dot(ctx,clamp(ex,0,w),clamp(ey,0,h),2.2,spokeCol);
+      }
+      wheel(leftX,s.angL||0,locked?1:carSpd,'L');
+      wheel(rightX,s.angR||0,wRspin,'R');
+
+      // differential housing
+      box(ctx,clamp(midx-16,0,w-32),clamp(cy-9,0,h-18),32,18,'diff',s.accent,PAL.surf);
+
+      txt(ctx,'right wheel '+wRspin.toFixed(1)+'× ring',clamp(rightX,0,w),clamp(cy-wheelR-maxTH-6,10,h-2),PAL.faint,7.5,'center');
+
+      // verdict
+      var vy=clamp(gy+clamp(h*0.11,18,30),gy+16,h-26);
+      if(moving){ txt(ctx,'MOVING',w/2,vy,PAL.good,16,'center'); }
+      else { txt(ctx,'STUCK — one wheel spinning',w/2,vy,PAL.bad,15,'center'); }
+
+      // car-progress track (car inches forward at the drive rate)
+      var progY=clamp(vy+18,gy+30,h-14);
+      var trkx0=clamp(w*0.20,20,w*0.30), trkx1=clamp(w*0.80,w*0.55,w-20), trkw=Math.max(10,trkx1-trkx0);
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(trkx0,progY); ctx.lineTo(trkx1,progY); ctx.stroke();
+      var cpos=clamp(trkx0+((s.dist||0)*40)%trkw,trkx0,trkx1);
+      ctx.fillStyle=moving?PAL.good:PAL.bad; rr(ctx,clamp(cpos-9,0,w-18),progY-6,18,8,2); ctx.fill();
+      txt(ctx,'progress',trkx0-4,progY+4,PAL.muted,8,'right');
+
+      // caption
+      txt(ctx,'open diff splits torque equally → the low-grip wheel caps both; LSD/lock breaks that rule',
+          w/2,h-7,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

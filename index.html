@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What Happens When… · The Series</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E7ECEE; --surface:#FCFDFD; --surface-2:#F1F4F5;
+    --ink:#151B1F; --ink-soft:#3A454B; --muted:#63717A; --faint:#8A97A0;
+    --line:#D3DBDF; --line-soft:#E2E8EB;
+    --accent:#0E7C86; --accent-ink:#FFFFFF; --accent-wash:#DCEDEE;
+
+    --shadow:0 1px 2px rgba(20,30,36,.05), 0 8px 24px -14px rgba(20,30,36,.18);
+    --shadow-lift:0 2px 4px rgba(20,30,36,.06), 0 18px 40px -20px rgba(20,30,36,.30);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+      --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+      --line:#273035; --line-soft:#20282D;
+      --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 6px rgba(0,0,0,.4), 0 22px 46px -20px rgba(0,0,0,.75);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1316; --surface:#161D21; --surface-2:#1B2429;
+    --ink:#E7EDEF; --ink-soft:#C2CDD2; --muted:#95A3AB; --faint:#6C7A82;
+    --line:#273035; --line-soft:#20282D;
+    --accent:#3BB9C0; --accent-ink:#07211F; --accent-wash:#123137;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 6px rgba(0,0,0,.4), 0 22px 46px -20px rgba(0,0,0,.75);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:1060px;margin:0 auto;padding-inline:22px;padding-block:0}
+
+  header.top{padding-block:58px 22px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(2.2rem,6vw,3.4rem);line-height:1.02;letter-spacing:-.02em;margin:.32em 0 .1em;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-family:var(--serif);font-size:1.18rem;color:var(--ink-soft);max-width:70ch;margin:.6em 0 0}
+  .metaline{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .metaline b{color:var(--ink);font-weight:600}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  .controls{position:sticky;top:0;z-index:30;background:color-mix(in srgb, var(--bg) 88%, transparent);backdrop-filter:blur(9px);border-bottom:1px solid var(--line-soft);margin-top:14px}
+  .controls .wrap{padding-block:12px;display:flex;flex-direction:column;gap:11px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:12px;width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .search input{width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px}
+  .search input::placeholder{color:var(--faint)}
+  .search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--ink)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);padding:5px 12px 5px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:border-color .12s,color .12s,background .12s}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .chip:hover{color:var(--ink);border-color:var(--faint)}
+  .chip[aria-pressed="true"]{background:var(--accent-wash);border-color:var(--accent);color:var(--ink)}
+
+  main.wrap{padding-block:26px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(304px,1fr));gap:16px}
+
+  .vcard{display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--vaccent,var(--accent));border-radius:13px;padding:20px 20px 18px;box-shadow:var(--shadow);text-decoration:none;color:inherit;transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease}
+  .vcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift);border-color:var(--vaccent,var(--accent))}
+  .vcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .vcard-top{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+  .vemoji{width:46px;height:46px;flex:none;display:grid;place-items:center;font-size:25px;line-height:1;border-radius:11px;background:color-mix(in srgb, var(--vaccent,var(--accent)) 15%, var(--surface));border:1px solid color-mix(in srgb, var(--vaccent,var(--accent)) 30%, var(--line-soft))}
+  .vmeta{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:auto;text-align:right;line-height:1.5}
+  .vmeta b{color:var(--ink);font-weight:600}
+  .vmeta-dd{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--vaccent,var(--accent));background:color-mix(in srgb, var(--vaccent,var(--accent)) 14%, var(--surface));border:1px solid color-mix(in srgb, var(--vaccent,var(--accent)) 32%, var(--line-soft));border-radius:999px;padding:4px 11px;line-height:1.2;white-space:nowrap}
+  .vtitle{font-family:var(--sans);font-weight:700;font-size:1.24rem;letter-spacing:-.01em;line-height:1.2;margin:0 0 .32em;text-wrap:balance}
+  .vtag{font-family:var(--serif);font-size:1.005rem;line-height:1.5;color:var(--ink-soft);margin:0 0 14px}
+  .vchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+  .vchip{font-family:var(--mono);font-size:11px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:3px 8px;line-height:1.3}
+  .vgo{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--vaccent,var(--accent));margin-top:15px;display:inline-flex;align-items:center;gap:6px}
+  .vcard:hover .vgo{color:var(--accent)}
+
+  .noresult{display:none;text-align:center;font-family:var(--serif);color:var(--muted);padding:52px 0 12px;font-size:1.05rem}
+  body.empty .noresult{display:block}
+  body.empty .grid{display:none}
+
+  footer.foot{margin-top:56px;padding:26px 0 60px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.75}
+  footer.foot b{color:var(--muted);font-weight:500}
+  footer.foot code{font-family:var(--mono);font-size:11.5px;background:var(--surface-2);color:var(--ink-soft);padding:1px 6px;border-radius:5px;border:1px solid var(--line-soft)}
+
+  @media (max-width:520px){
+    header.top{padding-block:44px 16px}
+    .grid{grid-template-columns:1fr}
+  }
+  @media print{
+    @page{size:A4;margin:14mm}
+    .toggle,.controls{display:none}
+    body{background:#fff;color:#000}
+    main.wrap{padding-block:8px 0}
+    .grid{display:block}
+    .vcard{break-inside:avoid;page-break-inside:avoid;box-shadow:none;border:1px solid #bbb;margin-bottom:10px;transform:none}
+    .vgo{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker"><span>The Series</span> · Offline Portal</div>
+    <h1>What Happens <em>When…</em></h1>
+    <p class="lede">One place for the whole "What Happens When…" library — spoken-ready mechanism walk-throughs across platform, cloud, data, languages, AI and robotics. Every volume keeps the same shape: the mechanism, an architect lens, and the terms to land. Open any volume below; each one is a standalone page you can read, search, filter, and print to A4.</p>
+    <div class="metaline" id="metaline"></div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="searchrow">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="Search volumes — e.g. kubernetes, kafka, rag, gil, iam, debezium" aria-label="Search volumes">
+      </label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by topic group"></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+  <p class="noresult" id="noresult">No volumes match that. Clear the search or pick another group.</p>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>How to use:</b> open <code>index.html</code> in any browser — no server, nothing to install. Click a card to open that volume; use its "← Index" link (top-left) to come back. Everything works offline; an internet connection only makes the web fonts load.<br>
+    <b>To print:</b> open a volume and print to PDF or A4 (the controls and nav hide automatically; cards avoid splitting across pages).<br>
+    <b>To add a future volume:</b> drop its standalone <code>.html</code> into this folder and add one entry to <code>volumes.js</code> — the card appears here automatically.<br>
+    <b>To share:</b> zip this whole folder and send it — it's fully self-contained and portable.
+  </div>
+</footer>
+
+<script src="volumes.js"></script>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  var volumes = (window.WHW_VOLUMES || []).slice();
+  var groups  = (window.WHW_GROUPS  || [{key:'all',label:'All'}]).slice();
+  var grid=document.getElementById('grid');
+  var chipsEl=document.getElementById('chips');
+  var countEl=document.getElementById('count');
+  var metaEl=document.getElementById('metaline');
+  var q=document.getElementById('q');
+  var activeGroup='all';
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+  // header metaline (stays accurate as volumes are added)
+  var totS=0, totT=0, totD=0, totV=0;
+  volumes.forEach(function(v){ if(v.kind==='deepdive'){ totD++; return; } totV++; totS+=(+v.scenarios||0); totT+=(+v.tracks||0); });
+  metaEl.innerHTML = '<span><b>'+totV+'</b> volumes</span>'
+                   + '<span><b>'+totS+'</b> scenarios</span>'
+                   + '<span><b>'+totT+'</b> tracks</span>'
+                   + (totD? '<span><b>'+totD+'</b> deep dives</span>' : '')
+                   + '<span>self-contained · offline · printable</span>';
+
+  // group chips (only groups that actually have volumes, plus All)
+  var used={}; volumes.forEach(function(v){ used[v.group]=true; });
+  var chipHtml='';
+  groups.forEach(function(g){
+    if(g.key!=='all' && !used[g.key]) return;
+    chipHtml += '<button class="chip" data-group="'+esc(g.key)+'" aria-pressed="'+(g.key==='all'?'true':'false')+'"><span class="dot"></span>'+esc(g.label)+'</button>';
+  });
+  chipsEl.innerHTML=chipHtml;
+
+  function groupLabel(key){ for(var i=0;i<groups.length;i++){ if(groups[i].key===key) return groups[i].label; } return key; }
+
+  // cards
+  var cardHtml='';
+  volumes.forEach(function(v){
+    var searchText=[v.title, v.tagline, (v.tags||[]).join(' '), groupLabel(v.group)].join(' ').toLowerCase();
+    var chips=(v.tags||[]).map(function(t){return '<span class="vchip">'+esc(t)+'</span>';}).join('');
+    var isDD = v.kind==='deepdive';
+    var metaHtml = isDD
+      ? '<span class="vmeta-dd">'+esc(v.meta||'Deep dive')+'</span>'
+      : '<span class="vmeta"><b>'+esc(v.scenarios)+'</b> scenarios<br>'+esc(v.tracks)+' tracks</span>';
+    cardHtml += ''
+      + '<a class="vcard" href="'+esc(v.file)+'" data-group="'+esc(v.group)+'" data-text="'+esc(searchText)+'" style="--vaccent:'+esc(v.accent||'')+'">'
+      +   '<div class="vcard-top"><span class="vemoji">'+esc(v.emoji||'📄')+'</span>'+metaHtml+'</div>'
+      +   '<h3 class="vtitle">'+esc(v.title)+'</h3>'
+      +   '<p class="vtag">'+esc(v.tagline)+'</p>'
+      +   '<div class="vchips">'+chips+'</div>'
+      +   '<span class="vgo">'+(isDD?'Read deep dive &rarr;':'Open volume &rarr;')+'</span>'
+      + '</a>';
+  });
+  grid.innerHTML=cardHtml || '';
+  var cards=Array.prototype.slice.call(grid.querySelectorAll('.vcard'));
+
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase();
+    var shown=0;
+    cards.forEach(function(c){
+      var okG = activeGroup==='all' || c.getAttribute('data-group')===activeGroup;
+      var okT = !term || c.getAttribute('data-text').indexOf(term)!==-1;
+      var vis = okG && okT;
+      c.hidden=!vis;
+      if(vis) shown++;
+    });
+    countEl.innerHTML='<b>'+shown+'</b> of '+cards.length+' shown';
+    document.body.classList.toggle('empty', shown===0);
+  }
+
+  Array.prototype.slice.call(chipsEl.querySelectorAll('.chip')).forEach(function(c){
+    c.addEventListener('click',function(){
+      activeGroup=c.getAttribute('data-group');
+      Array.prototype.slice.call(chipsEl.querySelectorAll('.chip')).forEach(function(x){x.setAttribute('aria-pressed', x===c?'true':'false');});
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+  apply();
+})();
+</script>
+</body>
+</html>

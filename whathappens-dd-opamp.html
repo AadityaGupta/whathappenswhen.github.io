@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>The Op-Amp & Negative Feedback — Why One Rule Builds Almost Every Analog Circuit · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#B23A6B; --accent-ink:#FFFFFF; --accent-wash:#F7E6EE;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#E487AE; --accent-ink:#241405; --accent-wash:#2A141E;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#E487AE; --accent-ink:#241405; --accent-wash:#2A141E;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 06 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>The Op-Amp &amp; Negative Feedback: Why One Rule Builds Almost Every Analog Circuit</h1>
+    <p class="dek">An op-amp&rsquo;s own gain is enormous, sloppy, and drifts with everything &mdash; yet we build precise amplifiers, filters and controllers from it. The trick is to stop controlling the gain and start controlling the <em>error</em>: negative feedback makes the circuit fix itself, and one rule &mdash; the op-amp moves its output until its two inputs match &mdash; explains nearly the whole analog world.</p>
+    <div class="meta">
+      <span>&approx; 18 min read</span>
+      <span>op-amps · negative feedback · analog design</span>
+      <span>companion to <b>Control Systems</b> and <b>Sensors &amp; Signal Chains</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">An operational amplifier is almost useless on its own. Its voltage gain is enormous &mdash; a hundred thousand, a million, more &mdash; but that gain is sloppy: it varies three-to-one between parts, drifts with temperature and supply, bends and distorts, and collapses as the frequency climbs. You cannot build a precise &times;10 amplifier by &ldquo;setting the gain to ten,&rdquo; because the gain is neither settable nor stable. And yet almost every precise analog circuit ever built &mdash; amplifiers, active filters, references, the integrators inside every control loop &mdash; is made from exactly this untrustworthy part. The way out is a single move: stop trying to control the gain, and start controlling the <em>error</em>. Feed a fraction of the output back to the inverting input and the amplifier becomes a servo that drives its own output until its two inputs match; the monstrous gain stops being the answer and becomes the engine that forces a tiny error to zero. One line falls out &mdash; the closed-loop gain is set by two resistors, not by the op-amp &mdash; and with it the two golden rules, the gain-bandwidth trade, and most of analog design. This piece builds that line from the one constraint, then turns to the half the textbooks skip: how you pick a topology, why a real circuit saturates or oscillates or drifts, and the things that only bite once the ideal math meets a real part on a real board.</p>
+
+    <h2><span class="sn">1</span>The constraint: a gain block you can&rsquo;t trust</h2>
+    <p>Start with the raw device. An operational amplifier is, at its heart, one enormous voltage gain: it takes the difference between its two inputs and multiplies it, putting out <span class="m"><i>A</i></span> times that difference, where the open-loop gain <span class="m"><i>A</i></span> runs from about 100,000 to well over a million.</p>
+    <div class="eq"><span class="m"><i>V</i><sub>out</sub> = <i>A</i> &middot; (<i>V</i><sub>+</sub> &minus; <i>V</i><sub>&minus;</sub>)</span><span class="lbl"><i>A</i> &approx; 10<sup>5</sup> to 10<sup>6</sup> &mdash; and you can trust none of it</span></div>
+    <p>That sounds wonderful until you try to <em>use</em> it. <span class="m"><i>A</i></span> is not a number you can lean on: it varies three-to-one from part to part, drifts with temperature and supply voltage, is nonlinear, and falls away as frequency rises. Feed a one-millivolt difference into a gain of 200,000 and you have just asked for 200&nbsp;volts out &mdash; the output instantly slams into the supply rail and sits there, saturated. You cannot build a precise &times;10 amplifier by &ldquo;setting <span class="m"><i>A</i></span> = 10&rdquo;; <span class="m"><i>A</i></span> is neither settable nor stable, and a difference of a few millivolts is already enough to rail it.</p>
+    <p>So the raw part, used open-loop as an amplifier, is almost unusable. That is the whole tension of the subject: the device hands you a gain that is colossal but wildly imprecise, and the entire art is getting precise, repeatable behaviour out of it anyway. The question the rest of the piece answers is simple to state: how do you build a trustworthy &times;10 (or &times;100) out of a gain you cannot trust to within a factor of three?</p>
+
+    <h2><span class="sn">2</span>The reframe: don&rsquo;t control the gain, control the error</h2>
+    <p>Here is the move that unlocks everything, and like all the best moves it is a refusal. Stop trying to pin down <span class="m"><i>A</i></span>. Instead, take a fraction of the output and feed it <em>back</em> to the inverting (&minus;) input, so the amplifier can see its own output. Feed it to the <em>minus</em> input and the feedback is <em>negative</em>: if the output drifts too high, the fed-back voltage at <span class="m"><i>V</i><sub>&minus;</sub></span> rises, the difference <span class="m">(<i>V</i><sub>+</sub> &minus; <i>V</i><sub>&minus;</sub>)</span> shrinks, and the huge gain drags the output straight back down. The circuit becomes a servo &mdash; it drives its output to exactly whatever value makes its two inputs (very nearly) equal, and then holds it there.</p>
+    <p>Notice what just happened to the problem. We wanted &ldquo;amplify by a trusted factor,&rdquo; which the op-amp cannot do, and we traded it for &ldquo;null an error,&rdquo; which a monstrous gain is <em>perfect</em> for. The sloppiness of <span class="m"><i>A</i></span> stops being the obstacle; a big, sloppy gain nulls an error just as hard as a big, precise one. The enormous untrustworthy gain is no longer the answer &mdash; it is the engine that makes a tiny error force a large correction. All that is left is to work out what value the servo settles on.</p>
+
+    <h2><span class="sn">3</span>The core equation: gain set by resistors, not by the op-amp</h2>
+    <p>Write it down for the non-inverting amplifier: the signal goes to <span class="m"><i>V</i><sub>+</sub></span>, and a resistor divider <span class="m"><i>R</i><sub>f</sub></span>&ndash;<span class="m"><i>R</i><sub>g</sub></span> from the output feeds a fraction back to <span class="m"><i>V</i><sub>&minus;</sub></span>. Two facts close the loop. The op-amp&rsquo;s own law, <span class="m"><i>V</i><sub>out</sub> = <i>A</i>(<i>V</i><sub>+</sub> &minus; <i>V</i><sub>&minus;</sub>)</span> with <span class="m"><i>V</i><sub>+</sub> = <i>V</i><sub>in</sub></span>; and the feedback itself, <span class="m"><i>V</i><sub>&minus;</sub> = &beta; <i>V</i><sub>out</sub></span>, where <span class="m">&beta; = <i>R</i><sub>g</sub>/(<i>R</i><sub>f</sub> + <i>R</i><sub>g</sub>)</span> is the fraction fed back. Substitute one into the other and solve for the closed-loop gain <span class="m"><i>G</i> = <i>V</i><sub>out</sub>/<i>V</i><sub>in</sub></span>:</p>
+    <div class="eq"><span class="m"><i>G</i> = <span class="frac"><span class="nu"><i>A</i></span><span>1 + <i>A</i>&beta;</span></span></span><span class="lbl">the exact closed-loop gain</span></div>
+    <p>Now read what that fraction does when the <b>loop gain</b> <span class="m"><i>A</i>&beta;</span> is huge &mdash; which, with <span class="m"><i>A</i></span> in the hundreds of thousands, it almost always is. The <span class="m"><i>A</i></span> on top and the <span class="m"><i>A</i>&beta;</span> on the bottom cancel, and the whole answer collapses to something you can buy off a reel:</p>
+    <div class="key">
+      <span class="kl">The whole payoff in one line</span>
+      <div class="eq"><span class="m"><i>A</i>&beta; &#8811; 1 &nbsp;&rarr;&nbsp; <i>G</i> &approx; <span class="frac"><span class="nu">1</span><span>&beta;</span></span> = 1 + <span class="frac"><span class="nu"><i>R</i><sub>f</sub></span><span><i>R</i><sub>g</sub></span></span></span></div>
+      <p>The closed-loop gain is set by the <em>ratio of two resistors</em> &mdash; parts you can buy to 0.1% that barely drift &mdash; and is almost completely <b>independent of <span class="m"><i>A</i></span></b>. The op-amp&rsquo;s monstrous, untrustworthy gain has vanished from the answer; two resistors took its place.</p>
+    </div>
+    <p>It is worth seeing exactly <em>how</em> the sloppiness disappears, because it does not vanish by magic &mdash; it gets divided down. Factor the exact gain into the ideal answer times a correction, <span class="m"><i>G</i> = (1/&beta;) &middot; <i>A</i>&beta;/(1 + <i>A</i>&beta;)</span>, and the correction is the gain error:</p>
+    <div class="eq"><span class="m">gain error &approx; <span class="frac"><span class="nu">1</span><span>1 + <i>A</i>&beta;</span></span> &approx; <span class="frac"><span class="nu">1</span><span><i>A</i>&beta;</span></span></span><span class="lbl">the sloppiness of <i>A</i>, divided down by the loop gain</span></div>
+    <p>Put numbers on it. With <span class="m"><i>A</i> = 200,000</span> and <span class="m">&beta; = 0.1</span> (a gain of 10), the loop gain is <span class="m"><i>A</i>&beta; = 20,000</span>, so the real gain is low by about one part in 20,000 &mdash; <b>0.005%</b>. Let <span class="m"><i>A</i></span> swing by its full three-to-one and that error wobbles between a hundred-thousandth and a few hundred-thousandths of the answer: invisible. The huge loop gain is a divider that takes the device&rsquo;s worst sin and shrinks it below the noise.</p>
+    <p>The two famous &ldquo;golden rules&rdquo; you may have met first are <em>consequences</em> of this, not axioms. The <b>virtual short</b> &mdash; that <span class="m"><i>V</i><sub>+</sub> &approx; <i>V</i><sub>&minus;</sub></span> &mdash; is just the statement that <span class="m"><i>V</i><sub>+</sub> &minus; <i>V</i><sub>&minus;</sub> = <i>V</i><sub>out</sub>/<i>A</i></span>, and since the output is finite while <span class="m"><i>A</i></span> is enormous, that difference is almost nothing. The inputs track each other not by decree but because any gap between them gets amplified hugely and corrected. The second rule, <b>no input current</b>, is just the op-amp&rsquo;s very high input impedance. Both hold <em>only while the loop is working</em> &mdash; while <span class="m"><i>A</i>&beta;</span> is large &mdash; and Part&nbsp;II lives entirely on where that stops being true.</p>
+
+    <div class="simwrap">
+      <div class="simcap">Crank the raw gain — the loop locks the output</div>
+      <canvas class="sim" data-sim="virtualshort" data-c="#B23A6B" aria-label="op-amp with feedback divider; as open-loop gain rises the inverting input meets the non-inverting input and the closed-loop gain locks to 1/beta"></canvas>
+      <div class="ctrls" data-sim="virtualshort"></div>
+    </div>
+    <p class="simnote">Drag the raw open-loop gain <span class="m"><i>A</i></span> and the target gain <span class="m">1/&beta;</span> (the resistor ratio). Watch what happens as <span class="m"><i>A</i></span> climbs: the inverting input <span class="m"><i>V</i><sub>&minus;</sub></span> rises to meet <span class="m"><i>V</i><sub>+</sub></span> &mdash; the virtual short snapping shut &mdash; and the closed-loop gain locks onto <span class="m">1/&beta;</span> and <em>stays</em> there even as you keep sweeping <span class="m"><i>A</i></span> over its full three-to-one spread. The error <span class="m">1/(1 + <i>A</i>&beta;)</span> falls toward zero as you turn the gain up. Crank <span class="m"><i>A</i></span> down toward 1 instead and the trick dies: the loop gives up, the two inputs drift apart, and the gain sags away from <span class="m">1/&beta;</span> back toward the raw, useless <span class="m"><i>A</i></span>.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read G = A/(1&thinsp;+&thinsp;A&beta;) at its ends</h2>
+    <p>The exact gain earns its keep by behaving sensibly at every extreme. Three ends pin the physics down.</p>
+    <div class="limit">
+      <b>Limit check — read the equation at its ends</b>
+      <b>Infinite loop gain</b> (<span class="m"><i>A</i>&beta; &rarr; &infin;</span>, the ideal): <span class="m"><i>G</i> &rarr;</span> exactly <span class="m">1/&beta;</span>. Gain perfectly set by the resistors, error &rarr; 0, output impedance &rarr; 0, distortion &rarr; 0 &mdash; the fantasy we design toward. <b>Loop gain gone</b> (<span class="m"><i>A</i>&beta; &rarr; 0</span>, as at high frequency where <span class="m"><i>A</i></span> has rolled off): <span class="m"><i>G</i> &rarr; <i>A</i></span>. The feedback does nothing, the golden rules evaporate, and you are back to the raw, unusable gain block &mdash; <b>this is the single most important failure mode in Part&nbsp;II.</b> <b>Unity-gain follower</b> (<span class="m">&beta; = 1</span>, output tied straight to <span class="m"><i>V</i><sub>&minus;</sub></span>): <span class="m"><i>G</i> = 1</span>, maximum loop gain, maximum feedback &mdash; the most robust, highest-bandwidth, lowest-distortion configuration there is. A buffer is just feedback turned all the way up.
+    </div>
+    <p>There is a fourth end, and it is the one that shapes real design: frequency. <span class="m"><i>A</i></span> is not a constant &mdash; it starts rolling off at about <span class="m">20&nbsp;dB/decade</span> above a few hertz, and the <em>product</em> of gain and bandwidth stays fixed. That product is the <b>gain-bandwidth product</b>, GBW (also called the unity-gain frequency). Since the loop can only hold your closed-loop gain up to the point where <span class="m"><i>A</i></span> itself has fallen to meet it, the closed-loop bandwidth is simply GBW shared out by the gain:</p>
+    <div class="eq"><span class="m"><i>f</i><sub>&minus;3dB</sub> = <span class="frac"><span class="nu">GBW</span><span>noise gain</span></span></span><span class="lbl">buy gain from one stage, pay with exactly proportional bandwidth</span></div>
+    <p>Want more gain out of a single stage? You pay for it with exactly proportionally less bandwidth. (Note the denominator is the <em>noise</em> gain, not the signal gain &mdash; a distinction that costs people whole afternoons, and one we return to in the field notes.)</p>
+
+    <div class="simwrap">
+      <div class="simcap">Gain-bandwidth: buy gain, pay with bandwidth</div>
+      <canvas class="sim" data-sim="gbw" data-c="#B23A6B" aria-label="Bode plot of open-loop gain rolling off at 20 dB per decade and a horizontal closed-loop gain line; their intersection is the closed-loop bandwidth"></canvas>
+      <div class="ctrls" data-sim="gbw"></div>
+    </div>
+    <p class="simnote">The diagonal is the op-amp&rsquo;s open-loop gain <span class="m"><i>A</i></span> falling at <span class="m">20&nbsp;dB/decade</span>; its slope is fixed, because GBW is fixed. Drag the horizontal <em>closed-loop gain</em> line up and down and watch the corner &mdash; the <span class="m">&minus;3&nbsp;dB</span> bandwidth &mdash; slide along the diagonal: higher gain pushes the corner <em>left</em> to a lower frequency, lower gain lets it run right. Drag GBW and the whole diagonal lifts or drops, carrying every corner with it. The intersection is the deal you actually get: <span class="m"><i>f</i><sub>&minus;3dB</sub> = GBW / gain</span>, no negotiation.</p>
+
+    <p>Step back and the pattern across all four ends is one idea: <b>feedback is a universal discount.</b> Everything you want small gets divided by the loop gain <span class="m">(1 + <i>A</i>&beta;)</span>, and everything you want large gets multiplied by it. Gain error, output impedance, distortion (the nonlinearity of <span class="m"><i>A</i></span>), and gain drift are all <em>divided</em> by <span class="m">(1 + <i>A</i>&beta;)</span>; the non-inverting input impedance is <em>multiplied</em> by it. One mechanism &mdash; spending raw gain to buy loop gain &mdash; simultaneously buys precision, linearity, a stiff low-impedance output, and a high, defined input impedance. You are not tuning four knobs; you are turning one.</p>
+    <p>And here is the catch that ends Part&nbsp;I. That same loop, if its phase reaches <span class="m">&minus;180&deg;</span> while <span class="m">|<i>A</i>&beta;|</span> is still greater than 1, stops being negative feedback and becomes positive &mdash; an oscillator. <b>Phase margin</b> is how much safety you have before that happens, and <b>dominant-pole compensation</b> (the deliberately large capacitor built into the op-amp) is what rolls <span class="m"><i>A</i></span> off early so that even a unity-gain follower stays stable. More loop gain buys more precision and spends phase margin; the two pull against each other, and they do so forever. That tension is the whole craft, and it is where the clean derivation hands off to the bench.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: picking a topology, and how it fails</h2>
+    <p>The op-amp is <em>the</em> universal analog building block, and real design is a short, fixed sequence. Pick the <b>topology</b> for the job: non-inverting for high input impedance; inverting for a virtual-ground summing node and easy gain or filtering; difference and instrumentation amps for differential sensors; integrators and differentiators for control loops and filters. Then <b>set the gain</b> with a resistor ratio; <b>check GBW</b> gives the bandwidth you need <em>at that gain</em>; <b>check slew rate</b> survives your largest, fastest swing; <b>check the DC errors</b> (offset times noise gain, bias current times resistance) are small enough; and <b>check stability</b> (phase margin, especially into capacitive loads). When a circuit misbehaves it does so in a short, recognisable vocabulary &mdash; and almost every entry is really &ldquo;the loop isn&rsquo;t doing what you assumed&rdquo;:</p>
+    <dl class="speclist">
+      <dt>Output stuck hard at a rail (saturated)</dt><dd>No DC feedback path, an input shoved outside the common-mode range, or offset &times; gain has itself railed the output. The loop cannot null an error it has no path to correct &mdash; check that a DC feedback path exists and the inputs are in range before you blame the op-amp.</dd>
+      <dt>Oscillation or ringing</dt><dd>Insufficient <b>phase margin</b>: a capacitive load, stray feedback capacitance, or simply too much loop gain pushing the phase toward <span class="m">&minus;180&deg;</span>. The feedback has gone positive. Isolate caps, tame the loop, or compensate.</dd>
+      <dt>Output won&rsquo;t swing near the rail</dt><dd>Not a rail-to-rail part, or the output current is maxed into the load. The datasheet&rsquo;s &ldquo;rail-to-rail&rdquo; always has fine print &mdash; read how close it really gets <em>under load</em>.</dd>
+      <dt>Distortion only on fast or large signals</dt><dd><b>Slew-rate limited</b> &mdash; the output physically can&rsquo;t change fast enough &mdash; or you have run out of GBW at that amplitude. The small-signal response looked perfect, which is exactly why this one hides.</dd>
+      <dt>Persistent DC error at the output</dt><dd>Input <b>offset voltage &times; noise gain</b>, plus <b>bias current &times; resistance</b>. At high gain this, not gain accuracy, is usually your dominant error &mdash; and no resistor tolerance fixes it.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How negative feedback shapes the whole circuit</h2>
+    <p>Feedback redraws nearly every property of the circuit at once, which is why &ldquo;what op-amp and what resistors&rdquo; is most of analog design. <b>Gain accuracy</b> moves out of the op-amp and into your <em>resistor matching</em>: a 0.1% ratio gives a 0.1% gain, regardless of which op-amp you solder in. <b>Bandwidth</b> is GBW divided by gain, which forces an architectural choice &mdash; one high-gain stage (narrow) versus several modest-gain stages cascaded (wide, but more parts and more noise). <b>Noise, offset and drift</b> are set by the op-amp itself and then <em>amplified by the noise gain</em>, so they define a precision floor you cannot resistor your way out of. <b>Input and output impedance</b> are set by the topology and then multiplied or divided by loop gain. Gain, bandwidth, precision and impedance are not four free knobs: the feedback network and the op-amp&rsquo;s GBW tie them together into a single trade, and learning to feel where they pull against each other is most of the skill.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>The same one rule runs sensor front-ends, active filters, the integrators inside every analog control loop, ADC drivers, current-sense amplifiers, precision references, audio stages and instrumentation amps &mdash; anywhere a signal must be conditioned before something else can use it. When you choose a part, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Gain-bandwidth product (GBW)</dt><dd>Sets closed-loop bandwidth = GBW / noise gain. The first thing to check once you&rsquo;ve picked the gain &mdash; and you need real margin, not a bare pass.</dd>
+      <dt>Slew rate</dt><dd>Maximum output <span class="m">d<i>V</i>/d<i>t</i></span> in V/&micro;s. For a sine, the demand is <span class="m">SR = 2&pi;<i>f</i><i>V</i><sub>peak</sub></span>. It guards large, fast signals and is a <em>separate</em> limit from GBW &mdash; a part can have plenty of bandwidth and still slew-limit on a big step.</dd>
+      <dt>Input offset voltage &amp; drift</dt><dd>Multiplied by noise gain into a DC output error. The dominant error at high gain; &ldquo;precision&rdquo; and &ldquo;zero-drift&rdquo; parts live here, in the microvolt class.</dd>
+      <dt>Input bias &amp; offset current</dt><dd>Flows through your resistances to make an error. Match the resistance seen by both inputs and the bias part largely cancels.</dd>
+      <dt>Input voltage noise density (nV/&radic;Hz)</dt><dd>The noise floor, amplified by the noise gain. It&rsquo;s what decides small-signal front-ends.</dd>
+      <dt>Supply range &amp; rail-to-rail (in/out)</dt><dd>Single versus dual supply, and how close to the rails the inputs and output really work &mdash; under load, not on the headline.</dd>
+      <dt>Output drive, CMRR/PSRR, quiescent current</dt><dd>Current into the load; how well it rejects common-mode and supply noise; and how much power it burns doing so.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the clean derivation won&rsquo;t tell you</span>
+      <ul>
+        <li><b>The virtual short is a lie that&rsquo;s only true while the loop is working.</b> At high frequency, in saturation, or during slewing, <span class="m"><i>V</i><sub>+</sub> &ne; <i>V</i><sub>&minus;</sub></span> &mdash; and those are exactly the moments your circuit misbehaves. Debug by asking one question: &ldquo;is the loop still in control here?&rdquo;</li>
+        <li><b>Noise gain is not signal gain.</b> An inverting amp with a signal gain of <span class="m">&minus;1</span> has a <em>noise gain of 2</em> (<span class="m">1 + <i>R</i><sub>f</sub>/<i>R</i><sub>g</sub> = 1 + 1 = 2</span>). It is the noise gain &mdash; not the signal gain &mdash; that sets stability, offset error and output noise. Get this one wrong and your numbers never add up.</li>
+        <li><b>Always provide a DC feedback path.</b> A pure capacitor-feedback integrator has infinite DC gain and will drift to a rail on offset and bias current alone, with no input. Put a large resistor across the cap to bound the DC gain and give those offsets somewhere to go.</li>
+        <li><b>Capacitive loads eat phase margin</b> and cause oscillation. Isolate the load with a small series resistor (an &ldquo;out-of-the-loop&rdquo; R), or pick a part explicitly rated to drive caps.</li>
+        <li><b>Decouple the supplies right at the pins</b> &mdash; 0.1&nbsp;&micro;F close in. Half of all &ldquo;mystery oscillation&rdquo; is supply inductance, not the circuit you actually drew.</li>
+        <li><b>&ldquo;Rail-to-rail output&rdquo; still can&rsquo;t quite reach the rail under load</b>, and rail-to-rail <em>inputs</em> often have a small crossover glitch mid-range where two internal input stages hand off. Read the fine print, or stay away from the rails.</li>
+        <li><b>At high gain, offset dominates &mdash; not gain error.</b> A 1&nbsp;mV offset at a gain of 100 is 100&nbsp;mV out, usually far worse than the 0.01% gain error you fretted over. When gain is high, spend your money on offset, not on 0.01% resistors.</li>
+        <li><b>More loop gain fights phase margin.</b> Every dB of loop gain you add for precision is a dB you take from stability. The whole craft is choosing where on that trade to sit &mdash; and then proving it in simulation.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">a ×100 sensor amp, end to end</span></div>
+
+    <h2><span class="sn">9</span>Build it: a &times;100 precision sensor amplifier</h2>
+    <p>Enough principle &mdash; here is a real amplifier sized end to end, so you can copy the shape and reuse it. The job: take a small, slow sensor signal &mdash; say a <span class="m">&plusmn;10&nbsp;mV</span> bridge or thermocouple output &mdash; and bring it up to <span class="m">&plusmn;1&nbsp;V</span> (gain = 100), flat to about 1&nbsp;kHz, on a single +5&nbsp;V or a <span class="m">&plusmn;5&nbsp;V</span> supply. Every line below is one formula you plug into; the derivation already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a &times;100 precision sensor amplifier</span>
+      <dl class="speclist">
+        <dt>Topology &amp; gain</dt><dd>Non-inverting, so the sensor sees a high input impedance and isn&rsquo;t loaded. <span class="m"><i>G</i> = 1 + <i>R</i><sub>f</sub>/<i>R</i><sub>g</sub> = 100 &rarr; <i>R</i><sub>f</sub>/<i>R</i><sub>g</sub> = 99</span>. Pick <b><span class="m"><i>R</i><sub>f</sub> = 100&nbsp;k&Omega;</span>, <span class="m"><i>R</i><sub>g</sub> = 1.0&nbsp;k&Omega;</span></b> (<span class="m"><i>G</i> = 101</span>, close enough), or 99&nbsp;k&Omega;/1&nbsp;k&Omega; for exactly 100. The noise gain is 100 too.</dd>
+        <dt>Bandwidth &rarr; GBW</dt><dd>Closed-loop BW = GBW / gain. For 1&nbsp;kHz at a gain of 100 you need <span class="m">GBW &ge; 100&nbsp;kHz</span> <em>minimum</em>; take ~10&times; margin so the response is flat, not drooping, at 1&nbsp;kHz &rarr; <b><span class="m">GBW &ge; 1&nbsp;MHz</span></b>. A jellybean MCP6002 (~1&nbsp;MHz) just scrapes it; a TLV9062 (~10&nbsp;MHz) is comfortable.</dd>
+        <dt>The real killer &mdash; offset</dt><dd>Output DC error = <span class="m"><i>V</i><sub>os</sub> &times;</span> noise gain = <span class="m"><i>V</i><sub>os</sub> &times; 100</span>. A garden-variety <span class="m"><i>V</i><sub>os</sub> = 2&nbsp;mV</span> gives <b>200&nbsp;mV of output error</b> on a <span class="m">&plusmn;1&nbsp;V</span> signal &mdash; 20%! This is why you reach for a <b>zero-drift / precision</b> part: an OPA333 (<span class="m"><i>V</i><sub>os</sub> &approx; 10&nbsp;&micro;V</span>) gives just 1&nbsp;mV of output error. <em>Offset, not gain accuracy, is the design driver here.</em></dd>
+        <dt>Bias current</dt><dd><span class="m"><i>I</i><sub>b</sub> &times;</span> resistance makes another DC error. Match the resistance seen by both inputs &mdash; add a resistor in the + lead equal to <span class="m"><i>R</i><sub>f</sub>&#8741;<i>R</i><sub>g</sub></span> &mdash; so the bias-current part cancels. With a CMOS precision part <span class="m"><i>I</i><sub>b</sub></span> is tiny and this is a non-issue.</dd>
+        <dt>Slew rate</dt><dd>For <span class="m">&plusmn;1&nbsp;V</span> at 1&nbsp;kHz, needed <span class="m">SR = 2&pi;<i>f</i><i>V</i><sub>pk</sub> = 2&pi;&middot;1000&middot;1 &approx;</span> <b>6.3&nbsp;mV/&micro;s = 0.006&nbsp;V/&micro;s</b>. Utterly trivial &mdash; any op-amp clears it by 1000&times;. Slew only bites when the signal is <em>both</em> fast and large.</dd>
+        <dt>Supply &amp; swing</dt><dd>On +5&nbsp;V single supply you need a mid-rail reference (<span class="m"><i>V</i><sub>ref</sub> = 2.5&nbsp;V</span>) for the bipolar signal, a rail-to-rail output, and inputs that stay in range. On <span class="m">&plusmn;5&nbsp;V</span> it&rsquo;s simpler &mdash; ground is your reference.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a topology, a resistor ratio and one hard look at offset hand you the whole design &mdash; and they tell you, loudly, that your money goes on a precision part, not on tight resistors. The plug-in set is small: non-inverting gain <span class="m"><i>G</i> = 1 + <i>R</i><sub>f</sub>/<i>R</i><sub>g</sub></span>, inverting gain <span class="m"><i>G</i> = &minus;<i>R</i><sub>f</sub>/<i>R</i><sub>g</sub></span>; noise gain (always) <span class="m">NG = 1 + <i>R</i><sub>f</sub>/<i>R</i><sub>g</sub></span> &mdash; use <em>this</em> for bandwidth, offset and stability; closed-loop bandwidth <span class="m"><i>f</i><sub>&minus;3dB</sub> = GBW / NG</span>; loop gain <span class="m"><i>T</i> = <i>A</i>&beta; = <i>A</i>/NG</span> with gain error <span class="m">&approx; 1/<i>T</i></span>; output DC error <span class="m"><i>V</i><sub>out,err</sub> &approx; <i>V</i><sub>os</sub>&middot;NG + <i>I</i><sub>b</sub>&middot;<i>R</i></span>; and the slew check <span class="m">SR<sub>needed</sub> = 2&pi;<i>f</i><i>V</i><sub>peak</sub> &le; SR<sub>spec</sub></span>.</p>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain:</p>
+    <ol class="recipe">
+      <li><b>Power only, input grounded.</b> Check the quiescent current is sane and measure the output DC &mdash; it should read <span class="m">&approx; <i>V</i><sub>os</sub> &times;</span> noise gain. If it&rsquo;s railed, you have a wiring, offset or common-mode problem <em>before</em> any signal goes in.</li>
+      <li><b>Small DC in.</b> Apply a known small DC (say 5&nbsp;mV) and confirm <span class="m"><i>V</i><sub>out</sub> =</span> gain &times; <span class="m"><i>V</i><sub>in</sub></span> + offset. The gain should match the resistor ratio, not the datasheet <span class="m"><i>A</i></span>.</li>
+      <li><b>Sweep frequency.</b> Inject a small sine, find the <span class="m">&minus;3&nbsp;dB</span> point, and confirm it <span class="m">&approx;</span> GBW / noise gain. If it&rsquo;s low, your op-amp&rsquo;s GBW is short for this gain.</li>
+      <li><b>Look for ringing or oscillation on the scope</b>, especially with the real load attached. Ringing means marginal phase margin &rarr; add a series R to a capacitive load, or a small feedback cap.</li>
+      <li><b>Load and swing test.</b> Drive the real load at full amplitude; check the output still reaches its needed swing and isn&rsquo;t slew- or current-limited.</li>
+      <li><b>Measure real offset &amp; drift</b>, not datasheet-typical &mdash; warm the part with a finger and watch the DC output move. That movement is your drift budget.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Inverting vs non-inverting</dt><dd>Non-inverting gives high input impedance, but the input sees the full common-mode voltage (a range limit). Inverting gives a convenient virtual-ground summing node &mdash; easy to add and filter signals &mdash; but its input impedance is only <span class="m"><i>R</i><sub>g</sub></span>, so it loads the source.</dd>
+      <dt>Single vs dual supply</dt><dd>Dual (<span class="m">&plusmn;V</span>) is simplest for bipolar signals. Single supply needs a mid-rail reference and rail-to-rail parts, but it&rsquo;s cheaper and battery-friendly.</dd>
+      <dt>Precision vs speed</dt><dd>Zero-drift parts give &micro;V offsets but modest GBW and more noise up high; fast parts carry bigger offsets. You rarely get both cheaply &mdash; pick by whether DC accuracy or bandwidth rules the job.</dd>
+      <dt>Discrete op-amp vs instrumentation amp</dt><dd>For a true differential sensor with common-mode noise, a three-op-amp in-amp (or a monolithic one) gives high CMRR and one-resistor gain. Don&rsquo;t fake it with a single-op-amp difference amp unless CMRR is loose.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do with real tools</b>
+      This page gets you to a correct schematic, the right class of part, and sane numbers &mdash; about 90% of the job. The last 10% is on the bench and in the simulator, and it&rsquo;s where analog bites. <b>Simulate stability</b> in LTspice or TINA-TI with the <em>manufacturer&rsquo;s real op-amp model</em>: run a loop-gain (STB) analysis and read the <b>phase margin</b> &mdash; aim for <span class="m">&ge; 45&deg;</span>, ideally <span class="m">60&deg;</span>. The ideal-op-amp math simply cannot see this. Then face <b>breadboard and PCB reality</b>: proper supply decoupling at the pins, short feedback traces, a ground that isn&rsquo;t a loop &mdash; a perfect schematic oscillates on a sloppy layout. And <b>measure, don&rsquo;t trust typicals</b>: real offset, drift over temperature and noise are often 2&ndash;3&times; the datasheet &ldquo;typical,&rdquo; so budget with the <em>max</em> column. Tools to reach for: LTspice and TINA-TI (free, with vendor models), a scope (for ringing and oscillation), and the vendor&rsquo;s op-amp selector, FilterPro and analog-design tools for filters and in-amps. The physics in Part&nbsp;I never changes; the last mile is making a real, imperfect part obey it on a real board.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">An inverting amplifier is built for a signal gain of <span class="m">&minus;9</span> (<span class="m"><i>R</i><sub>f</sub> = 90&nbsp;k&Omega;</span>, <span class="m"><i>R</i><sub>g</sub> = 10&nbsp;k&Omega;</span>). Its closed-loop bandwidth comes out lower than you&rsquo;d guess from &ldquo;9.&rdquo; Why &mdash; and what number actually sets it?</p><span class="a">Because bandwidth is set by the <b>noise gain</b>, not the signal gain. The noise gain is <span class="m">1 + <i>R</i><sub>f</sub>/<i>R</i><sub>g</sub> = 1 + 9 = 10</span>, so the <span class="m">&minus;3&nbsp;dB</span> bandwidth is <span class="m">GBW/10</span>, not <span class="m">GBW/9</span>. An inverting stage always has a noise gain one larger in magnitude than its signal gain (the &ldquo;+1&rdquo; from the non-inverting input), and it&rsquo;s that noise gain &mdash; the gain the feedback network presents back to the op-amp &mdash; that the loop actually works against. The same number sets the offset error and the stability margin, which is why you track it, not the headline &ldquo;9.&rdquo;</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">You cascade the sloppy op-amp (its open-loop gain <span class="m"><i>A</i></span> varies three-to-one between units) into a non-inverting &times;10 circuit with 0.1% resistors. How much does the &times;10 gain actually vary unit-to-unit &mdash; and why isn&rsquo;t it 3:1?</p><span class="a">About <b>0.1%</b> &mdash; it tracks the resistors, not the op-amp. The closed-loop gain is <span class="m"><i>G</i> &approx; 1/&beta; = 1 + <i>R</i><sub>f</sub>/<i>R</i><sub>g</sub></span>, set by the ratio of two 0.1% resistors, so the gain&rsquo;s spread is the resistors&rsquo; spread. The op-amp&rsquo;s wild 3:1 variation in <span class="m"><i>A</i></span> doesn&rsquo;t pass through: it survives only inside the tiny error term <span class="m">1/(1 + <i>A</i>&beta;)</span>, which for a gain of 10 is on the order of <span class="m">1/(<i>A</i>/10) &approx;</span> a few parts per hundred-thousand. A three-to-one swing in a part-per-hundred-thousand correction is still a part-per-hundred-thousand correction &mdash; the loop gain has divided the sloppiness down below anything you can measure. That division is the entire point of closing the loop.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">Your integrator (a capacitor in the feedback path) slowly drifts to the positive rail with no input at all. What&rsquo;s happening, and what&rsquo;s the one-component fix?</p><span class="a">A pure capacitive feedback gives the op-amp <b>infinite gain at DC</b> &mdash; a cap is an open circuit at zero frequency, so there is no DC feedback path. With nothing to correct it against, the op-amp&rsquo;s own input offset voltage and bias current get integrated indefinitely, and the output ramps until it hits a rail. The one-component fix is a <b>large resistor across the capacitor</b>: it bounds the DC gain to <span class="m"><i>R</i><sub>f</sub>/<i>R</i><sub>g</sub></span> and gives those DC offsets a path to be nulled, while leaving the integrating behaviour intact above the corner the resistor-cap pair sets. You&rsquo;ve traded a little low-frequency response for a circuit that no longer walks itself into the rail.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-propeller.html"><b>&larr; Prev:</b> Propeller thrust &amp; disk loading</a>
+      <span class="nextpill"><b>Coming next:</b> H-bridge, gate drive &amp; dead-time</span>
+    </div>
+    <p class="footnote"><b>The Op-Amp &amp; Negative Feedback — Why One Rule Builds Almost Every Analog Circuit.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (an op-amp&rsquo;s own gain is enormous but untrustworthy) and the one move (feed the output back to the inverting input) from which <span class="m"><i>G</i> = <i>A</i>/(1 + <i>A</i>&beta;)</span>, the resistor-set gain <span class="m"><i>G</i> &approx; 1/&beta; = 1 + <i>R</i><sub>f</sub>/<i>R</i><sub>g</sub></span>, the virtual short and the gain-bandwidth trade all fall out &mdash; then the practitioner&rsquo;s half: how you pick a topology, why a circuit saturates, oscillates or drifts, what to spec, and a &times;100 sensor amp sized end to end. With live simulations of the loop locking the output to <span class="m">1/&beta;</span> as the raw gain climbs, and of the gain-bandwidth corner sliding as you buy gain and pay with bandwidth. The honest truth of it: this gets you to a working schematic, the right part class and sane numbers &mdash; phase margin and board layout are the bench&rsquo;s last 10%.<br>
+    Companion volumes in the portal: <b>Control Systems</b> and <b>Sensors &amp; Signal Chains</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* virtualshort — negative feedback locks the output. A non-inverting op-amp with feedback
+     divider Rf/Rg (β = Rg/(Rf+Rg) = 1/cgain). Crank the raw open-loop gain A = 10^loga and the
+     inverting input V− rises to meet V+ (the "virtual short"): the gap V+−V− collapses, the
+     closed-loop gain G = A/(1+Aβ) locks to the ideal 1/β, and the gain error 100/(1+Aβ)% falls
+     to a fraction of a percent once the loop gain Aβ ≳ 100. State on s.*, controls via s.p.KEY,
+     s.accent = rose (hero: the virtual short / Vout lock), unicode literals only in txt(). */
+  SIMS.virtualshort={
+    controls:[
+      {k:'loga',label:'Open-loop gain A',min:0,max:6,step:0.05,val:2.5,fmt:function(v){return '10^'+v.toFixed(1);}},
+      {k:'cgain',label:'Target gain 1/β',min:1,max:100,step:1,val:10}
+    ],
+    _geom:function(s,w,h){
+      s.cy=Math.round(h*0.34);
+      s.xL=Math.round(w*0.21);
+      s.triW=Math.max(44,Math.round(w*0.15));
+      s.xR=s.xL+s.triW;
+      s.hh=Math.max(24,Math.round(h*0.14));
+      s.inY=13;
+      s.nodeX=s.xL-16;
+      s.ox=s.xR+Math.max(26,Math.round(w*0.08));
+      s.my=s.cy+40;
+      s.gy=s.my+30;
+      s.vinX=Math.max(8,s.xL-30);
+      s.mx0=Math.max(s.ox+36,Math.round(w*0.54));
+    },
+    init:function(s,w,h){ SIMS.virtualshort._geom(s,w,h); },
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var R=SIMS.virtualshort; R._geom(s,w,h);
+      // ---- physics ----
+      var Vin=1.0;
+      var A=Math.pow(10,clamp(s.p.loga,0,6));
+      var beta=1/clamp(s.p.cgain,1,100);
+      var Ab=A*beta;
+      var G=A/(1+Ab);
+      var Vout=Vin*G;
+      var Vminus=beta*Vout;      // = Ab/(1+Ab)
+      var err=Vin-Vminus;        // = 1/(1+Ab)
+      var ideal=1/beta;          // = cgain
+      var errPct=100/(1+Ab);
+      // ---- formatters ----
+      function sup(n){var d='⁰¹²³⁴⁵⁶⁷⁸⁹';var t=''+Math.round(n);var o='';for(var i=0;i<t.length;i++){o+=d[+t[i]];}return o;}
+      function sci(v){ if(v<1000) return v<10?v.toFixed(2):v.toFixed(0);
+        var e=Math.floor(Math.log10(v)); var m=v/Math.pow(10,e); return m.toFixed(1)+'×10'+sup(e); }
+      function gf(v){ return v<10?v.toFixed(2):(v<100?v.toFixed(1):v.toFixed(0)); }
+      function ef(v){ return v>=0.1?v.toFixed(1)+'%':(v>=0.001?v.toFixed(3)+'%':'<0.001%'); }
+
+      // ---- schematic: op-amp triangle ----
+      ctx.lineWidth=1.4; ctx.strokeStyle=PAL.ink; ctx.fillStyle=PAL.surf;
+      ctx.beginPath();
+      ctx.moveTo(s.xL,s.cy-s.hh); ctx.lineTo(s.xR,s.cy); ctx.lineTo(s.xL,s.cy+s.hh); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      txt(ctx,'+',s.xL+9,s.cy-s.inY+4,PAL.ink,12,'left');
+      txt(ctx,'−',s.xL+9,s.cy+s.inY+4,PAL.ink,12,'left');
+      txt(ctx,'A',(s.xL+s.xR)/2-2,s.cy+4,PAL.muted,11,'center');
+
+      // input + feedback wiring
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.3;
+      // + input from Vin
+      ctx.beginPath(); ctx.moveTo(s.vinX,s.cy-s.inY); ctx.lineTo(s.xL,s.cy-s.inY); ctx.stroke();
+      // − input stub to node, node down to feedback rail
+      ctx.beginPath(); ctx.moveTo(s.xL,s.cy+s.inY); ctx.lineTo(s.nodeX,s.cy+s.inY);
+      ctx.lineTo(s.nodeX,s.my); ctx.stroke();
+      // output wire apex -> Vout node
+      ctx.beginPath(); ctx.moveTo(s.xR,s.cy); ctx.lineTo(s.ox,s.cy); ctx.stroke();
+      // Vout node down to Rf rail
+      ctx.beginPath(); ctx.moveTo(s.ox,s.my); ctx.lineTo(s.ox,s.cy); ctx.stroke();
+      // Rf horizontal rail between node and Vout drop
+      ctx.beginPath(); ctx.moveTo(s.nodeX,s.my); ctx.lineTo(s.ox,s.my); ctx.stroke();
+      // Rg down to ground
+      ctx.beginPath(); ctx.moveTo(s.nodeX,s.my); ctx.lineTo(s.nodeX,s.gy); ctx.stroke();
+
+      // resistor boxes (feedback divider)
+      var rfw=Math.min(40,(s.ox-s.nodeX)*0.34);
+      box(ctx,(s.nodeX+s.ox)/2-rfw/2,s.my-8,rfw,16,'Rf',PAL.muted,PAL.surf);
+      box(ctx,s.nodeX-12,(s.my+s.gy)/2-9,24,18,'Rg',PAL.muted,PAL.surf);
+
+      // ground symbol
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=1.3;
+      ctx.beginPath(); ctx.moveTo(s.nodeX-8,s.gy); ctx.lineTo(s.nodeX+8,s.gy);
+      ctx.moveTo(s.nodeX-5,s.gy+4); ctx.lineTo(s.nodeX+5,s.gy+4);
+      ctx.moveTo(s.nodeX-2,s.gy+8); ctx.lineTo(s.nodeX+2,s.gy+8); ctx.stroke();
+
+      // node junction dots
+      dot(ctx,s.nodeX,s.my,2.4,PAL.ink);
+      dot(ctx,s.ox,s.cy,2.4,PAL.ink);
+      // Vin source + flow arrow
+      dot(ctx,s.vinX,s.cy-s.inY,2.6,PAL.cool);
+      arrow(ctx,s.vinX+4,s.cy-s.inY,s.xL-3,s.cy-s.inY,PAL.cool);
+      txt(ctx,'Vin 1.00 V',s.vinX-2,s.cy-s.inY-7,PAL.cool,9,'left');
+      txt(ctx,'Vout',s.ox+5,s.cy-6,s.accent,9.5,'left');
+      txt(ctx,'β = Rg/(Rf+Rg) = 1/'+clamp(s.p.cgain,1,100).toFixed(0),s.nodeX-10,s.gy+22,PAL.faint,8.5,'left');
+
+      // ---- meters ----
+      var barTop=46, barBot=h-40, barH=Math.max(30,barBot-barTop);
+      var regionW=(w-10)-s.mx0, slot=regionW/4;
+      var barW=Math.min(34,slot*0.52);
+      var bars=[
+        {lab:'V+',frac:Vin/1.0,col:PAL.cool,val:Vin.toFixed(2)},
+        {lab:'V−',frac:clamp(Vminus,0,1),col:PAL.sky,val:Vminus.toFixed(2)},
+        {lab:'err',frac:clamp(err,0,1),col:PAL.warn,val:err<0.01?err.toFixed(3):err.toFixed(2)},
+        {lab:'Vout',frac:clamp(Vout/Math.max(ideal,1e-6),0,1),col:s.accent,val:gf(Vout)}
+      ];
+      txt(ctx,'volts (Vin = 1 V)',s.mx0,16,PAL.muted,9.5,'left');
+      // baseline
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(s.mx0,barBot+0.5); ctx.lineTo(w-10,barBot+0.5); ctx.stroke();
+      var cx0=0,cx1=0;
+      for(var i=0;i<4;i++){
+        var b=bars[i]; var cx=s.mx0+slot*(i+0.5);
+        if(i===0)cx0=cx; if(i===1)cx1=cx;
+        var topY=barBot-clamp(b.frac,0,1)*barH;
+        ctx.fillStyle=b.col; ctx.globalAlpha=0.85;
+        ctx.fillRect(cx-barW/2,topY,barW,barBot-topY); ctx.globalAlpha=1;
+        // ideal marker on Vout bar
+        if(i===3){
+          ctx.strokeStyle=s.accent; ctx.globalAlpha=0.6; ctx.setLineDash([3,3]); ctx.lineWidth=1;
+          ctx.beginPath(); ctx.moveTo(cx-barW/2-3,barTop); ctx.lineTo(cx+barW/2+3,barTop); ctx.stroke();
+          ctx.setLineDash([]); ctx.globalAlpha=1;
+          txt(ctx,'ideal '+ideal.toFixed(0),cx,barTop-4,PAL.faint,8,'center');
+        }
+        txt(ctx,b.val,cx,topY-4,b.col,9.5,'center');
+        txt(ctx,b.lab,cx,barBot+12,PAL.muted,9,'center');
+      }
+      // virtual-short gap between V+ and V− bar tops
+      var vpY=barBot-barH, vmY=barBot-clamp(Vminus,0,1)*barH;
+      var gx=(cx0+cx1)/2;
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.5; ctx.setLineDash([3,2]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cx0,vpY); ctx.lineTo(cx1,vpY); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      if(vmY-vpY>5){ arrow(ctx,gx,vpY,gx,vmY,s.accent); arrow(ctx,gx,vmY,gx,vpY,s.accent); }
+      dot(ctx,gx,vpY,2,s.accent);
+      var pulse=0.5+0.5*Math.sin((s.t||0)*3);
+      txt(ctx,'virtual short:',s.mx0,barTop-22,s.accent,9,'left');
+      txt(ctx,'V+−V− → 0',s.mx0,barTop-11,s.accent,9.5,'left');
+
+      // ---- titles ----
+      txt(ctx,'negative feedback locks the output',8,13,PAL.muted,10,'left');
+      txt(ctx,'crank A: V− meets V+, gain → 1/β, error → 0',8,h-5,PAL.faint,8.5,'left');
+
+      // ---- numeric readouts (left, below the divider) ----
+      var ry=Math.min(s.gy+40,h-52);
+      txt(ctx,'open-loop A = 10^'+clamp(s.p.loga,0,6).toFixed(1)+'  ≈ '+sci(A),10,ry,PAL.ink,9,'left');
+      txt(ctx,'loop gain Aβ = '+sci(Ab),10,ry+13,(Ab>=100?PAL.good:PAL.muted),9,'left');
+      txt(ctx,'gain G = '+gf(G)+'   (ideal 1/β = '+ideal.toFixed(0)+')',10,ry+26,s.accent,9,'left');
+      txt(ctx,'gain error = '+ef(errPct),10,ry+39,(errPct<1?PAL.good:PAL.bad),9,'left');
+    }
+  };
+
+  /* gbw — the gain–bandwidth trade (Bode view). A one-pole op-amp with fixed DC open-loop gain
+     A_dc = 120 dB and gain-bandwidth product GBW = gbwM MHz. Dominant pole f_p = GBW/A_dc; the
+     open-loop magnitude is flat at 120 dB, then rolls off −20 dB/dec, crossing 0 dB at GBW. A
+     closed-loop gain set to cgain (20·log10 dB) rides flat until it meets the roll-off, then
+     follows it down — the corner is the −3 dB bandwidth f_bw = GBW/cgain. Raise the gain and the
+     line lifts while the corner slides left (less bandwidth); raise GBW and the diagonal shifts
+     right. s.accent = rose (hero: the closed-loop response), unicode literals only in txt(). */
+  SIMS.gbw={
+    controls:[
+      {k:'cgain',label:'Closed-loop gain',min:1,max:1000,step:1,val:10},
+      {k:'gbwM',label:'Gain-bandwidth GBW',min:0.1,max:50,step:0.1,val:1,unit:' MHz'}
+    ],
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var AdcDB=120;                               // 10^6
+      var GBW=clamp(s.p.gbwM,0.1,50)*1e6;          // Hz
+      var fp=GBW/Math.pow(10,AdcDB/20);            // dominant pole (Hz)
+      var cg=clamp(s.p.cgain,1,1000);
+      var clDB=20*Math.log10(cg);
+      var fbw=GBW/cg;                              // closed-loop −3 dB BW
+      // axes
+      var mL=40,mR=12,mT=28,mB=44;
+      var x0=mL,x1=w-mR,y0=mT,y1=h-mB;
+      var DEC=8, DBMAX=130;
+      function lx(f){ var L=clamp(Math.log10(f),0,DEC); return x0+L/DEC*(x1-x0); }
+      function my(db){ return y1-clamp(db,0,DBMAX)/DBMAX*(y1-y0); }
+      function olDB(f){ return f<=fp?AdcDB:AdcDB-20*Math.log10(f/fp); }
+      function fmtHz(f){ if(f>=1e6) return (f/1e6>=10?(f/1e6).toFixed(0):(f/1e6).toFixed(1))+' MHz';
+        if(f>=1e3) return (f/1e3>=10?(f/1e3).toFixed(0):(f/1e3).toFixed(1))+' kHz';
+        return (f>=10?f.toFixed(0):f.toFixed(1))+' Hz'; }
+      var labels=['1','10','100','1k','10k','100k','1M','10M','100M'];
+      var i,f,xx,yy;
+
+      // grid: horizontal dB lines
+      for(i=0;i<=6;i++){ var db=i*20; yy=my(db);
+        ctx.strokeStyle=PAL.line; ctx.globalAlpha=i?0.4:0.85; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(x0,yy); ctx.lineTo(x1,yy); ctx.stroke(); ctx.globalAlpha=1;
+        txt(ctx,db+'',x0-5,yy+3,PAL.faint,8,'right');
+      }
+      txt(ctx,'dB',x0-5,y0-6,PAL.faint,8,'right');
+      // grid: vertical decade lines + labels
+      for(i=0;i<=DEC;i++){ xx=x0+i/DEC*(x1-x0);
+        ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.32; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(xx,y0); ctx.lineTo(xx,y1); ctx.stroke(); ctx.globalAlpha=1;
+        txt(ctx,labels[i],xx,y1+12,PAL.faint,8,'center');
+      }
+      // axes frame
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x0,y1); ctx.lineTo(x1,y1); ctx.stroke();
+      txt(ctx,'frequency (Hz, log)',(x0+x1)/2,y1+24,PAL.muted,8.5,'center');
+
+      // open-loop roll-off (secondary ink)
+      ctx.strokeStyle=PAL.muted; ctx.globalAlpha=0.7; ctx.lineWidth=1.6;
+      ctx.beginPath();
+      for(i=0;i<=160;i++){ f=Math.pow(10,i/160*DEC); xx=lx(f); yy=my(olDB(f)); if(i===0)ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy); }
+      ctx.stroke(); ctx.globalAlpha=1;
+      // closed-loop response (hero, accent): flat at clDB then follows roll-off
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4;
+      ctx.beginPath();
+      for(i=0;i<=160;i++){ f=Math.pow(10,i/160*DEC); xx=lx(f); yy=my(Math.min(clDB,olDB(f))); if(i===0)ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy); }
+      ctx.stroke();
+
+      // slope + open-loop labels
+      var fmid=Math.sqrt(Math.max(fp,1)*GBW);
+      txt(ctx,'−20 dB/dec',lx(fmid)+4,my(olDB(fmid))-5,PAL.muted,8.5,'left');
+      txt(ctx,'open-loop (120 dB)',x0+6,my(AdcDB)+12,PAL.faint,8.5,'left');
+
+      // corner marker: dot + dashed guide + f_bw readout
+      var cxc=lx(fbw), cyc=my(clDB);
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.55; ctx.setLineDash([4,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cxc,cyc); ctx.lineTo(cxc,y1); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      var puls=3.5+1.6*(0.5+0.5*Math.sin((s.t||0)*3));
+      ctx.strokeStyle=s.accent; ctx.globalAlpha=0.5; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(cxc,cyc,puls,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1;
+      dot(ctx,cxc,cyc,4,s.accent);
+      var al=cxc>(x0+x1)/2?'right':'left', tx=cxc+(al==='right'?-7:7);
+      txt(ctx,'f_BW '+fmtHz(fbw),tx,clamp(cyc-9,y0+9,y1-4),s.accent,9.5,al);
+
+      // readouts (top-right)
+      txt(ctx,'gain–bandwidth trade (Bode)',8,13,PAL.muted,10,'left');
+      txt(ctx,'GBW = '+(GBW/1e6>=10?(GBW/1e6).toFixed(0):(GBW/1e6).toFixed(1))+' MHz',x1-4,y0+12,PAL.ink,9.5,'right');
+      txt(ctx,'gain = '+cg.toFixed(0)+'×  ('+clDB.toFixed(0)+' dB)',x1-4,y0+25,s.accent,9.5,'right');
+      txt(ctx,'BW = GBW / gain = '+fmtHz(fbw),x1-4,y0+38,PAL.muted,9,'right');
+      // caption
+      txt(ctx,'gain × bandwidth = GBW (constant) — buy gain, pay with bandwidth',(x0+x1)/2,h-5,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

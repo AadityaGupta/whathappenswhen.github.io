@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>The Hohmann Transfer — Why You Speed Up to Reach a Slower, Higher Orbit · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#3E5AA0; --accent-ink:#FFFFFF; --accent-wash:#E6EAF6;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#8AA0E0; --accent-ink:#241405; --accent-wash:#141A2E;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#8AA0E0; --accent-ink:#241405; --accent-wash:#141A2E;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 14 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>The Hohmann Transfer: Why You Speed Up to Reach a Slower, Higher Orbit</h1>
+    <p class="dek">You&rsquo;re in one circular orbit and you want a higher one. Every instinct from flying &mdash; point where you want to go and thrust &mdash; is exactly wrong in orbit. The cheapest way up is two carefully timed prograde burns joined by a coasting half-ellipse, and the punchline is a paradox: you fire your engine to <em>add</em> speed, yet you arrive in an orbit that is <em>slower</em> than the one you left. Learn this one ellipse and you can budget almost any orbit change.</p>
+    <div class="meta">
+      <span>&approx; 17 min read</span>
+      <span>orbital mechanics · astrodynamics · mission design</span>
+      <span>companion to <b>The Rocket Equation</b> and <b>Control Systems</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">You are in a circular orbit &mdash; low Earth orbit, say &mdash; and you need to be in a higher circular one, like the geostationary belt, and the instinct you bring from every aircraft you have ever flown is precisely the wrong one. In the air you pitch up, thrust toward where you want to go, and climb; try that in orbit and thrusting straight at your destination mostly just tips your circle into an ellipse that swings right back to where you started, buying no permanent altitude at all. The bind is real: an orbit is not a place you steer toward but a <em>shape</em> you are locked into, and on top of that every scrap of velocity you can spend is exponentially expensive in propellant (the rocket equation&rsquo;s logarithm, Deep Dive&nbsp;#04), so you cannot afford to thrash. The escape is a single reframe &mdash; stop aiming at the destination and instead <em>change the energy of the orbit you are on, twice</em> &mdash; and from that one move the whole subject falls out: a transfer ellipse that just kisses both circles, a prograde burn at the bottom to get onto it and a second prograde burn at the top to circularize, every speed on it read from one equation (vis-viva), a transfer time that is simply half the ellipse&rsquo;s period, and a sting in the tail that trips everyone &mdash; you fire the engine to <em>add</em> speed at both burns, yet you end up in an orbit moving <em>slower</em> than the one you left, because the price of altitude is being slow. Then the piece turns to the half the textbooks skip: how you plan a real maneuver and build its <span class="m">&Delta;<i>v</i></span> budget, how it goes wrong (phasing, plane changes, finite burns), what to spec, and a full LEO&rarr;GEO raise worked end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: you can&rsquo;t just fly up</h2>
+    <p>Start with exactly what you are being asked to do. You are in a circular orbit &mdash; low Earth orbit &mdash; and you need to be in a higher circular one, the geostationary belt. Every instinct from flying says: pitch up, thrust toward the destination, climb. In orbit that instinct fails completely. Thrust radially outward and you mostly just tilt your circle into an ellipse that comes right back around to where you started; you have bought yourself a brief excursion in altitude and <em>no permanent gain at all</em>. There is no &ldquo;up&rdquo; to hold onto, only the orbit you are on.</p>
+    <p>And there is a second, harsher constraint layered on top: the fuel. Deep Dive&nbsp;#04 showed that <span class="m">&Delta;<i>v</i></span> &mdash; the total change in velocity you can buy &mdash; is exponentially expensive in propellant (the rocket equation&rsquo;s logarithm), so you cannot afford to flail around spending velocity on maneuvers that do not stick. The real question is therefore sharp, and the whole piece answers it: <b>what is the <em>cheapest</em> way, in <span class="m">&Delta;<i>v</i></span>, to move between two circular orbits?</b> Not a way &mdash; the way the physics itself certifies as minimal.</p>
+
+    <h2><span class="sn">2</span>The reframe: change the orbit&rsquo;s energy, then fix it up</h2>
+    <p>The key realization is that in orbit you do not steer toward a place &mdash; you <b>change the shape and energy of the orbit you are on</b>, and let the orbit carry you there. Two facts drive everything. The first is that an orbit&rsquo;s <em>size is set by its energy</em>: add energy by burning <b>prograde</b> (along your direction of motion) and the orbit grows, its far side swinging higher; remove energy by burning retrograde and it shrinks. The second is that on a circular orbit, <em>speed falls as you go higher</em> &mdash; the circular speed is set entirely by the radius:</p>
+    <div class="eq"><span class="m"><i>v</i><sub>circ</sub> = &radic;(&mu;/<i>r</i>)</span><span class="lbl">&mu; is the gravitational parameter, <i>r</i> the orbit radius &mdash; bigger <i>r</i>, smaller <i>v</i></span></div>
+    <p>High orbits are <em>slow</em> orbits. Put those two facts together and the strategy writes itself. To get from a low circle to a high circle, do this: at your current altitude, burn <b>prograde</b> to add energy &mdash; this raises the <em>opposite</em> side of your orbit, turning the circle into an ellipse whose far point (apogee) reaches the target altitude. Then coast &mdash; for free, no fuel &mdash; all the way up that ellipse to apogee. Now you are at the right altitude but moving too slowly to hold a circle there (you are sitting at the slow, far end of an ellipse), so you burn <b>prograde again</b> to add exactly the speed that circularizes you. Two prograde burns, one coasting ellipse. You never once &ldquo;aimed up&rdquo;; you re-shaped the orbit twice and let gravity do the climbing.</p>
+
+    <h2><span class="sn">3</span>The core: the transfer ellipse and its two burns</h2>
+    <p>Now make it exact. Connect the inner circle (radius <span class="m"><i>r</i><sub>1</sub></span>) and the outer circle (radius <span class="m"><i>r</i><sub>2</sub></span>) with a single <b>transfer ellipse</b> that just kisses both: its <b>perigee</b> touches the inner orbit and its <b>apogee</b> touches the outer. An ellipse&rsquo;s size is fixed by its semi-major axis, and for a tangent ellipse that reaches from <span class="m"><i>r</i><sub>1</sub></span> to <span class="m"><i>r</i><sub>2</sub></span> the semi-major axis is simply the average of the two radii:</p>
+    <div class="eq"><span class="m"><i>a</i> = <span class="frac"><span class="nu"><i>r</i><sub>1</sub> + <i>r</i><sub>2</sub></span><span>2</span></span></span><span class="lbl">the ellipse spans from the inner circle to the outer, so its mean radius is theirs</span></div>
+    <p>The one equation that gives the speed anywhere on <em>any</em> orbit &mdash; circle, ellipse, the lot &mdash; is <b>vis-viva</b>, and it is the single relation worth carrying out of this piece:</p>
+    <div class="eq"><span class="m"><i>v</i> = &radic;( &mu;&middot;(2/<i>r</i> &minus; 1/<i>a</i>) )</span><span class="lbl">speed at radius <i>r</i> on an orbit of semi-major axis <i>a</i></span></div>
+    <p>Apply vis-viva at the two tangent points and compare it to the circular speed each place needs. At <b>perigee</b> (<span class="m"><i>r</i> = <i>r</i><sub>1</sub></span>) the ellipse carries you at <span class="m"><i>v</i><sub>p</sub> = &radic;(&mu;(2/<i>r</i><sub>1</sub> &minus; 1/<i>a</i>))</span>, while the circle there needs only <span class="m"><i>v</i><sub>1</sub> = &radic;(&mu;/<i>r</i><sub>1</sub>)</span>, and since <span class="m"><i>v</i><sub>p</sub> &gt; <i>v</i><sub>1</sub></span> you must add speed to get onto the ellipse:</p>
+    <div class="eq"><span class="m">&Delta;<i>v</i><sub>1</sub> = <i>v</i><sub>p</sub> &minus; <i>v</i><sub>1</sub></span><span class="lbl">prograde boost at perigee, to climb onto the transfer ellipse</span></div>
+    <p>At <b>apogee</b> (<span class="m"><i>r</i> = <i>r</i><sub>2</sub></span>) the ellipse has slowed you to <span class="m"><i>v</i><sub>a</sub> = &radic;(&mu;(2/<i>r</i><sub>2</sub> &minus; 1/<i>a</i>))</span>, but a circle there needs <span class="m"><i>v</i><sub>2</sub> = &radic;(&mu;/<i>r</i><sub>2</sub>)</span>, and now <span class="m"><i>v</i><sub>a</sub> &lt; <i>v</i><sub>2</sub></span>, so you add speed <em>again</em> to circularize:</p>
+    <div class="eq"><span class="m">&Delta;<i>v</i><sub>2</sub> = <i>v</i><sub>2</sub> &minus; <i>v</i><sub>a</sub></span><span class="lbl">prograde boost at apogee, to turn the ellipse into the higher circle</span></div>
+    <div class="eq"><span class="m">&Delta;<i>v</i> = &Delta;<i>v</i><sub>1</sub> + &Delta;<i>v</i><sub>2</sub></span><span class="lbl">the whole price of the transfer, in velocity</span></div>
+    <p>And the trip itself takes exactly <em>half</em> the ellipse&rsquo;s orbital period &mdash; you ride the ellipse from perigee to apogee and no further:</p>
+    <div class="eq"><span class="m"><i>t</i> = &pi;&middot;&radic;( <i>a</i><sup>3</sup>/&mu; )</span><span class="lbl">half the period of the transfer ellipse</span></div>
+    <p>This two-tangent-burn ellipse is the <b>Hohmann transfer</b>, and it is the <b>minimum-<span class="m">&Delta;<i>v</i></span></b> way to move between two coplanar circular orbits &mdash; for radius ratios up to about 11.9, past which something cleverer wins (&sect;4). It is worth setting the whole payoff apart, because everything downstream is a consequence of it.</p>
+    <div class="key">
+      <span class="kl">The whole transfer, in one ellipse and two burns</span>
+      <div class="eq"><span class="m"><i>a</i> = (<i>r</i><sub>1</sub> + <i>r</i><sub>2</sub>)/2</span></div>
+      <div class="eq"><span class="m"><i>v</i> = &radic;( &mu;&middot;(2/<i>r</i> &minus; 1/<i>a</i>) )</span></div>
+      <p>Join the two circles with an ellipse tangent to both (semi-major axis the average of the radii). Burn prograde at perigee to get on it (<span class="m">&Delta;<i>v</i><sub>1</sub> = <i>v</i><sub>p</sub> &minus; <i>v</i><sub>1</sub></span>), coast free to apogee, burn prograde again to circularize (<span class="m">&Delta;<i>v</i><sub>2</sub> = <i>v</i><sub>2</sub> &minus; <i>v</i><sub>a</sub></span>). Every speed comes from the one equation, vis-viva; the trip takes <span class="m"><i>t</i> = &pi;&radic;(<i>a</i><sup>3</sup>/&mu;)</span>. It is the cheapest two-impulse transfer between circular orbits.</p>
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">Two prograde burns, one coasting ellipse</div>
+      <canvas class="sim" data-sim="transfer" data-c="#3E5AA0" aria-label="a Hohmann transfer: inner and outer circular orbits joined by an ellipse tangent to both, with a prograde burn at perigee and apogee"></canvas>
+      <div class="ctrls" data-sim="transfer"></div>
+    </div>
+    <p class="simnote">Drag the two orbit radii and watch the transfer ellipse re-form between them, its perigee glued to the inner circle and its apogee to the outer. The two <span class="m">&Delta;<i>v</i></span> readouts update live &mdash; a prograde kick at the bottom to climb onto the ellipse, a second prograde kick at the top to circularize &mdash; along with the transfer time <span class="m"><i>t</i> = &pi;&radic;(<i>a</i><sup>3</sup>/&mu;)</span> stretching out as the ellipse grows. Keep an eye on the speeds: the <em>higher</em> circle always reads the <em>lower</em> circular speed, even though you added velocity at both burns to get there. That contradiction-in-plain-sight is the whole paradox of &sect;4, and the next sim pins it to a curve.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read the transfer at its ends</h2>
+    <p>The transfer earns its keep at the extremes, and reading it there is the fastest way to see both where the cheapness comes from and where the famous paradox hides.</p>
+    <div class="limit">
+      <b>Limit check — read the transfer at its ends</b>
+      <b>No change</b> (<span class="m"><i>r</i><sub>2</sub> = <i>r</i><sub>1</sub></span>): the ellipse collapses onto the circle, <span class="m"><i>a</i> = <i>r</i><sub>1</sub></span> and <span class="m"><i>v</i><sub>p</sub> = <i>v</i><sub>a</sub> = <i>v</i><sub>1</sub> = <i>v</i><sub>2</sub></span>, so <span class="m">&Delta;<i>v</i> = 0</span> &mdash; nothing to do, exactly as it must be. <b>Going down</b> (<span class="m"><i>r</i><sub>2</sub> &lt; <i>r</i><sub>1</sub></span>): the identical geometry runs in reverse and both burns become <em>retrograde</em> &mdash; you <em>slow down</em> to drop into a lower, faster orbit. De-orbiting is a Hohmann run backwards. <b>The paradox, sharpened</b>: you add speed at <em>both</em> burns (both <span class="m">&Delta;<i>v</i></span>&rsquo;s are prograde), yet the destination circular speed is <em>lower</em> than where you began (<span class="m"><i>v</i><sub>2</sub> &lt; <i>v</i><sub>1</sub></span>). You spend velocity to end up slower &mdash; because the burns pour energy into <em>altitude</em>, and the price of altitude is being slow. Energy up, speed down. <b>Huge ratios</b> (<span class="m"><i>r</i><sub>2</sub>/<i>r</i><sub>1</sub></span> beyond &approx; 11.94): the Hohmann stops being optimal &mdash; a <b>bi-elliptic</b> transfer (fling apogee far past <span class="m"><i>r</i><sub>2</sub></span>, nudge at that distant point, then drop back in) can cost <em>less</em> total <span class="m">&Delta;<i>v</i></span>, trading a much longer trip for cheaper burns. For most real transfers the ratio is small and Hohmann wins. <b>Transfer time scales as</b> <span class="m"><i>a</i><sup>3/2</sup></span>: a LEO&rarr;GEO hop is about 5 hours; an Earth&rarr;Mars Hohmann is about 8&ndash;9 months. The coast is free in fuel but expensive in time.
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">Higher orbit = slower — yet both burns add speed</div>
+      <canvas class="sim" data-sim="orbitspeed" data-c="#3E5AA0" aria-label="orbital speed falling as 1 over root r, with the two circular orbits and the transfer ellipse apsis speeds marked and the two prograde burns shown as upward jumps"></canvas>
+      <div class="ctrls" data-sim="orbitspeed"></div>
+    </div>
+    <p class="simnote">Here is the paradox made visible. The curve is circular speed <span class="m"><i>v</i><sub>circ</sub> = &radic;(&mu;/<i>r</i>)</span> falling off as <span class="m">1/&radic;<i>r</i></span>: slide out to a bigger radius and the circle you would sit on is unarguably <em>slower</em>. Now watch the two burns drawn as <em>upward</em> jumps &mdash; at perigee you leap up from <span class="m"><i>v</i><sub>1</sub></span> to the ellipse speed <span class="m"><i>v</i><sub>p</sub></span>, and at apogee you leap up again from <span class="m"><i>v</i><sub>a</sub></span> to <span class="m"><i>v</i><sub>2</sub></span>. Both arrows point up; you added speed twice. Yet the point you land on, <span class="m"><i>v</i><sub>2</sub></span>, sits <em>below</em> where you started, <span class="m"><i>v</i><sub>1</sub></span>, because it lives far out on the falling curve. Energy up, speed down &mdash; the whole thing in one picture.</p>
+
+    <p>Three consequences the clean ellipse forces on any real mission, none of which appear in the two-burn arithmetic. First, <b>phasing and the launch window</b>: the transfer only works if the target is at the right place when you <em>arrive</em> at apogee, so you must depart at the one phase angle that puts the destination there half an orbit later. That single geometric fact is why interplanetary launches have windows that open roughly every 26 months for Mars, and why a GEO insertion is timed rather than fired on a whim &mdash; the ellipse is cheap, but you may wait a long time to start it. Second, <b>plane changes are brutally expensive</b>, and you do them where you are <em>slowest</em>: tilting the orbit costs <span class="m">&Delta;<i>v</i></span> roughly proportional to your current speed, so you fold it into the apogee burn (the slow, high end), never the fast perigee end. A pure plane change is one of the most expensive maneuvers in all of spaceflight.</p>
+    <p>Third, <b>real burns are not impulses</b>. The vis-viva math assumes instantaneous velocity changes, but an engine pushes for minutes, so you pay small <b>gravity and steering losses</b> on top of the ideal numbers &mdash; and <b>low-thrust electric propulsion cannot do a Hohmann at all</b>. With only milli-newtons of thrust it spirals outward continuously over months instead of kicking twice: a genuinely different trajectory, and for high specific impulse often far cheaper in propellant. The two-impulse ellipse is the idealization every real transfer is measured against, not the one every vehicle actually flies.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: planning a maneuver, and how it goes wrong</h2>
+    <p>The Hohmann transfer is the <em>first</em> thing you compute when planning almost any orbit change &mdash; satellite deployment and station-keeping, GEO insertion, raising or lowering a constellation, rendezvous and docking approach, and the first cut of any lunar or interplanetary trajectory. The sequence is fixed, not a flash of insight: establish <span class="m"><i>r</i><sub>1</sub></span> and <span class="m"><i>r</i><sub>2</sub></span>; compute <span class="m"><i>a</i></span>, the apsis speeds, and the two <span class="m">&Delta;<i>v</i></span>&rsquo;s; add that into your <b><span class="m">&Delta;<i>v</i></span> budget</b> (which feeds straight into the rocket equation and the propellant mass, Deep Dive&nbsp;#04); compute the <b>transfer time</b> and the required <b>phase angle / launch window</b>; and add margins for plane change, finite-burn losses, and navigation. When it goes wrong, the failure modes are specific and each is really one of the core facts talking back:</p>
+    <dl class="speclist">
+      <dt>Arrive at the right altitude, but the target isn&rsquo;t there</dt><dd>A <b>phasing</b> error &mdash; the departure phase angle was wrong, or the window was missed. The ellipse is correct; the <em>timing</em> is not. You either wait for the geometry to come round again or pay for a costly phasing maneuver.</dd>
+      <dt><span class="m">&Delta;<i>v</i></span> budget blows up on an inclined target</dt><dd>An unbudgeted <b>plane change</b>. The fix is placement, not brute force: combine it with the apogee burn, where you are slowest and a degree of tilt is cheapest, rather than doing it as a separate maneuver down low.</dd>
+      <dt>The transfer &ldquo;costs more than Hohmann&rdquo;</dt><dd>Either your burns were not purely <b>tangential / prograde</b> (any off-axis component is wasted <span class="m">&Delta;<i>v</i></span>), or the radius ratio is huge and a <b>bi-elliptic</b> would have been cheaper. Check both before you accept the number.</dd>
+      <dt>Didn&rsquo;t circularize</dt><dd>You nailed the apogee altitude but skipped or under-sized <span class="m">&Delta;<i>v</i><sub>2</sub></span>, so you are still on the ellipse and fall right back down to perigee. Both burns are mandatory &mdash; reaching the altitude is only half the job.</dd>
+      <dt>Low-thrust stage can&rsquo;t execute it</dt><dd>An electric / ion stage cannot deliver an impulsive apogee kick; it must be planned as a slow <b>spiral</b>, a different trajectory entirely. Hohmann-planning a low-thrust vehicle is a category error, not a tuning problem.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How the transfer shapes the mission</h2>
+    <p>The Hohmann numbers ripple outward through the whole spacecraft and mission design; they are never just a line in a maneuver table. The <b><span class="m">&Delta;<i>v</i></span> budget</b> the transfer produces sets, through the rocket equation, the <b>propellant fraction</b> and therefore much of the vehicle&rsquo;s mass and cost &mdash; a bigger orbit raise is exponentially more propellant, so &ldquo;how high&rdquo; is really &ldquo;how much fuel.&rdquo; The <b>transfer time</b> (scaling as <span class="m"><i>a</i><sup>3/2</sup></span>) sets mission duration, crew consumables, and radiation exposure, and it forces the <b>launch-window cadence</b> that dominates interplanetary scheduling. The decision of <em>where</em> to spend plane-change <span class="m">&Delta;<i>v</i></span> &mdash; at the slow apogee &mdash; shapes the entire burn plan. And the choice of <b>propulsion type</b> forks the whole architecture: high-thrust chemical does crisp Hohmann impulses (fast, higher <span class="m">&Delta;<i>v</i></span>), while high-<span class="m"><i>I</i><sub>sp</sub></span> electric does long spirals (slow, less propellant) &mdash; a trade between time and mass decided largely by this one maneuver. In short, &ldquo;how do we get to that orbit&rdquo; is answered first by a Hohmann calculation, and everything downstream sizes to its output.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>It governs satellite orbit-raising and GEO insertion, constellation deployment and disposal, rendezvous and docking approach ellipses, lunar and interplanetary first-cut trajectories, and de-orbit planning. When you plan one, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt><span class="m">&Delta;<i>v</i><sub>1</sub></span>, <span class="m">&Delta;<i>v</i><sub>2</sub></span> and total <span class="m">&Delta;<i>v</i></span></dt><dd>The maneuver&rsquo;s price, and the single most important output &mdash; fed straight into the rocket equation to size propellant. Everything else is secondary to this number.</dd>
+      <dt>Transfer time <span class="m"><i>t</i> = &pi;&radic;(<i>a</i><sup>3</sup>/&mu;)</span></dt><dd>Mission duration and the coast you must survive &mdash; power, thermal, consumables, radiation. Free in fuel, paid in time.</dd>
+      <dt>Phase angle / launch window</dt><dd>When you must depart so the target is <em>there</em> on arrival. Sets scheduling and cadence, and can dominate an entire program&rsquo;s calendar.</dd>
+      <dt>Plane-change <span class="m">&Delta;<i>v</i></span> (if any)</dt><dd>Do it at apogee, where you are slowest; budget it together with the circularization burn rather than as a separate line.</dd>
+      <dt>Propulsion: thrust &amp; <span class="m"><i>I</i><sub>sp</sub></span></dt><dd>Chemical (impulsive Hohmann) vs electric (spiral). This decides whether a Hohmann is even the right trajectory, not just how you fly it.</dd>
+      <dt>Margins</dt><dd>Gravity and steering losses for finite burns, plus navigation and dispersion allowances. The ideal <span class="m">&Delta;<i>v</i></span> is a floor, not the number you load into the tanks.</dd>
+      <dt>Bi-elliptic check</dt><dd>For ratios &gtrsim;&nbsp;12, compare against a bi-elliptic transfer before committing &mdash; it can be cheaper in <span class="m">&Delta;<i>v</i></span> at the cost of a much longer flight.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the textbook won&rsquo;t tell you</span>
+      <ul>
+        <li><b>Burn prograde to go up &mdash; and accept that you&rsquo;ll be slower on top.</b> The paradox trips people forever: between circular orbits, energy and speed move in <em>opposite</em> directions. Internalize &ldquo;higher&nbsp;=&nbsp;slower&rdquo; and the two prograde burns stop feeling wrong.</li>
+        <li><b>Both burns must be tangential (prograde / retrograde).</b> Any radial or out-of-plane component is <span class="m">&Delta;<i>v</i></span> you paid for that did not help the transfer. The efficiency of the Hohmann <em>is</em> that both burns are purely along-track.</li>
+        <li><b>Do plane changes where you&rsquo;re slow.</b> Inclination change costs roughly <span class="m"><i>v</i>&middot;&Delta;&theta;</span>, so a degree costs far less at a 1.6&nbsp;km/s apogee than at a 7.7&nbsp;km/s perigee. Fold the plane change into <span class="m">&Delta;<i>v</i><sub>2</sub></span>.</li>
+        <li><b>The free coast isn&rsquo;t free in time.</b> Months-long interplanetary coasts drive consumables, power, radiation, and reliability. Fuel-optimal is rarely time-optimal &mdash; the cheapest ellipse can be the slowest ride.</li>
+        <li><b>Windows, not whims.</b> You launch when the geometry lines up; miss it and you wait a full synodic period. This one fact shapes entire program schedules, Mars missions most famously.</li>
+        <li><b>Electric propulsion changes the game, not just the numbers.</b> With milli-newton thrust you cannot do an impulsive Hohmann; you spiral. It is slower but, thanks to high <span class="m"><i>I</i><sub>sp</sub></span>, often far cheaper in propellant &mdash; a different trajectory, not a tweaked one.</li>
+        <li><b>Vis-viva is the one equation to carry.</b> <span class="m"><i>v</i> = &radic;(&mu;(2/<i>r</i> &minus; 1/<i>a</i>))</span> gives every speed on every conic. Memorize it and you can sanity-check any transfer on a napkin.</li>
+        <li><b>The ideal <span class="m">&Delta;<i>v</i></span> is a floor.</b> Real missions add 5&ndash;15&nbsp;% for losses, dispersions, and station-keeping. Quoting the textbook Hohmann number as the budget is how you run out of fuel short of the orbit.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">LEO → GEO, end to end</span></div>
+
+    <h2><span class="sn">9</span>Build it: LEO &rarr; GEO, end to end</h2>
+    <p>Enough principle &mdash; here is a real raise walked end to end, so you can copy the shape and reuse it. The goal: lift a satellite from a 400&nbsp;km circular LEO to the geostationary circle, and come away knowing the <span class="m">&Delta;<i>v</i></span>, the time, and the window. Use <span class="m">&mu;<sub>Earth</sub> = 398,600 km&sup3;/s&sup2;</span>. Every line below is one number read straight off the equations you already own.</p>
+    <div class="worked">
+      <span class="wl">Worked example — raising a satellite from 400&nbsp;km LEO to GEO</span>
+      <dl class="speclist">
+        <dt>The two radii</dt><dd>LEO: <span class="m"><i>r</i><sub>1</sub> = 6378 + 400 = <b>6778&nbsp;km</b></span>. GEO: <span class="m"><i>r</i><sub>2</sub> = <b>42,164&nbsp;km</b></span> (where the period is one sidereal day). Ratio <span class="m">&approx; 6.2</span> &mdash; well under 11.9, so Hohmann is optimal.</dd>
+        <dt>The ellipse</dt><dd><span class="m"><i>a</i> = (<i>r</i><sub>1</sub> + <i>r</i><sub>2</sub>)/2 = (6778 + 42,164)/2 = <b>24,471&nbsp;km</b></span>.</dd>
+        <dt>Circular speeds</dt><dd><span class="m"><i>v</i><sub>1</sub> = &radic;(&mu;/<i>r</i><sub>1</sub>) = &radic;(398600/6778) &approx; <b>7.67&nbsp;km/s</b></span>; <span class="m"><i>v</i><sub>2</sub> = &radic;(&mu;/<i>r</i><sub>2</sub>) = &radic;(398600/42164) &approx; <b>3.07&nbsp;km/s</b></span> &mdash; GEO is much slower, the paradox already visible in the raw numbers.</dd>
+        <dt>Ellipse apsis speeds (vis-viva)</dt><dd><span class="m"><i>v</i><sub>p</sub> = &radic;(&mu;(2/<i>r</i><sub>1</sub> &minus; 1/<i>a</i>)) &approx; <b>10.07&nbsp;km/s</b></span>; <span class="m"><i>v</i><sub>a</sub> = &radic;(&mu;(2/<i>r</i><sub>2</sub> &minus; 1/<i>a</i>)) &approx; <b>1.62&nbsp;km/s</b></span>.</dd>
+        <dt>The two burns</dt><dd><span class="m">&Delta;<i>v</i><sub>1</sub> = <i>v</i><sub>p</sub> &minus; <i>v</i><sub>1</sub> &approx; 10.07 &minus; 7.67 = <b>2.40&nbsp;km/s</b></span> (prograde at LEO); <span class="m">&Delta;<i>v</i><sub>2</sub> = <i>v</i><sub>2</sub> &minus; <i>v</i><sub>a</sub> &approx; 3.07 &minus; 1.62 = <b>1.45&nbsp;km/s</b></span> (prograde at GEO). <b>Total <span class="m">&approx; 3.85&nbsp;km/s</b></span>.</dd>
+        <dt>Transfer time</dt><dd><span class="m"><i>t</i> = &pi;&radic;(<i>a</i><sup>3</sup>/&mu;) = &pi;&radic;(24,471<sup>3</sup>/398,600) &approx; <b>5.3 hours</b></span> &mdash; one half-ellipse.</dd>
+        <dt>Reality adders</dt><dd>A real GTO&rarr;GEO insertion from a non-equatorial launch also pays a <b>plane change</b> (fold it into <span class="m">&Delta;<i>v</i><sub>2</sub></span>), plus finite-burn and dispersion margins &mdash; the loaded budget sits a few hundred m/s above the ideal 3.85&nbsp;km/s. That total, via the rocket equation (Deep Dive&nbsp;#04), sizes the apogee-kick propellant.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: two altitudes and a gravitational parameter hand you the ellipse, the four speeds, the two burns, the trip time, and &mdash; loudly &mdash; the fact that the ideal 3.85&nbsp;km/s is a floor, not the number you fuel to. The plug-in set is small, and the entire transfer lives in a handful of lines you already have:</p>
+    <div class="eq"><span class="m"><i>v</i><sub>circ</sub> = &radic;(&mu;/<i>r</i>)</span><span class="lbl">circular speed at radius <i>r</i></span></div>
+    <div class="eq"><span class="m"><i>a</i> = (<i>r</i><sub>1</sub> + <i>r</i><sub>2</sub>)/2</span><span class="lbl">semi-major axis of the transfer ellipse</span></div>
+    <div class="eq"><span class="m"><i>v</i> = &radic;( &mu;(2/<i>r</i> &minus; 1/<i>a</i>) )</span><span class="lbl">vis-viva &mdash; speed anywhere on the orbit</span></div>
+    <div class="eq"><span class="m">&Delta;<i>v</i><sub>1</sub> = &radic;(&mu;(2/<i>r</i><sub>1</sub> &minus; 1/<i>a</i>)) &minus; &radic;(&mu;/<i>r</i><sub>1</sub>)</span><span class="lbl">burn 1, at the inner radius</span></div>
+    <div class="eq"><span class="m">&Delta;<i>v</i><sub>2</sub> = &radic;(&mu;/<i>r</i><sub>2</sub>) &minus; &radic;(&mu;(2/<i>r</i><sub>2</sub> &minus; 1/<i>a</i>))</span><span class="lbl">burn 2, at the outer radius</span></div>
+    <div class="eq"><span class="m"><i>t</i> = &pi;&radic;(<i>a</i><sup>3</sup>/&mu;)</span><span class="lbl">transfer time (half the ellipse period)</span></div>
+    <div class="eq"><span class="m"><i>r</i><sub>2</sub>/<i>r</i><sub>1</sub> &gtrsim; 11.94</span><span class="lbl">beyond this ratio a bi-elliptic transfer can cost less total &Delta;<i>v</i></span></div>
+
+    <p><b>Plan it in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually to the moment the target isn&rsquo;t where you arrive, or the tank runs dry short of the circle:</p>
+    <ol class="recipe">
+      <li><b>Write down <span class="m"><i>r</i><sub>1</sub></span>, <span class="m"><i>r</i><sub>2</sub></span> and <span class="m">&mu;</span>.</b> Convert altitudes to radii (add the central body&rsquo;s radius), form the ratio, and note if it exceeds ~12 (then also price a bi-elliptic).</li>
+      <li><b>Compute <span class="m"><i>a</i></span>, then the four speeds</b> (<span class="m"><i>v</i><sub>1</sub></span>, <span class="m"><i>v</i><sub>2</sub></span>, <span class="m"><i>v</i><sub>p</sub></span>, <span class="m"><i>v</i><sub>a</sub></span>) from vis-viva. Sanity-check: <span class="m"><i>v</i><sub>p</sub> &gt; <i>v</i><sub>1</sub></span>, <span class="m"><i>v</i><sub>a</sub> &lt; <i>v</i><sub>2</sub></span>, and the higher orbit is slower.</li>
+      <li><b>Get the two <span class="m">&Delta;<i>v</i></span>&rsquo;s and the total</b>, and feed the total into the rocket equation (Deep Dive&nbsp;#04) to size propellant.</li>
+      <li><b>Compute the transfer time</b> <span class="m"><i>t</i> = &pi;&radic;(<i>a</i><sup>3</sup>/&mu;)</span> and the <b>phase angle</b> for departure; from that, the launch window and its cadence.</li>
+      <li><b>Add a plane change at apogee if the target is inclined</b>, and add loss and dispersion margins (5&ndash;15&nbsp;%).</li>
+      <li><b>Check the propulsion type</b>: chemical &rarr; execute as two impulsive burns; electric / low-thrust &rarr; replan as a spiral, not a Hohmann.</li>
+    </ol>
+
+    <p><b>The forks that actually change the plan.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Hohmann vs bi-elliptic</dt><dd>Hohmann for ratios up to ~12 (fewer burns, faster, usually cheaper); bi-elliptic for very large raises, where the far-apogee trick saves <span class="m">&Delta;<i>v</i></span> at the cost of a much longer trip.</dd>
+      <dt>Chemical (impulsive) vs electric (spiral)</dt><dd>Chemical for speed and crewed / time-critical transfers (higher <span class="m">&Delta;<i>v</i></span>, more propellant); electric for cargo and fuel-limited missions (slow spiral, high <span class="m"><i>I</i><sub>sp</sub></span>, far less propellant) &mdash; but it is a different trajectory, not a Hohmann.</dd>
+      <dt>When to spend the plane change</dt><dd>Combine it with the apogee burn (slow &rarr; cheap) rather than a separate maneuver; split-S or super-synchronous tricks can cut it further for GTO&rarr;GEO.</dd>
+      <dt>Direct insertion vs parking orbit + transfer</dt><dd>Launch straight onto the transfer ellipse when the window allows, or park in LEO and phase &mdash; trading flexibility against a little extra <span class="m">&Delta;<i>v</i></span>.</dd>
+    </dl>
+
+    <h2><span class="sn">10</span>The honest last mile</h2>
+    <p>A deep dive gets you the exact ideal <span class="m">&Delta;<i>v</i></span>, the transfer time, and the window geometry &mdash; a correct first-cut trajectory and budget, about 90&nbsp;% of the planning. The last 10&nbsp;% is where real missions live.</p>
+    <div class="lastmile">
+      <b>The last mile — what you still do with real tools</b>
+      This page gets you the mechanism cold, the exact two-impulse <span class="m">&Delta;<i>v</i></span>, the transfer time and the phase geometry &mdash; a defensible first cut. The last 10&nbsp;% is flying that ellipse through a real solar system with a real engine on a real clock. <b>Model finite burns and losses</b> &mdash; impulsive vis-viva is a floor; real engines burn for minutes and pay gravity and steering losses, so run the burn in a propagator and carry the margin. <b>Nail the phasing and windows</b> &mdash; the ellipse is easy; <em>arriving when the target is there</em>, with navigation dispersions, is the hard part, and it wants a real ephemeris, not a circle on paper. <b>Budget plane change, station-keeping, and disposal</b> &mdash; the raise is rarely the whole <span class="m">&Delta;<i>v</i></span> story; inclination, drag make-up, and end-of-life disposal all draw on the same tank. And <b>decide the trajectory class early</b> &mdash; chemical-impulsive versus electric-spiral changes everything downstream, so do not Hohmann-plan a low-thrust vehicle. Tools to stand on: a two-body / vis-viva calculator for the first cut, then a real propagator and mission-design tool &mdash; <b>GMAT</b> (free, NASA), <b>STK</b>, or <b>poliastro / pykep</b> in Python &mdash; with actual ephemerides for phasing, finite burns, and n-body effects. The vis-viva ellipse in Part&nbsp;I never changes; the last mile is everything real that rides on top of it.
+    </div>
+    <p>Reason these out from vis-viva and the circular-speed relation, rather than recalling them &mdash; if the paradox still feels like a trick, these are where it stops being one:</p>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">To raise your orbit you fire the engine and speed up &mdash; yet once you&rsquo;ve finished the transfer and circularized, your spacecraft is moving <em>slower</em> than before you started. Explain, using energy and the circular-speed relation, why adding velocity leaves you slower.</p><p class="a">Both burns add orbital <em>energy</em>, which is what raises the orbit; but circular speed <span class="m"><i>v</i> = &radic;(&mu;/<i>r</i>)</span> <em>falls</em> as <span class="m"><i>r</i></span> grows, so the higher destination circle is intrinsically slower. The prograde burns pour velocity into <em>altitude</em> (potential energy), and the price of a higher orbit is a lower speed. Energy and speed move in opposite directions between circular orbits &mdash; you spent <span class="m">&Delta;<i>v</i></span> to buy altitude, and altitude is paid for in slowness.</p></div>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">A colleague plans a transfer with a single big prograde burn at LEO that raises apogee to GEO, and says the satellite will then &ldquo;be at GEO.&rdquo; Why will it not stay there, and what exactly is missing?</p><p class="a">After the first burn the craft is on the transfer <em>ellipse</em> &mdash; it reaches GEO altitude only at apogee, and there it is moving at just <span class="m">&approx; 1.62&nbsp;km/s</span>, far below the <span class="m">&approx; 3.07&nbsp;km/s</span> needed to hold a circle at that radius. So it does not stay; it falls right back down to the LEO perigee. The missing piece is the second prograde burn, <span class="m">&Delta;<i>v</i><sub>2</sub> &approx; 1.45&nbsp;km/s</span> at apogee, to circularize. Reaching the altitude is only half the job &mdash; both burns are mandatory.</p></div>
+    <div class="sc"><span class="scl">Check your understanding</span><p class="q">You need to both raise a satellite to GEO and change its orbital plane by a few degrees. Why is it far cheaper to do the plane change at the GEO end of the transfer than at the LEO end?</p><p class="a">A plane change costs <span class="m">&Delta;<i>v</i> &approx; <i>v</i>&middot;&Delta;&theta;</span> for small angles &mdash; proportional to how fast you are going when you do it. At LEO you are moving at <span class="m">&approx; 7.7&nbsp;km/s</span>; at the GEO end you are moving at only <span class="m">&approx; 1.6&ndash;3&nbsp;km/s</span>, roughly two to five times slower, so the same angle costs several times less <span class="m">&Delta;<i>v</i></span> there. That is why you fold the plane change into the slow apogee (circularization) burn rather than paying for it down at fast perigee.</p></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-bolted.html"><b>&larr; Prev:</b> Bolted-Joint Preload</a>
+      <span class="nextpill"><b>Coming next:</b> Transmission-Line Reflections</span>
+    </div>
+    <p class="footnote"><b>The Hohmann Transfer — Why You Speed Up to Reach a Slower, Higher Orbit.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (you cannot fly &ldquo;up&rdquo; in orbit, and every scrap of <span class="m">&Delta;<i>v</i></span> is exponentially expensive) and the one reframe (change the orbit&rsquo;s energy twice, don&rsquo;t aim at the destination) from which the transfer ellipse <span class="m"><i>a</i> = (<i>r</i><sub>1</sub> + <i>r</i><sub>2</sub>)/2</span>, the two prograde burns <span class="m">&Delta;<i>v</i><sub>1</sub> = <i>v</i><sub>p</sub> &minus; <i>v</i><sub>1</sub></span> and <span class="m">&Delta;<i>v</i><sub>2</sub> = <i>v</i><sub>2</sub> &minus; <i>v</i><sub>a</sub></span>, every speed from vis-viva <span class="m"><i>v</i> = &radic;(&mu;(2/<i>r</i> &minus; 1/<i>a</i>))</span>, the transfer time <span class="m"><i>t</i> = &pi;&radic;(<i>a</i><sup>3</sup>/&mu;)</span>, and the paradox that both burns add speed yet the destination is slower all fall out &mdash; then the practitioner&rsquo;s half: how you plan a maneuver and build its <span class="m">&Delta;<i>v</i></span> budget, how it goes wrong (phasing, plane changes, finite burns, failing to circularize), what to spec, and a full LEO&rarr;GEO raise worked to 3.85&nbsp;km/s and 5.3 hours. With live simulations of the transfer ellipse re-forming between two draggable orbits and of orbital speed falling as <span class="m">1/&radic;<i>r</i></span> while both burns point up. The honest truth of it: this gets you the exact ideal <span class="m">&Delta;<i>v</i></span>, the transfer time, and the window geometry &mdash; finite-burn losses, phasing with real ephemerides, and plane-change / station-keeping budgets are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The Rocket Equation</b> and <b>Control Systems</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+
+  /* transfer — the Hohmann geometry and its two burns (the showpiece). Top-down view, Earth at the
+     focus (filled muted circle). Two circular orbits centred on Earth: inner radius R1 (PAL.cool),
+     outer radius R2 (PAL.sky). The transfer ellipse (s.accent) is tangent to the inner circle at
+     perigee (distance R1, left of Earth) and the outer circle at apogee (distance R2, right of Earth):
+     a=(R1+R2)/2, ellipse centre offset from the focus by c=(R2-R1)/2, semi-minor b=√(R1·R2). A craft
+     dot loops off s.t — burn prograde at perigee (Δv₁), coast the half-ellipse up to apogee, burn
+     again (Δv₂), then ride the outer circle. Readouts: v₁,v₂ (circular), v_p,v_a (apsis), Δv₁,Δv₂,
+     total Δv (km/s), transfer time (h). Scale fits the current outer radius: as r2 grows the inner
+     circle shrinks and v₂ drops (higher = slower). μ=398600 km³/s². Controls read ONLY via s.p.*. */
+  SIMS.transfer={
+    controls:[
+      {k:'r1',label:'Inner orbit radius',min:6600,max:20000,step:200,val:6778,unit:' km'},
+      {k:'r2',label:'Outer orbit radius',min:8000,max:60000,step:500,val:42164,unit:' km'}
+    ],
+    init:function(s,w,h){ s.phase=0; },
+    step:function(s,dt){ /* animation is driven purely off s.t */ },
+    draw:function(ctx,w,h,s){
+      var MU=398600;
+      var R1=clamp(s.p.r1,6600,20000);
+      var R2=Math.max(clamp(s.p.r2,8000,60000),R1+500);
+      var a=(R1+R2)/2;
+      var v1=Math.sqrt(MU/R1), v2=Math.sqrt(MU/R2);
+      var vp=Math.sqrt(MU*(2/R1-1/a)), va=Math.sqrt(MU*(2/R2-1/a));
+      var dv1=vp-v1, dv2=v2-va, dvtot=dv1+dv2;
+      var ttrans=Math.PI*Math.sqrt(a*a*a/MU);           // seconds
+
+      // ---- layout ----
+      var panelX=clamp(w-152,w*0.55,w-96), panelW=Math.max(60,w-panelX-8);
+      var gx0=14, gx1=clamp(panelX-12,gx0+40,w-10);
+      var geoTop=26, geoBot=h-20;
+      var geoW=Math.max(40,gx1-gx0), geoH=Math.max(40,geoBot-geoTop);
+      var plotR=clamp(Math.min(geoW/2,geoH/2)-2,20,400);
+      var cx=clamp((gx0+gx1)/2,gx0+plotR,gx1-plotR);
+      var cy=clamp((geoTop+geoBot)/2,geoTop+plotR,geoBot-plotR);
+      var scale=plotR/R2;                                // px per km (fits current outer radius)
+
+      // geometry in px
+      var innerPx=clamp(R1*scale,2,plotR), outerPx=plotR;
+      var c=(R2-R1)/2, b=Math.sqrt(R1*R2);
+      var aPx=clamp(a*scale,2,plotR), bPx=clamp(b*scale,2,plotR), cPx=c*scale;
+      var ecx=clamp(cx+cPx,gx0,gx1);                     // ellipse centre (offset toward apogee)
+      var perX=clamp(cx-innerPx,0,w), apoX=clamp(cx+outerPx,0,w);
+
+      // title + top readout
+      txt(ctx,'Hohmann transfer — two burns, one coast',8,13,PAL.muted,10,'left');
+      txt(ctx,'R₁ '+Math.round(R1)+' · R₂ '+Math.round(R2)+' km',w-8,13,PAL.ink,8.5,'right');
+
+      // apse line (faint)
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.35; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(perX,cy); ctx.lineTo(apoX,cy); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+
+      // outer + inner circular orbits (centred on Earth)
+      ctx.strokeStyle=PAL.sky; ctx.lineWidth=2; ctx.globalAlpha=0.9;
+      ctx.beginPath(); ctx.arc(cx,cy,outerPx,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle=PAL.cool; ctx.beginPath(); ctx.arc(cx,cy,innerPx,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=1;
+
+      // transfer ellipse (accent)
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.ellipse(ecx,cy,aPx,bPx,0,0,Math.PI*2); ctx.stroke();
+
+      // Earth at the focus
+      var er=clamp(plotR*0.11,4,13);
+      dot(ctx,cx,cy,er,PAL.muted);
+      txt(ctx,'Earth',cx,clamp(cy+er+11,10,h-2),PAL.faint,8,'center');
+
+      // orbit labels
+      txt(ctx,'inner',clamp(cx-innerPx*0.0,0,w),clamp(cy-innerPx-4,12,h-2),PAL.cool,7.5,'center');
+      txt(ctx,'outer',cx,clamp(cy-outerPx-4,12,h-2),PAL.sky,7.5,'center');
+
+      // ---- craft animation off s.t ----
+      var Tc=7.0, cyc=(s.t||0)/Tc, frac=cyc-Math.floor(cyc);
+      var p1=0.08, p2=0.52, p3=0.60;                     // burn / coast / burn / ride
+      var cxp=perX, cyp=cy, burnP=false, burnA=false;
+      if(frac<p1){ burnP=true; cxp=perX; cyp=cy; }
+      else if(frac<p2){ var e=(frac-p1)/(p2-p1); var E=Math.PI+e*Math.PI;  // perigee→apogee (upper half)
+        cxp=clamp(ecx+aPx*Math.cos(E),0,w); cyp=clamp(cy+bPx*Math.sin(E),0,h); }
+      else if(frac<p3){ burnA=true; cxp=apoX; cyp=cy; }
+      else { var e2=(frac-p3)/(1-p3); var ang=e2*Math.PI*2;                // ride the outer circle
+        cxp=clamp(cx+outerPx*Math.cos(ang),0,w); cyp=clamp(cy+outerPx*Math.sin(ang),0,h); }
+
+      // burn markers: prograde Δv arrows (gold), always shown
+      var alen=clamp(plotR*0.20,12,26);
+      arrow(ctx,perX,cy,perX,clamp(cy-alen,0,h),PAL.gold,2);     // Δv₁ prograde (up) at perigee
+      txt(ctx,'Δv₁',clamp(perX,8,w-8),clamp(cy-alen-5,10,h-2),PAL.gold,9,'center');
+      arrow(ctx,apoX,cy,apoX,clamp(cy+alen,0,h),PAL.gold,2);     // Δv₂ prograde (down) at apogee
+      txt(ctx,'Δv₂',clamp(apoX,8,w-8),clamp(cy+alen+11,10,h-2),PAL.gold,9,'center');
+
+      // burn flash at the active apsis (pulses)
+      var pulse=0.35+0.3*Math.sin((s.t||0)*18);
+      if(burnP||burnA){
+        var fx=burnP?perX:apoX;
+        ctx.strokeStyle=PAL.gold; ctx.globalAlpha=clamp(pulse,0,1); ctx.lineWidth=2;
+        ctx.beginPath(); ctx.arc(clamp(fx,0,w),cy,clamp(er+6,3,40),0,Math.PI*2); ctx.stroke();
+        ctx.globalAlpha=1;
+      }
+
+      // craft dot
+      ctx.fillStyle=PAL.surf; ctx.beginPath(); ctx.arc(cxp,cyp,5.5,0,Math.PI*2); ctx.fill();
+      dot(ctx,cxp,cyp,4,PAL.ink);
+
+      // ---- readouts panel ----
+      var px0=clamp(panelX,w*0.5,w-70), pxw=Math.max(56,w-8-px0);
+      txt(ctx,'speeds (km/s)',px0,34,PAL.muted,9,'left');
+      var rows=[
+        {n:'v₁ circular',v:v1.toFixed(2),c:PAL.cool},
+        {n:'v₂ circular',v:v2.toFixed(2),c:PAL.sky},
+        {n:'v_p perigee',v:vp.toFixed(2),c:s.accent},
+        {n:'v_a apogee',v:va.toFixed(2),c:s.accent},
+        {n:'Δv₁ burn',v:dv1.toFixed(2),c:PAL.gold},
+        {n:'Δv₂ burn',v:dv2.toFixed(2),c:PAL.gold},
+        {n:'total Δv',v:dvtot.toFixed(2),c:PAL.ink},
+        {n:'transfer t',v:(ttrans/3600).toFixed(1)+' h',c:PAL.muted}
+      ];
+      var ry=50, rstep=clamp((h-62)/rows.length,15,24);
+      for(var i=0;i<rows.length;i++){
+        var yy=clamp(ry+i*rstep,14,h-6);
+        if(i===6){ ctx.strokeStyle=PAL.line; ctx.lineWidth=1; ctx.beginPath();
+          ctx.moveTo(px0,clamp(yy-rstep+5,10,h-2)); ctx.lineTo(px0+pxw,clamp(yy-rstep+5,10,h-2)); ctx.stroke(); }
+        txt(ctx,rows[i].n,px0,yy,rows[i].c,8.5,'left');
+        txt(ctx,rows[i].v,px0+pxw,yy,PAL.ink,8.5,'right');
+      }
+
+      // caption
+      txt(ctx,'burn prograde twice, coast the ellipse between — the cheapest way up',w/2,h-6,PAL.faint,8,'center');
+    }
+  };
+
+  /* orbitspeed — the vis-viva speed ladder (the paradox). Plots circular speed v_circ(r)=√(μ/r) as a
+     falling curve (PAL.muted) over fixed axes: r from 6000→60000 km, speed 0→~11 km/s. On the curve:
+     the inner point (R1,v1) and outer point (R2,v2) — v2 sits LOWER (higher orbit = slower). Off the
+     curve: the transfer perigee speed (R1,vp) ABOVE and apogee speed (R2,va) BELOW. Two gold burn
+     arrows BOTH point UP: at x=R1 from v1→vp (Δv₁), at x=R2 from va→v2 (Δv₂) — both burns add speed
+     even though the destination is lower on the curve. As r2 grows its point slides right and DOWN.
+     μ=398600 km³/s². Controls read ONLY via s.p.*; unicode literals only. */
+  SIMS.orbitspeed={
+    controls:[
+      {k:'r1',label:'Inner orbit radius',min:6600,max:20000,step:200,val:6778,unit:' km'},
+      {k:'r2',label:'Outer orbit radius',min:8000,max:60000,step:500,val:42164,unit:' km'}
+    ],
+    init:function(s,w,h){ s.phase=0; },
+    step:function(s,dt){ /* static plot; gentle pulse uses s.t in draw */ },
+    draw:function(ctx,w,h,s){
+      var MU=398600;
+      var R1=clamp(s.p.r1,6600,20000);
+      var R2=Math.max(clamp(s.p.r2,8000,60000),R1+500);
+      var a=(R1+R2)/2;
+      var v1=Math.sqrt(MU/R1), v2=Math.sqrt(MU/R2);
+      var vp=Math.sqrt(MU*(2/R1-1/a)), va=Math.sqrt(MU*(2/R2-1/a));
+      var dv1=vp-v1, dv2=v2-va;
+
+      // ---- axes ----
+      var rMin=6000, rMax=60000, vMax=11;
+      var px0=48, py0=24, pxw=clamp(w-px0-118,80,w-60), pyh=clamp(h-py0-34,60,260);
+      var pxB=px0+pxw, pyB=py0+pyh;
+      function X(r){ return clamp(px0+(clamp(r,rMin,rMax)-rMin)/(rMax-rMin)*pxw,px0,pxB); }
+      function Y(v){ return clamp(pyB-clamp(v,0,vMax)/vMax*pyh,py0,pyB); }
+
+      // title
+      txt(ctx,'vis-viva — the speed ladder',8,13,PAL.muted,10,'left');
+
+      // axes frame + grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px0,py0); ctx.lineTo(px0,pyB); ctx.lineTo(pxB,pyB); ctx.stroke();
+      ctx.globalAlpha=0.5;
+      for(var g=2;g<=10;g+=2){ var gy=Y(g); ctx.beginPath(); ctx.moveTo(px0,gy); ctx.lineTo(pxB,gy); ctx.stroke();
+        txt(ctx,String(g),px0-4,gy+3,PAL.faint,7.5,'right'); }
+      ctx.globalAlpha=1;
+      txt(ctx,'km/s',px0-4,clamp(py0-4,8,h),PAL.faint,7.5,'right');
+      txt(ctx,'orbit radius r (km) →',pxB,clamp(pyB+16,10,h-2),PAL.faint,7.5,'right');
+      txt(ctx,String(rMin),px0,clamp(pyB+16,10,h-2),PAL.faint,7.5,'left');
+      txt(ctx,String(rMax),pxB,clamp(pyB+16,10,h-2),PAL.faint,7.5,'right');
+
+      // v_circ(r) = √(μ/r) falling curve
+      ctx.strokeStyle=PAL.muted; ctx.lineWidth=2.2; ctx.beginPath();
+      var N=60, started=false;
+      for(var i=0;i<=N;i++){ var r=rMin+(rMax-rMin)*i/N; var vx=X(r), vy=Y(Math.sqrt(MU/r));
+        if(!started){ ctx.moveTo(vx,vy); started=true; } else ctx.lineTo(vx,vy); }
+      ctx.stroke();
+      txt(ctx,'v_circ = √(μ / r)',clamp(X(rMin)+8,0,w),clamp(Y(Math.sqrt(MU/rMin))-6,10,h-2),PAL.muted,8,'left');
+
+      // burn arrows (both UP) — drawn first so dots sit on top
+      var pulse=1.6+0.5*Math.sin((s.t||0)*3);
+      arrow(ctx,X(R1),Y(v1),X(R1),Y(vp),PAL.gold,2);           // Δv₁ : v1 → vp (up)
+      txt(ctx,'Δv₁',clamp(X(R1)+5,8,w-8),clamp((Y(v1)+Y(vp))/2+3,10,h-2),PAL.gold,8.5,'left');
+      arrow(ctx,X(R2),Y(va),X(R2),Y(v2),PAL.gold,2);           // Δv₂ : va → v2 (up)
+      txt(ctx,'Δv₂',clamp(X(R2)+5,8,w-8),clamp((Y(va)+Y(v2))/2+3,10,h-2),PAL.gold,8.5,'left');
+
+      // points on / off the curve
+      dot(ctx,X(R1),Y(v1),4,PAL.cool);  txt(ctx,'v₁',clamp(X(R1)-6,8,w-8),clamp(Y(v1)+3,10,h-2),PAL.cool,8.5,'right');
+      dot(ctx,X(R2),Y(v2),4,PAL.sky);   txt(ctx,'v₂',clamp(X(R2)-6,8,w-8),clamp(Y(v2)+3,10,h-2),PAL.sky,8.5,'right');
+      dot(ctx,X(R1),Y(vp),4,s.accent);  txt(ctx,'v_p',clamp(X(R1)-6,8,w-8),clamp(Y(vp)-5,10,h-2),s.accent,8.5,'right');
+      dot(ctx,X(R2),Y(va),4,s.accent);  txt(ctx,'v_a',clamp(X(R2)+6,8,w-8),clamp(Y(va)+3,10,h-2),s.accent,8.5,'left');
+
+      // guide drop-lines to the axis
+      ctx.strokeStyle=PAL.faint; ctx.globalAlpha=0.3; ctx.lineWidth=1; ctx.setLineDash([2,3]);
+      ctx.beginPath(); ctx.moveTo(X(R1),Y(v1)); ctx.lineTo(X(R1),pyB); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(X(R2),Y(v2)); ctx.lineTo(X(R2),pyB); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'R₁',X(R1),clamp(pyB+8,10,h-2),PAL.cool,7.5,'center');
+      txt(ctx,'R₂',X(R2),clamp(pyB+8,10,h-2),PAL.sky,7.5,'center');
+
+      // ---- readouts panel ----
+      var qx=clamp(pxB+14,w*0.6,w-62), qw=Math.max(48,w-8-qx);
+      txt(ctx,'speeds (km/s)',qx,34,PAL.muted,9,'left');
+      var rows=[
+        {n:'v₁',v:v1.toFixed(2),c:PAL.cool},
+        {n:'v₂',v:v2.toFixed(2),c:PAL.sky},
+        {n:'v_p',v:vp.toFixed(2),c:s.accent},
+        {n:'v_a',v:va.toFixed(2),c:s.accent},
+        {n:'Δv₁',v:dv1.toFixed(2),c:PAL.gold},
+        {n:'Δv₂',v:dv2.toFixed(2),c:PAL.gold}
+      ];
+      var ry=50, rstep=clamp((h-70)/rows.length,15,24);
+      for(var k=0;k<rows.length;k++){ var yy=clamp(ry+k*rstep,14,h-14);
+        txt(ctx,rows[k].n,qx,yy,rows[k].c,9,'left');
+        txt(ctx,rows[k].v,qx+qw,yy,PAL.ink,9,'right');
+      }
+
+      // caption
+      txt(ctx,'higher orbit = slower (the curve falls) — yet both burns add speed. energy up, speed down.',
+          w/2,h-6,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

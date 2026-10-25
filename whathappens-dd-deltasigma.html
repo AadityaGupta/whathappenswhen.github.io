@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>@page{size:A4;margin:14mm}.whw-home{position:fixed;top:16px;left:16px;z-index:41;display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-family:var(--mono,ui-monospace,monospace);font-size:12.5px;font-weight:500;letter-spacing:.02em;text-decoration:none;box-shadow:var(--shadow)}.whw-home:hover{color:var(--accent);border-color:var(--accent)}@media print{.whw-home{display:none!important}}@media (max-width:560px){.whw-home{padding:0 11px;font-size:12px}}</style>
+<title>The Delta-Sigma ADC — 20 Bits From a 1-Bit Comparator · Deep Dives · What Happens When…</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+
+<style>
+  :root{
+    --bg:#E8ECEF; --surface:#FCFDFE; --surface-2:#F0F3F6;
+    --ink:#141A20; --ink-soft:#38424B; --muted:#616E79; --faint:#8893A0;
+    --line:#D2DAE0; --line-soft:#E2E8ED;
+    --accent:#5A5AA8; --accent-ink:#FFFFFF; --accent-wash:#E8E8F5;
+    --amber:#8A6A1F; --amber-wash:#F3ECD9; --ok:#2F8A58; --slate:#5A6B8C;
+    --shadow:0 1px 2px rgba(30,22,14,.05), 0 8px 24px -14px rgba(30,22,14,.18);
+    --shadow-lift:0 2px 6px rgba(30,22,14,.08), 0 18px 40px -18px rgba(30,22,14,.28);
+    --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+      --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+      --line:#28333A; --line-soft:#1F282E;
+      --accent:#9A9AE0; --accent-ink:#241405; --accent-wash:#16162A;
+      --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+      --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1317; --surface:#151D23; --surface-2:#1A242B;
+    --ink:#E8EEF1; --ink-soft:#C3CDD4; --muted:#95A2AB; --faint:#6B7982;
+    --line:#28333A; --line-soft:#1F282E;
+    --accent:#9A9AE0; --accent-ink:#241405; --accent-wash:#16162A;
+    --amber:#E0B060; --amber-wash:#2A2415; --ok:#5FC98C; --slate:#93A3C4;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -16px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 8px rgba(0,0,0,.4), 0 20px 46px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:720px;margin:0 auto;padding-inline:22px}
+
+  .toggle{position:fixed;top:16px;right:16px;z-index:40;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .toggle:hover{color:var(--accent);border-color:var(--accent)}
+  .toggle svg{width:19px;height:19px}
+  .toggle .moon{display:none}
+  :root[data-theme="dark"] .toggle .moon{display:block}
+  :root[data-theme="dark"] .toggle .sun{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .toggle .moon{display:block}
+    :root:not([data-theme="light"]) .toggle .sun{display:none}
+  }
+
+  header.top{padding-block:58px 14px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .kicker::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(1.85rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.02em;margin:.42em 0 0;color:var(--ink)}
+  .dek{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-soft);margin:.7em 0 0;max-width:40em}
+  .meta{display:flex;flex-wrap:wrap;gap:7px 20px;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:13px 0}
+  .meta b{color:var(--ink);font-weight:600}
+
+  article{padding-bottom:40px}
+  .body p{font-family:var(--serif);font-size:1.12rem;line-height:1.72;color:var(--ink-soft);margin:1.05em 0}
+  .body .body-lead{margin-top:30px}
+  .body p>b, .body li>b{color:var(--ink);font-weight:600}
+  .body em{font-style:italic}
+  h2{font-family:var(--sans);font-weight:700;font-size:1.44rem;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:2.3em 0 .1em;padding-top:.3em;scroll-margin-top:16px}
+  h2 .sn{font-family:var(--mono);font-size:.7em;font-weight:600;color:var(--accent);margin-right:.6em;letter-spacing:.02em}
+  .body ul{margin:1em 0;padding-left:1.1em}
+  .body li{font-family:var(--serif);font-size:1.1rem;line-height:1.65;color:var(--ink-soft);margin:.5em 0}
+  .body code{font-family:var(--mono);font-size:.84em;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--ink)}
+
+  .m{font-family:var(--serif);white-space:nowrap}
+  .m i, .eq i{font-style:italic;font-family:var(--serif)}
+  .eq{margin:26px 0;text-align:center;font-family:var(--serif);font-size:1.26rem;color:var(--ink);position:relative}
+  .eq .lbl{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint);font-style:normal}
+  .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .18em;font-size:.94em}
+  .frac>span{display:block;padding:0 .5em;line-height:1.22}
+  .frac .nu{border-bottom:1.5px solid currentColor}
+  sub,sup{font-size:.72em;line-height:0}
+
+  .key{margin:24px 0;padding:16px 18px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .key .kl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:7px}
+  .key .eq{margin:6px 0 2px}
+  .key p{font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft);margin:.5em 0 0}
+  .limit{margin:22px 0;padding:13px 16px;background:var(--amber-wash);border-radius:10px;border-left:3px solid var(--amber);font-family:var(--serif);font-size:1.04rem;line-height:1.6;color:var(--ink-soft)}
+  .limit b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:4px}
+
+  /* ---- Part II practitioner layer ---- */
+  .part2{margin:46px 0 0;padding-top:22px;border-top:2px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .part2 .p2k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .part2 .p2s{font-family:var(--serif);font-style:italic;font-size:1.04rem;color:var(--muted)}
+  .speclist{margin:16px 0 4px;display:grid;grid-template-columns:auto 1fr;gap:0;border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+  .speclist dt{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+  .speclist dd{font-family:var(--serif);font-size:1.03rem;line-height:1.5;color:var(--ink-soft);margin:0;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .speclist dt:last-of-type, .speclist dd:last-of-type{border-bottom:none}
+  .speclist dd b{color:var(--ink);font-weight:600}
+  .fieldnotes{margin:18px 0 4px;padding:16px 18px 10px;background:var(--surface-2);border:1px solid var(--line-soft);border-left:3px solid var(--slate);border-radius:10px}
+  .fieldnotes .fnl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);font-weight:600;margin-bottom:10px}
+  .fieldnotes ul{margin:0;padding:0;list-style:none}
+  .fieldnotes li{font-family:var(--serif);font-size:1.05rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:20px;position:relative}
+  .fieldnotes li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--slate);transform:rotate(45deg)}
+  .fieldnotes li b{color:var(--ink);font-weight:600}
+  /* ---- Build-it (application) layer ---- */
+  .worked{margin:16px 0 6px;padding:15px 17px 7px;background:var(--accent-wash);border-radius:12px;border-left:3px solid var(--accent)}
+  .worked .wl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:9px}
+  .worked .speclist{background:var(--surface);margin-top:0}
+  .recipe{margin:14px 0 6px;padding:0;counter-reset:step;list-style:none}
+  .recipe li{font-family:var(--serif);font-size:1.08rem;line-height:1.55;color:var(--ink-soft);margin:0 0 11px;padding-left:40px;position:relative}
+  .recipe li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-1px;width:25px;height:25px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12.5px;font-weight:600;display:grid;place-items:center}
+  .recipe li b{color:var(--ink);font-weight:600}
+  .lastmile{margin:18px 0 4px;padding:15px 17px;background:var(--surface-2);border:1px dashed var(--amber);border-radius:10px;font-family:var(--serif);font-size:1.05rem;line-height:1.62;color:var(--ink-soft)}
+  .lastmile b:first-child{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+  .lastmile b{color:var(--ink);font-weight:600}
+
+  .simwrap{margin:20px 0 6px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+  canvas.sim{display:block;width:100%;height:260px;background:transparent}
+  .simcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint);padding:8px 14px 0;text-transform:uppercase}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;padding:10px 14px 14px}
+  .ctrl{display:flex;flex-direction:column;gap:2px}
+  .ctrl .lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .ctrl .lbl b{color:var(--ink);font-weight:600}
+  .ctrl input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px}
+  .ctrl button{font-family:var(--sans);font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ctrl button:hover{border-color:var(--accent);color:var(--ink)}
+  .simnote{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--muted);margin:7px 0 0;padding-left:2px}
+
+  .sc{margin:16px 0;padding:14px 16px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-soft)}
+  .sc .scl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;display:block;margin-bottom:5px}
+  .sc .q{font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);margin:0}
+  .sc .a{font-family:var(--serif);font-size:1.02rem;line-height:1.55;color:var(--muted);font-style:italic;margin:8px 0 0;display:block}
+
+  footer.foot{border-top:1px solid var(--line-soft);background:var(--surface);margin-top:30px}
+  footer.foot .wrap{padding-block:26px 40px}
+  .nextrow{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .nextpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:7px 12px}
+  .nextpill b{color:var(--accent);font-weight:600}
+  .footnote{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .footnote b{color:var(--ink-soft)}
+  @media (max-width:560px){ header.top{padding-top:46px} .body p,.body li{font-size:1.06rem} .speclist{grid-template-columns:1fr} .speclist dt{border-bottom:none;padding-bottom:2px} }
+  @media print{ .toggle,.simwrap{display:none!important} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="whw-home" href="index.html">← Index</a>
+
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light and dark theme" title="Toggle theme">
+  <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8l1.8-1.8M18 6l1.8-1.8"/></svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a6.5 6.5 0 1 0 10.5 10.5z"/></svg>
+</button>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Deep Dives · 09 <span style="color:var(--faint);border:none">— What Happens When…</span></div>
+    <h1>The Delta-Sigma ADC: 20 Bits From a 1-Bit Comparator</h1>
+    <p class="dek">You cannot build a 20-bit converter by trimming 20-bit-accurate components &mdash; nobody can match a million levels. So delta-sigma stops trying: it uses the crudest possible quantizer, a 1-bit comparator, runs it absurdly fast, and wraps it in a feedback loop that shoves its own error out of the band you care about. Trade precision in <em>amplitude</em> for precision in <em>time and averaging</em>, and read 20 clean bits off a stream of ones and zeros.</p>
+    <div class="meta">
+      <span>&approx; 18 min read</span>
+      <span>delta-sigma · oversampling · precision ADCs</span>
+      <span>companion to <b>The Op-Amp &amp; Negative Feedback</b> and <b>Sensors &amp; Signal Chains</b></span>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="wrap body">
+
+    <p class="body-lead">An analog-to-digital converter has one job: pin an analog voltage to one of <span class="m">2<sup><i>N</i></sup></span> levels. The direct ways build those levels in hardware &mdash; a flash converter with a ladder of matched resistors, a SAR converter with a binary-weighted capacitor array &mdash; and they are superb to 8, 10, maybe 12 bits. But each extra bit <em>halves</em> the voltage you must resolve and <em>doubles</em> the matching your components need, and somewhere around 16 bits you are asking silicon to match to a handful of parts per million, across temperature and aging and the luck of the fab. That path dead-ends on <b>component matching</b>: you simply cannot trim a million levels into a chip. Delta-sigma is the refusal that gets you there anyway. Stop trying to be precise in amplitude; use the <em>crudest</em> quantizer there is &mdash; a 1-bit comparator, which can only ever ask &ldquo;above or below the middle?&rdquo; &mdash; because a two-level converter has nothing to mismatch and is therefore <em>perfectly linear</em>. Then buy the lost resolution back two ways: run the comparator far faster than the signal needs, and wrap it in a feedback loop with an integrator that pushes its own quantization noise <em>out</em> of your signal band, where a digital filter deletes it. Average the fast one-bit stream down and 20 honest bits fall out &mdash; set by clock rate and loop order, not by trimming anything. From that one move the whole subject follows: oversampling, noise shaping, the bitstream whose density of ones <em>is</em> the value, and the decimation filter that is the converter&rsquo;s other half. Then the piece turns to the part the textbooks skip: how you choose and use a real part, why it disappoints, what to spec, and a 24-bit weigh-scale front end sized end to end.</p>
+
+    <h2><span class="sn">1</span>The constraint: you can&rsquo;t match a million levels</h2>
+    <p>Start with exactly what the problem demands. A converter must map a continuous voltage onto one of <span class="m">2<sup><i>N</i></sup></span> discrete levels, and the obvious architectures build those levels as physical hardware. A <b>flash</b> ADC needs <span class="m">2<sup><i>N</i></sup> &minus; 1</span> comparators and a resistor ladder with <span class="m">2<sup><i>N</i></sup></span> matched taps; a <b>SAR</b> ADC needs a capacitor array binary-weighted to <span class="m"><i>N</i></span>-bit accuracy. Both work beautifully to 8, 10, perhaps 12 bits &mdash; the levels are far enough apart that ordinary parts hold them.</p>
+    <p>The trouble is the exponent. Each extra bit <b>halves</b> the voltage you have to resolve and, with it, <b>doubles</b> the matching precision your components must hold. At 16 bits you are asking resistors or capacitors to agree to roughly <b>15 parts per million</b>; at 20 bits, to <b>under one part per million</b> &mdash; and not just on the day they are made, but across temperature, across years of aging, across the spread of a production run. That is simply not buildable with trimmed components at any sane cost. The brute-force road to high resolution dead-ends on the same wall every time: <b>component matching</b>. You cannot trim a million levels into silicon. The question the rest of this piece answers is how to get a clean 20-bit number out of parts that can&rsquo;t hold more than about 12 bits&rsquo; worth of matching.</p>
+
+    <h2><span class="sn">2</span>The reframe: trade amplitude precision for time and averaging</h2>
+    <p>Here is the move, and like the best moves it is a refusal: stop trying to be precise in <em>amplitude</em> at all. Reach instead for the <em>crudest</em> quantizer there is &mdash; a <b>1-bit comparator</b>, which answers exactly one question, &ldquo;is the signal above or below the midpoint?&rdquo; At first this looks like surrender. But a 1-bit converter has only <em>two</em> output levels, and two levels have <em>nothing to mismatch</em>: two points define a perfectly straight line, so a 1-bit DAC is <b>inherently, flawlessly linear</b>. That is the quiet secret that makes the whole scheme give <em>honest</em> high-resolution results &mdash; there is no curvature or trim error hiding in the conversion, because there are not enough levels to bend.</p>
+    <p>The catch is obvious: one bit is terrible resolution. We buy it back along two axes that <em>are</em> cheap and buildable. First, <b>oversample</b> &mdash; run the comparator far faster than the signal strictly needs (its Nyquist rate), so you take thousands of crude looks where you needed one. Second, <b>feed the error back</b> &mdash; wrap the comparator in a loop with an <b>integrator</b> so the loop continuously corrects its own quantization error, and arrange that correction so the error energy is shoved <em>out</em> of the frequency band you care about. Then average the fast 1-bit stream down into a slow, high-resolution number. We have traded precision-in-amplitude, which is impossible, for precision-in-time-and-averaging, which is cheap. The hard part moved from matching analog components to counting fast &mdash; and counting fast is exactly what digital silicon does for free.</p>
+
+    <h2><span class="sn">3</span>The core: oversampling, then noise shaping</h2>
+    <p>Build the argument in two moves, because they <em>stack</em> &mdash; the first makes the second possible, and together they turn a single bit into twenty.</p>
+    <p><b>Move 1 &mdash; oversampling spreads the noise thin.</b> Quantization adds a fixed amount of error power, and for a busy signal that power is spread roughly evenly across frequency, from DC up to half the sampling rate. The total doesn&rsquo;t change when you sample faster &mdash; but the <em>band it is spread over</em> does. Sample faster and the same fixed noise power is smeared across a wider band, so the slice of it sitting inside your narrow signal band shrinks. Define the <b>oversampling ratio</b> as the sampling rate over the Nyquist rate of your band:</p>
+    <div class="eq"><span class="m">OSR = <span class="frac"><span class="nu"><i>f</i><sub>s</sub></span><span>2&middot;<i>f</i><sub>B</sub></span></span></span><span class="lbl">how many times faster than Nyquist you run the comparator</span></div>
+    <p>Because the in-band noise power falls in proportion to OSR, every <b>doubling of OSR buys about 3 dB &mdash; half a bit</b>:</p>
+    <div class="eq"><span class="m">&Delta;SNR &approx; 3 dB (&frac12; bit) per doubling of OSR</span><span class="lbl">oversampling alone &mdash; honest, but painfully slow</span></div>
+    <p>Useful, but weak: getting 16 bits from a 1-bit converter by oversampling <em>alone</em> would demand an absurd OSR, as the last self-check makes concrete. We need a lever, not a crank.</p>
+    <p><b>Move 2 &mdash; noise shaping bends the noise out of the band.</b> Put an <b>integrator</b> before the comparator, take the 1-bit output, and <em>subtract</em> it from the input before the integrator. That subtract is the <b>delta</b> (&Delta;); the integrate is the <b>sigma</b> (&Sigma;). In one line of pseudocode the whole modulator is just: form the error <span class="m"><i>e</i> = <i>u</i> &minus; <i>y</i></span> between input and fed-back output, accumulate it in the integrator state <span class="m"><i>v</i></span>, and let the comparator make the one-bit decision on that accumulator:</p>
+    <div class="eq"><span class="m"><i>e</i> = <i>u</i> &minus; <i>y</i>, &nbsp;&nbsp; <i>v</i> &larr; <i>v</i> + <i>e</i>, &nbsp;&nbsp; <i>y</i> = sign(<i>v</i>)</span><span class="lbl">subtract (&Delta;), integrate (&Sigma;), then a 1-bit decision &mdash; the entire modulator</span></div>
+    <p>Now trace where the signal and the noise each go. The loop passes the <em>signal</em> straight through &mdash; its signal transfer function is about 1 in band &mdash; while the <em>quantization noise</em>, which is injected right at the comparator, sees the integrator&rsquo;s gain working <em>against</em> it. The result is that the <b>noise transfer function is a high-pass</b>: the loop literally pushes its own quantization noise up to high frequencies, out of the signal band, piling it where a digital filter will later throw it away. A <b>first-order</b> loop (one integrator) shapes the in-band noise so it falls about <b>9 dB per octave of OSR &mdash; 1.5 bits per doubling</b>; a <b>second-order</b> loop (two integrators) gives about <b>15 dB/octave &mdash; 2.5 bits per doubling</b>. In one formula, for a loop of order <span class="m"><i>L</i></span>:</p>
+    <div class="eq"><span class="m">&Delta;SNR &approx; (6<i>L</i> + 3) dB per doubling of OSR</span><span class="lbl"><i>L</i>=1 &rarr; 9 dB (1.5 bit); &nbsp;<i>L</i>=2 &rarr; 15 dB (2.5 bit)</span></div>
+    <p>Those bits are abstract until you convert signal-to-noise ratio into resolution, and the bridge is the standard one &mdash; every extra 6.02 dB of SNR is one more effective bit:</p>
+    <div class="eq"><span class="m">ENOB &approx; <span class="frac"><span class="nu">SNR<sub>dB</sub> &minus; 1.76</span><span>6.02</span></span></span><span class="lbl">effective number of bits, read off the SNR</span></div>
+    <p>So a 1-bit comparator clocked fast, inside a 2nd-order loop, really can deliver 16 to 20-plus bits &mdash; because the feedback high-pass is a far stronger lever than merely spreading noise thin.</p>
+    <div class="key">
+      <span class="kl">The whole payoff in one line</span>
+      <div class="eq"><span class="m">resolution = oversampling (spread it thin) &nbsp;+&nbsp; noise shaping (bend it out of band)</span></div>
+      <p>Resolution no longer comes from matched components; it comes from <b>oversampling</b> &mdash; spreading the fixed quantization noise thin &mdash; plus <b>noise shaping</b> &mdash; a feedback loop with integrators that high-pass-filters its <em>own</em> noise out of the signal band. A perfectly-linear 1-bit quantizer, clocked fast, becomes a 20-bit converter, and the bits are set by <b>clock rate and loop order</b>, not by trimming anything.</p>
+    </div>
+
+    <div class="simwrap">
+      <div class="simcap">Spread the noise thin, then bend it out of the band</div>
+      <canvas class="sim" data-sim="noiseshape" data-c="#5A5AA8" aria-label="quantization noise spectrum, flat without shaping and high-pass-shaped with a modulator, with the signal band marked and effective bits rising as oversampling ratio and order increase"></canvas>
+      <div class="ctrls" data-sim="noiseshape"></div>
+    </div>
+    <p class="simnote">Drag the <em>oversampling ratio</em> and the <em>loop order</em> and watch the two levers act. With no shaping the quantization noise is a flat carpet from DC to <span class="m"><i>f</i><sub>s</sub>/2</span>; pull the OSR up and the signal band (marked at the left) keeps only a thinner and thinner slice of that same total &mdash; the <span class="m">&frac12;</span>-bit-per-octave crank. Now turn the order up from 0 to 1 to 2 and the carpet lifts off the floor and tips <em>uphill</em>: the noise is high-pass-shaped, pushed out of the band where the decimation filter will delete it, and the in-band area collapses far faster &mdash; 1.5 bits per octave at first order, 2.5 at second. The effective-bits readout climbs as you do both, and you can feel directly why shaping is the lever and oversampling alone is merely the crank.</p>
+
+    <h2><span class="sn">4</span>Limit checks &mdash; read the scheme at its ends</h2>
+    <p>The scheme earns its keep by behaving sensibly at every extreme, and reading it at its ends is the fastest way to internalise what it actually trades.</p>
+    <div class="limit">
+      <b>Limit check — read the scheme at its ends</b>
+      <b>OSR &rarr; 1</b> (sample at Nyquist, no oversampling): you are back to a plain 1-bit converter &mdash; about <em>one bit</em>, useless. Every bit of resolution is bought <em>above</em> Nyquist; none of it lives at the signal rate. <b>OSR &rarr; very large</b>: resolution keeps climbing &mdash; 1.5 or 2.5 bits per doubling, depending on order &mdash; but you pay in clock rate and power, and you spend <em>bandwidth</em>. Delta-sigma trades <b>bandwidth for bits</b>, which is exactly why it rules low-bandwidth, high-resolution jobs (audio, weigh scales, precision sensors) and never GHz data acquisition &mdash; that belongs to pipeline and SAR. <b>Loop order &rarr; higher</b> (3rd, 4th order): steeper shaping, even more bits per octave &mdash; but past 2nd order a 1-bit loop can go <b>unstable</b>, so high-order modulators need careful design (feedforward paths, scaled integrators) to stay well-behaved. <b>Input near full scale, or a steady DC input</b>: the loop can fall into <b>idle tones</b> &mdash; faint periodic patterns in the bitstream that show up as spurious tones in the output; dither or a higher-order loop breaks them up.</p>
+    </div>
+    <p>Two consequences fall straight out of the mechanism, and they are what a real converter is actually made of. The first is <em>what the modulator emits</em>. It does not hand you numbers; it hands you a <b>high-rate 1-bit stream whose density of ones encodes the input</b>. Feed in a level at 75&nbsp;% of full scale and about 75&nbsp;% of the output bits come out as ones; the value lives in the <em>average</em>, never in any single bit. The second is the half that turns that stream back into samples: the <b>decimation filter</b>, the digital half of every delta-sigma ADC. It is a low-pass filter &mdash; which both <em>averages</em> the bitstream into multi-bit words and <em>removes</em> the shaped high-frequency noise the modulator pushed up there &mdash; followed by <b>downsampling</b> to the output rate:</p>
+    <div class="eq"><span class="m"><i>f</i><sub>out</sub> = <span class="frac"><span class="nu"><i>f</i><sub>s</sub></span><span>OSR</span></span></span><span class="lbl">the decimation filter averages, kills the shaped HF noise, then drops to the output rate</span></div>
+    <p>So a delta-sigma ADC is really two cooperating halves: a tiny, fast, mostly-analog <b>modulator</b> that trades resolution for speed and linearity, and a <b>digital decimation filter</b> that trades the speed back for resolution. The analog part is trivial and robust &mdash; one comparator, a couple of integrators, components that can be sloppy because feedback corrects them &mdash; and the heavy lifting moved into cheap, exact digital logic. That relocation, from matched analog to free digital, is precisely why the technique won.</p>
+
+    <div class="simwrap">
+      <div class="simcap">The bitstream's density of ones IS the value</div>
+      <canvas class="sim" data-sim="modulator" data-c="#5A5AA8" aria-label="a first-order delta-sigma modulator producing a 1-bit stream whose density of ones tracks the analog input, with the running average converging to the input"></canvas>
+      <div class="ctrls" data-sim="modulator"></div>
+    </div>
+    <p class="simnote">Drag the <em>input level</em> and watch the first-order modulator run: the integrator ramps as it accumulates the error <span class="m"><i>e</i> = <i>u</i> &minus; <i>y</i></span>, the comparator spits a 1 or a 0 each clock, and the fed-back bit is subtracted to keep the loop honest. No single bit means anything &mdash; but the <b>density of ones</b> tracks the input, and the running average you can see converging on the readout <em>is</em> the converted value: set the input to three-quarters of full scale and about three bits in four come out high. Toggle from a steady DC level to a slow sine and the density breathes up and down in step with it &mdash; the stream is the signal, encoded in time instead of amplitude.</p>
+
+    <div class="part2"><span class="p2k">Part II · In practice</span><span class="p2s">the half the textbooks skip</span></div>
+
+    <h2><span class="sn">5</span>Where it lives: choosing a part, and how it disappoints</h2>
+    <p>Delta-sigma is the default converter for <b>precision, lower-bandwidth</b> measurement: audio capture, weigh scales and load cells, thermocouple, RTD and bridge front-ends, power and energy metering, and most 16&ndash;24-bit &ldquo;precision ADC&rdquo; chips. You rarely design the modulator yourself &mdash; you <em>select</em> a chip and <em>use</em> it well, and that is a short, fixed sequence. Fix the <b>signal bandwidth</b> and the <b>resolution</b> (noise-free bits) you need; from those pick the <b>OSR and modulator order</b> &mdash; usually the chip&rsquo;s job, exposed as a data-rate setting; choose the <b>output data rate</b>, which sets the decimation filter and the settling time; and match the <b>input type</b> &mdash; differential, usually with a built-in PGA for small sensor signals. When a part underperforms it does so in a short, recognisable vocabulary, and almost every entry is really &ldquo;you spent the bandwidth/resolution budget somewhere you didn&rsquo;t mean to&rdquo;:</p>
+    <dl class="speclist">
+      <dt>Noisy results at high data rate</dt><dd>You asked for too much bandwidth. Raising the output rate <em>lowers</em> the OSR, so noise-free bits drop &mdash; roughly 1.5&ndash;2.5 bits per octave of OSR you gave away. Slow the data rate back down and the resolution returns; it was never gone, just spent.</dd>
+      <dt>Sluggish or wrong readings right after a channel switch</dt><dd>The <b>decimation filter has memory</b> &mdash; it needs several conversions to settle. Multiplex channels without allowing that settling and you read stale, blended data: a bit of the new channel, a bit of the old.</dd>
+      <dt>A persistent tone or pattern in audio or spectra</dt><dd><b>Idle tones</b> from a DC-ish input. Add dither, or move to a part with a higher-order loop; both break the periodic pattern up into broadband noise you can&rsquo;t hear.</dd>
+      <dt>50/60&nbsp;Hz mains hum in the reading</dt><dd>Pick an output rate whose decimation filter drops <b>notches on 50 and 60&nbsp;Hz</b> &mdash; most precision ADCs offer exactly this. It is free rejection you paid for the moment you chose the right data rate.</dd>
+      <dt>Resolution worse than the datasheet</dt><dd>You quoted <em>dynamic range</em> where you meant <em>noise-free bits</em>, or your reference and PGA noise now dominate. At this resolution the ADC is often no longer the floor &mdash; something quieter than the modulator has to be, and it usually isn&rsquo;t.</dd>
+    </dl>
+
+    <h2><span class="sn">6</span>How the architecture shapes the system</h2>
+    <p>The whole personality of delta-sigma flows from one trade: <b>bandwidth for resolution</b>. That makes it exactly the right tool when the signal is slow and the accuracy demand is high, and exactly the wrong one when you need speed &mdash; there is no setting that gives you both. From that single trade, four system-level consequences follow. It <b>relocates difficulty</b> out of the analog domain (no trimmed ladders, no matched caps &mdash; just a comparator and some integrators, which tolerate loose components because feedback corrects them) and into the digital domain (the decimation filter), which rides Moore&rsquo;s law and costs almost nothing. It bakes in <b>anti-aliasing relief</b>: because you sample at OSR&times;, the analog anti-alias filter only has to guard a band far above your signal, so a single RC does what a steep analog filter would otherwise demand. It hands you <b>built-in filtering knobs</b> &mdash; the output data rate directly sets your noise bandwidth and your mains-rejection notches, so filtering choices you would otherwise build in hardware become a register write. And the cost it imposes on the system is honest and unavoidable: <b>latency</b> (the decimation filter&rsquo;s group delay) and a hard ceiling on <b>bandwidth</b>. Design around those two and the architecture gives you everything else nearly for free.</p>
+
+    <h2><span class="sn">7</span>Where it&rsquo;s used, and what to spec</h2>
+    <p>The same idea runs audio ADCs and &mdash; reversed &mdash; 1-bit and multi-bit audio DACs and class-D amplifiers; it runs precision instrumentation and sensor front-ends, weigh scales, power and energy meters, and sigma-delta-based isolated current sensors. When you pick one, these are the numbers that actually decide the outcome:</p>
+    <dl class="speclist">
+      <dt>Output data rate &amp; bandwidth</dt><dd>The first lever. It sets how fast you can sample and, inversely, your resolution &mdash; the two are the same knob read from opposite ends.</dd>
+      <dt>Noise-free / effective resolution (ENOB) at that rate</dt><dd>The honest resolution number <em>at your data rate</em>, not the headline bit count. Always quoted with a rate, or it means nothing.</dd>
+      <dt>Modulator order &amp; OSR</dt><dd>More shaping is more bits per octave; higher order risks tones and instability, but most parts handle this internally and expose it only as a data-rate choice.</dd>
+      <dt>Integrated PGA &amp; reference</dt><dd>A low-noise gain stage and a stable reference &mdash; because at 24 bits the <em>reference</em> and <em>PGA</em> noise usually set the floor, not the modulator.</dd>
+      <dt>Digital filter options</dt><dd>Selectable data rates with <b>50/60&nbsp;Hz notch</b> filters, and a choice between single-cycle-settled (sinc) and sharper filters for multiplexing.</dd>
+      <dt>Latency / settling</dt><dd>Group delay and settling time &mdash; critical the moment you multiplex channels or close a control loop around the converter.</dd>
+      <dt>Input configuration</dt><dd>Differential inputs, common-mode range, and channel count / mux &mdash; what the sensor actually needs to connect to.</dd>
+    </dl>
+
+    <h2><span class="sn">8</span>Field notes</h2>
+    <div class="fieldnotes">
+      <span class="fnl">What the datasheet won&rsquo;t tell you</span>
+      <ul>
+        <li><b>Resolution and speed are the same knob.</b> Every &ldquo;more bits&rdquo; is &ldquo;less bandwidth&rdquo; and vice-versa; the chip&rsquo;s data-rate setting <em>is</em> the OSR dial. Decide your bandwidth first, then read off the bits you are allowed to have &mdash; not the other way around.</li>
+        <li><b>The digital filter has memory &mdash; respect settling when you multiplex.</b> After a channel change the sinc filter needs several conversions to flush the old data. Read too soon and you get a blend of two channels that looks like a real measurement. Either wait the settling time, or use a single-cycle-settled filter.</li>
+        <li><b>At 24 bits, the ADC is rarely your noise floor.</b> The voltage reference, the PGA, and your own board &mdash; thermals, grounding, EMI &mdash; dominate. Spend your effort on the reference and the layout, not on hunting a &ldquo;better&rdquo; modulator.</li>
+        <li><b>Pick the data rate for free mains rejection.</b> The right output rate lands the filter&rsquo;s notches exactly on 50/60&nbsp;Hz &mdash; often worth more than any analog filtering you would add, and it costs a register value.</li>
+        <li><b>Oversampling relaxes your anti-alias filter to a single RC.</b> You still need <em>one</em>, but the steep analog filter a Nyquist converter would demand is gone &mdash; a real board-level saving people forget they already earned by oversampling.</li>
+        <li><b>Idle tones are a DC-input phenomenon.</b> They appear with slow, steady inputs and vanish on busy signals; a little dither trades a hair of noise floor for their removal, which is almost always the right trade.</li>
+        <li><b>&ldquo;24-bit&rdquo; is marketing until you say at what rate.</b> Always quote ENOB or noise-free bits at <em>your</em> data rate; the headline number is measured at the slowest, quietest setting you will never actually use.</li>
+      </ul>
+    </div>
+
+    <div class="part2"><span class="p2k">Build it</span><span class="p2s">a 24-bit weigh-scale front end</span></div>
+
+    <h2><span class="sn">9</span>Build it: a 24-bit load-cell / weigh-scale front end</h2>
+    <p>Enough principle &mdash; here is a real front end sized end to end, so you can copy the shape and reuse it. The job: digitise a strain-gauge load cell &mdash; a few millivolts full-scale, signal essentially DC to a few hertz &mdash; with about 20 noise-free bits and clean mains rejection. Every line below is one choice you plug in; the derivation already did the hard part.</p>
+    <div class="worked">
+      <span class="wl">Worked example — a 24-bit weigh-scale front end</span>
+      <dl class="speclist">
+        <dt>Know the signal</dt><dd>A load cell outputs about <span class="m">2&nbsp;mV/V</span>; on a 5&nbsp;V bridge excitation that is roughly <b><span class="m">10&nbsp;mV</span> full scale</b>, bandwidth <span class="m">0&ndash;5&nbsp;Hz</span> (weight settles slowly). Tiny, slow, high-accuracy &mdash; the textbook delta-sigma job.</dd>
+        <dt>Pick the part class</dt><dd>An integrated <b>24-bit delta-sigma</b> with an on-chip <b>low-noise PGA</b> (gain <span class="m">128&times;</span>) and differential inputs &mdash; an ADS1232 / NAU7802-class weigh-scale ADC. The PGA lifts the 10&nbsp;mV up to use the full reference, so the modulator sees a signal that fills its range.</dd>
+        <dt>Set the data rate</dt><dd>Choose <b><span class="m">10&nbsp;SPS</span></b> (samples per second). For a 5&nbsp;Hz signal that is a huge OSR, so noise-free bits are maximised &mdash; <em>and</em> a 10&nbsp;SPS sinc filter lands <b>notches on 50 and 60&nbsp;Hz</b>, so mains hum is rejected for free.</dd>
+        <dt>Resolution reality-check</dt><dd>The headline is &ldquo;24-bit,&rdquo; but at 10&nbsp;SPS with the PGA at 128&times; you will see perhaps <b>~19&ndash;21 noise-free bits</b> referred to the input &mdash; plenty to resolve grams on a many-kilogram scale. Quote the noise-free number, never the 24.</dd>
+        <dt>What actually limits you</dt><dd>The <b>reference</b> and <b>PGA noise</b>, the bridge-excitation stability, and thermocouple EMFs at the connections &mdash; not the modulator. Run <b>ratiometric</b>: use the bridge excitation as the ADC reference, and excitation drift cancels out of the reading entirely.</dd>
+        <dt>Anti-alias</dt><dd>A single <b>RC</b> per input, cutoff well below <span class="m"><i>f</i><sub>s</sub>/2</span>, is enough &mdash; oversampling pushed the alias bands so far away that nothing steep is needed.</dd>
+      </dl>
+    </div>
+    <p>That is the method made concrete: a sensor&rsquo;s few millivolts, a bandwidth and a resolution target hand you the part class, the data rate, the gain, and &mdash; loudly &mdash; the fact that your real adversary is board noise and the reference, not the converter. The plug-in set is small: the oversampling ratio <span class="m">OSR = <i>f</i><sub>s</sub>/(2&middot;<i>f</i><sub>B</sub>)</span>; oversampling-only gain <span class="m">&Delta;SNR &approx; 3 dB (&frac12; bit)</span> per doubling of OSR; with noise shaping of order <span class="m"><i>L</i></span>, <span class="m">&Delta;SNR &approx; (6<i>L</i>+3) dB</span> per doubling &mdash; 9&nbsp;dB (1.5&nbsp;bit) first-order, 15&nbsp;dB (2.5&nbsp;bit) second; bits from SNR, <span class="m">ENOB &approx; (SNR<sub>dB</sub> &minus; 1.76)/6.02</span>; noise-free bits <span class="m">&approx; ENOB &minus; ~2.7</span> (peak-to-peak against RMS); and the decimation relation <span class="m"><i>f</i><sub>out</sub> = <i>f</i><sub>s</sub>/OSR</span>, where the digital filter both averages the stream and kills the shaped high-frequency noise.</p>
+
+    <p><b>Bring it up in this order.</b> The sequence matters; skipping a step just relocates the pain &mdash; usually into a noise number you can&rsquo;t explain later:</p>
+    <ol class="recipe">
+      <li><b>Short the inputs and measure the noise floor.</b> With the inputs shorted (or held at mid-scale), log the output and compute RMS and peak-to-peak noise &rarr; your <em>real</em> noise-free bits at this data rate. This is ground truth, taken before any sensor is attached.</li>
+      <li><b>Sweep the data rate.</b> Confirm the resolution rises as you slow down and falls as you speed up &mdash; you are watching the OSR / bits trade happen directly, in your own numbers.</li>
+      <li><b>Check mains rejection.</b> Pick the rate whose notches sit on your local 50 or 60&nbsp;Hz; wave a hand near the wiring and confirm the reading barely twitches.</li>
+      <li><b>Add the sensor, go ratiometric.</b> Use the bridge excitation as the reference and confirm the reading is immune to excitation-voltage drift &mdash; wiggle the supply and watch the number hold.</li>
+      <li><b>Test channel settling (if multiplexing).</b> Switch channels and count how many conversions it takes to settle; budget that wait, or choose a single-cycle-settled filter.</li>
+      <li><b>Calibrate.</b> Offset (tare) and gain (a known mass or voltage) &mdash; the modulator is linear, so two points are all it takes to pin the whole transfer curve.</li>
+    </ol>
+
+    <p><b>The forks that actually change the design.</b> Most parameters you can trim later; these you decide up front:</p>
+    <dl class="speclist">
+      <dt>Delta-sigma vs SAR vs pipeline</dt><dd>Delta-sigma for high resolution at low bandwidth (sensors, audio, metering); SAR for medium speed and resolution with low latency (easy multiplexing); pipeline for high speed (MS/s to GS/s). Latency and bandwidth decide, not raw bit count.</dd>
+      <dt>Data rate: fast vs slow</dt><dd>Slow for maximum bits and mains notches (metering, scales); faster when you need loop bandwidth or many channels, accepting fewer bits. The same knob, chosen for the job.</dd>
+      <dt>Sinc (single-cycle-settled) vs sharp filter</dt><dd>Sinc settles in one conversion &mdash; ideal for multiplexing &mdash; but rolls off gently; a sharper filter rejects close-in interferers but carries long group delay.</dd>
+      <dt>Integrated PGA / reference vs external</dt><dd>Integrated simplifies and often enables ratiometric operation; go external only when you need an ultra-stable reference or an unusual gain the chip can&rsquo;t give you.</dd>
+    </dl>
+
+    <div class="lastmile">
+      <b>The last mile — what you still do on the bench</b>
+      This page gets you the right architecture, the right part class, the data rate, and a realistic resolution number &mdash; about 90&nbsp;% of the job. The last 10&nbsp;% is analog board reality and the digital filter&rsquo;s fine print, and it is where a 24-bit part earns or loses its bits. <b>Your noise floor is a layout and reference problem, not an ADC problem</b> at this resolution: star grounds, guarding, keeping thermocouple junctions matched and isothermal, a genuinely low-noise excitation &mdash; and you <em>measure it shorted first</em>, before you trust any sensor reading. <b>Know your decimation filter&rsquo;s settling and group delay</b> before you multiplex channels or close a control loop around the converter &mdash; read the filter section of the datasheet, not just the headline bits. <b>Calibrate against a traceable reference</b> &mdash; known mass, known voltage &mdash; over temperature, because the converter is linear but your sensor and reference drift. And <b>validate mains rejection and real ENOB on the bench</b>, at your actual data rate and inside your actual enclosure, not in the datasheet&rsquo;s. Tools to stand on: the vendor&rsquo;s <b>precision-ADC eval board and PC GUI</b> (they plot your noise, histograms and ENOB for you), a good <b>DMM and reference</b> for calibration, and the datasheet&rsquo;s <b>filter, settling and noise tables</b>. Don&rsquo;t hand-roll a modulator in silicon &mdash; use the integrated parts. The oversample-and-shape idea in Part&nbsp;I never changes; the last mile is giving a 24-bit part a board quiet enough to deserve its bits.
+    </div>
+
+    <h2><span class="sn">10</span>Check yourself</h2>
+    <div class="sc"><span class="scl">Question 1</span><p class="q">Your 24-bit delta-sigma reads beautifully at 10&nbsp;SPS but gets noticeably noisier when you bump it to 1&nbsp;kSPS to track a faster signal. Nothing else changed. Why is this expected, and what single quantity moved?</p><span class="a">You traded bits for bandwidth, and the one knob that moved is the <b>OSR</b>. Raising the output rate raises <span class="m"><i>f</i><sub>s</sub></span> relative to your band, but for a fixed modulator clock the practical effect is the same: less of the fixed quantization noise is being pushed <em>out</em> of band, because <span class="m">OSR = <i>f</i><sub>s</sub>/(2&middot;<i>f</i><sub>B</sub>)</span> fell when you widened the band. Fewer bits survive &mdash; noise-free resolution drops about 1.5&ndash;2.5 bits per octave of OSR you gave away, depending on the loop order. The resolution wasn&rsquo;t lost; it was <em>spent</em> on bandwidth, and slowing back down to 10&nbsp;SPS buys every bit of it back.</span></div>
+    <div class="sc"><span class="scl">Question 2</span><p class="q">You multiplex four thermocouples through one delta-sigma ADC and every channel reads a bit like a blend of itself and the previous channel. The ADC and the wiring are fine. What&rsquo;s doing it, and what are two fixes?</p><span class="a">The <b>decimation (sinc) filter has memory</b>. It averages many bitstream samples to make each output word, so after you switch the mux it needs several conversions to flush the <em>old</em> channel&rsquo;s data out of its history &mdash; and you are reading before it has settled, so each result is a weighted blend of the new channel and the last one. The two fixes both respect that memory: either <b>wait the filter&rsquo;s settling time</b> after every channel switch before you trust a reading, or switch to a <b>single-cycle-settled</b> (fully-settled sinc) filter or mode, which produces one valid, un-blended sample per conversion at the cost of a gentler roll-off.</span></div>
+    <div class="sc"><span class="scl">Question 3</span><p class="q">Someone proposes getting 16 bits from a 1-bit converter purely by oversampling &mdash; no feedback loop at all. Roughly what OSR would that need, and why does adding a single integrator change the answer so dramatically?</p><span class="a">Oversampling alone buys about <b>0.5 bit per octave</b>, so 15 extra bits is roughly 30 octaves of OSR &mdash; an oversampling ratio on the order of <b>10<sup>9</sup></b>, which is absurd: no clock and no decimator could survive it. One integrator turns on <b>first-order noise shaping</b>, which is about <b>1.5 bits per octave</b>, and a second integrator makes it <b>2.5</b>, so the same 15 bits need only a few hundred&times; OSR instead of a billion&times;. The reason the lever is so much stronger is that the feedback loop doesn&rsquo;t merely <em>spread</em> the quantization noise thinner &mdash; it <b>high-pass-filters it out of the band entirely</b>, bending the noise up to frequencies the decimation filter simply deletes. Spreading is a crank; shaping is a lever.</span></div>
+
+  </div>
+</article>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="kicker" style="margin-bottom:12px">Deep Dives · a growing set</div>
+    <div class="nextrow">
+      <a class="nextpill" href="whathappens-dd-mppt.html"><b>&larr; Prev:</b> MPPT &amp; the Solar I-V Knee</a>
+      <span class="nextpill"><b>Coming next:</b> The DC-Motor Speed&ndash;Torque Line</span>
+    </div>
+    <p class="footnote"><b>The Delta-Sigma ADC — 20 Bits From a 1-Bit Comparator.</b> A first-principles deep dive in the <em>What Happens When…</em> series: the one constraint (you cannot trim a million matched levels into silicon) and the one refusal (use a perfectly-linear 1-bit comparator, run it absurdly fast, and feed its error back to shove its own quantization noise out of band) from which the oversampling ratio <span class="m">OSR = <i>f</i><sub>s</sub>/(2&middot;<i>f</i><sub>B</sub>)</span>, the shaping gain <span class="m">&Delta;SNR &approx; (6<i>L</i>+3) dB</span> per octave (and the bare <span class="m">&frac12;</span>-bit-per-octave of oversampling alone), the bits-from-SNR bridge <span class="m">ENOB &approx; (SNR &minus; 1.76)/6.02</span>, the one-line modulator <span class="m"><i>e</i> = <i>u</i> &minus; <i>y</i>, <i>v</i> += <i>e</i>, <i>y</i> = sign(<i>v</i>)</span>, and the decimation <span class="m"><i>f</i><sub>out</sub> = <i>f</i><sub>s</sub>/OSR</span> all fall out &mdash; then the practitioner&rsquo;s half: how you choose and use a precision part, why it disappoints, what to spec, and a 24-bit weigh-scale front end sized end to end. With live simulations of a 1-bit modulator whose density of ones tracks the input, and of quantization noise going flat, then high-pass-shaped out of the band as OSR and order climb. The honest truth of it: this gets you the right architecture, part class, data rate, and a realistic resolution number &mdash; board noise, the reference, and filter settling are the bench&rsquo;s last 10&nbsp;%.<br>
+    Companion volumes in the portal: <b>The Op-Amp &amp; Negative Feedback</b> and <b>Sensors &amp; Signal Chains</b>.</p>
+  </div>
+</footer>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var explicit=root.getAttribute('data-theme');
+    var dark = explicit ? explicit==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    refreshPalette();
+  });
+
+  var PAL={};
+  function refreshPalette(){
+    var cs=getComputedStyle(document.documentElement);
+    PAL.ink=cs.getPropertyValue('--ink').trim()||'#201a14';
+    PAL.muted=cs.getPropertyValue('--muted').trim()||'#616E79';
+    PAL.faint=cs.getPropertyValue('--faint').trim()||'#9c8e7c';
+    PAL.line=cs.getPropertyValue('--line').trim()||'#ded6cb';
+    PAL.surf=cs.getPropertyValue('--surface-2').trim()||'#f4f1ed';
+    PAL.good='#3a9d6b'; PAL.warn='#d18a2a'; PAL.bad='#d8544e'; PAL.cool='#4d86c7'; PAL.sky='#6aa6d8'; PAL.viol='#9166b8'; PAL.gold='#c79a3a';
+  }
+  refreshPalette();
+
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function arrow(ctx,x1,y1,x2,y2,col,w){
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w||2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    var a=Math.atan2(y2-y1,x2-x1),h=6+(w||2);
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4));
+    ctx.lineTo(x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4));
+    ctx.closePath();ctx.fill();
+  }
+  function txt(ctx,s,x,y,col,size,align){
+    ctx.fillStyle=col||PAL.muted;ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+    ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';ctx.fillText(s,x,y);
+  }
+  function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function box(ctx,x,y,w,h,label,col,fill){ ctx.fillStyle=fill||PAL.surf; rr(ctx,x,y,w,h,7); ctx.fill(); ctx.strokeStyle=col||PAL.line; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,7); ctx.stroke(); if(label)txt(ctx,label,x+w/2,y+h/2+4,col||PAL.ink,11,'center'); }
+  function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+  function pr(n){var x=Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x);}
+  function bar(ctx,x,y,w,val,col,label){
+    ctx.fillStyle=PAL.surf; rr(ctx,x,y-6,w,12,3); ctx.fill();
+    var v=clamp(val,0,1); ctx.fillStyle=col; rr(ctx,x,y-6,v*w,12,3); ctx.fill();
+    if(label)txt(ctx,label,x-6,y+4,PAL.muted,10,'right');
+  }
+  function grid(ctx,x,y,w,h){ ctx.strokeStyle=PAL.line; ctx.globalAlpha=0.5; ctx.lineWidth=1; for(var i=1;i<4;i++){ var yy=y+h*i/4; ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke(); } ctx.globalAlpha=1; }
+
+  var SIMS={};
+
+  /* modulator — a 1st-order ΔΣ modulator in time. A 1-bit comparator sits in a feedback loop:
+     delta (u − fed-back bit) → sigma (integrate) → 1-bit decision. The OUTPUT is a ±1 bitstream
+     whose DENSITY of ones encodes the analog input; a trailing running average (accent) visibly
+     hugs the input u (cool). DC input → flat average on the line; slow-sine input → the average
+     traces the sine. Ticks run many per frame so the stream scrolls left. s.accent = the answer
+     (bitstream + running average). State on s.*, controls via s.p.KEY, unicode literals only. */
+  SIMS.modulator={
+    controls:[
+      {k:'inp',label:'Input level',min:-0.9,max:0.9,step:0.05,val:0.4,fmt:function(v){return v.toFixed(2);},unit:' ×FS'},
+      {k:'sig',label:'Input type',min:0,max:1,step:1,val:0,fmt:function(v){return v?'slow sine':'DC level';}}
+    ],
+    _reset:function(s){ s.v=0; s.y=1; s.hist=[]; s.tick=0; s.tickAcc=0; },
+    _ncols:function(w){ return clamp(Math.round(((w||300)-44)/3),40,360); },
+    init:function(s,w,h){ SIMS.modulator._reset(s); s.nCols=SIMS.modulator._ncols(w); },
+    step:function(s,dt){
+      if(typeof s.v!=='number'||!s.hist){ SIMS.modulator._reset(s); }
+      var w=s.canvasW||300;
+      var nCols=SIMS.modulator._ncols(w);
+      s.nCols=nCols;
+      var rate=100, period=160;
+      s.tickAcc=(s.tickAcc||0)+clamp(dt,0,0.1)*rate;
+      var n=Math.floor(s.tickAcc); s.tickAcc-=n; n=clamp(n,0,400);
+      var dc=clamp(s.p.inp,-0.9,0.9);
+      var isSine=(s.p.sig>=0.5);
+      for(var i=0;i<n;i++){
+        s.tick++;
+        var u=isSine?0.7*Math.sin(2*Math.PI*(s.tick/period)):dc;
+        var e=u-s.y;            // delta: subtract the fed-back 1-bit value
+        s.v+=e;                 // sigma: integrate
+        s.v=clamp(s.v,-4,4);    // keep the integrator sane (no runaway)
+        s.y=(s.v>=0)?1:-1;      // 1-bit comparator
+        s.hist.push({u:u,y:s.y});
+        if(s.hist.length>nCols) s.hist.shift();
+      }
+    },
+    draw:function(ctx,w,h,s){
+      if(!s.hist){ SIMS.modulator._reset(s); }
+      var hist=s.hist, len=hist.length;
+      var nCols=clamp(s.nCols||SIMS.modulator._ncols(w),40,360);
+      var x0=30, x1=Math.max(x0+20,w-10);
+      // -- stacked lanes --
+      var laneTop=22, laneBot=68;
+      var plotTop=88, plotBot=Math.max(plotTop+24,h-30);
+      var yHi=laneTop+8, yLo=laneBot-6, yMid=(yHi+yLo)/2;
+      function xAt(i){ return clamp(x0+(nCols>1?(i/(nCols-1)):0)*(x1-x0),x0,x1); }
+      function yVal(v){ return clamp(plotBot-((clamp(v,-1.15,1.15)+1.15)/2.3)*(plotBot-plotTop),plotTop,plotBot); }
+
+      // title + readouts
+      txt(ctx,'ΔΣ modulator · 1-bit output',8,13,PAL.muted,10,'left');
+
+      // bitstream lane frame + midline
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,laneTop,x1-x0,laneBot-laneTop);
+      ctx.globalAlpha=0.5; ctx.beginPath(); ctx.moveTo(x0,yMid); ctx.lineTo(x1,yMid); ctx.stroke(); ctx.globalAlpha=1;
+      txt(ctx,'+1',x0-3,yHi+3,PAL.faint,7,'right');
+      txt(ctx,'−1',x0-3,yLo+3,PAL.faint,7,'right');
+
+      // bitstream as a scrolling ±1 square wave (accent)
+      if(len>0){
+        ctx.strokeStyle=s.accent; ctx.lineWidth=1.4; ctx.globalAlpha=0.9;
+        ctx.beginPath();
+        var py0=(hist[0].y>0)?yHi:yLo;
+        ctx.moveTo(xAt(0),py0);
+        for(var i=1;i<len;i++){
+          var xi=xAt(i), prevY=(hist[i-1].y>0)?yHi:yLo, curY=(hist[i].y>0)?yHi:yLo;
+          ctx.lineTo(xi,prevY);
+          ctx.lineTo(xi,curY);
+        }
+        ctx.stroke(); ctx.globalAlpha=1;
+      }
+
+      // value-plot frame + value grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,plotTop,x1-x0,plotBot-plotTop);
+      ctx.globalAlpha=0.45;
+      var gvv; for(gvv=-1;gvv<=1;gvv+=1){ var gy=yVal(gvv);
+        ctx.beginPath(); ctx.moveTo(x0,gy); ctx.lineTo(x1,gy); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      txt(ctx,'+1',x0-3,yVal(1)+3,PAL.faint,7,'right');
+      txt(ctx,'0',x0-3,yVal(0)+3,PAL.faint,7,'right');
+      txt(ctx,'−1',x0-3,yVal(-1)+3,PAL.faint,7,'right');
+
+      // windowed running average
+      var pre=[0]; var k;
+      for(k=0;k<len;k++){ pre[k+1]=pre[k]+hist[k].y; }
+      var W=clamp(Math.round(nCols*0.6),24,80);
+      function avgAt(idx){ var lo=Math.max(0,idx-W+1); var cnt=idx-lo+1; return cnt>0?(pre[idx+1]-pre[lo])/cnt:0; }
+
+      // input u (cool)
+      if(len>0){
+        ctx.strokeStyle=PAL.cool; ctx.lineWidth=1.6;
+        ctx.beginPath();
+        for(k=0;k<len;k++){ var xu=xAt(k), yu=yVal(hist[k].u); if(k===0) ctx.moveTo(xu,yu); else ctx.lineTo(xu,yu); }
+        ctx.stroke();
+      }
+      // running average (accent) — hugs u
+      if(len>0){
+        ctx.strokeStyle=s.accent; ctx.lineWidth=2.0;
+        ctx.beginPath();
+        for(k=0;k<len;k++){ var xa=xAt(k), ya=yVal(avgAt(k)); if(k===0) ctx.moveTo(xa,ya); else ctx.lineTo(xa,ya); }
+        ctx.stroke();
+      }
+
+      // readouts
+      var ones=0; for(k=0;k<len;k++){ if(hist[k].y>0) ones++; }
+      var pct=len>0?(100*ones/len):0;
+      var uNow=len>0?hist[len-1].u:clamp(s.p.inp,-0.9,0.9);
+      var avgNow=len>0?avgAt(len-1):0;
+      txt(ctx,'u '+uNow.toFixed(2)+'  ·  '+pct.toFixed(0)+'% ones  ·  avg '+avgNow.toFixed(2),
+          w-8,13,PAL.ink,8.5,'right');
+      txt(ctx,'input u',x1-4,yVal(1)+10,PAL.cool,8,'right');
+      txt(ctx,'running average',x1-4,yVal(-1)-4,s.accent,8,'right');
+
+      // caption
+      txt(ctx,'density of ones encodes the value — the average is the answer',w/2,h-4,PAL.faint,8,'center');
+    }
+  };
+
+  /* noiseshape — why oversampling + noise shaping buy bits. Plot of quantization-noise PSD vs
+     frequency, 0 → f_s/2 (x normalised so f_s/2 = 1). The signal band is [0, 1/OSR] (shaded, left):
+     raise OSR and it shrinks to a sliver. The shaped-noise curve (accent) is |NTF|² =
+     (2·sin(π·X/2))^(2·order): order 0 is flat, higher order bends the noise up and out of band.
+     In-band noise is the curve integrated over the shaded band; converting it to bits gives the
+     effective ENOB, which climbs as OSR and order rise. s.accent = shaped curve + ENOB (hero). */
+  SIMS.noiseshape={
+    controls:[
+      {k:'osr',label:'Oversampling ratio',min:1,max:256,step:1,val:64},
+      {k:'order',label:'Modulator order',min:0,max:3,step:1,val:1,fmt:function(v){return v==0?'0 (just oversampling)':(''+v);}}
+    ],
+    _psd:function(X,order){
+      if(order<=0) return 1;                         // flat (order 0)
+      var m=2*Math.sin(Math.PI*clamp(X,0,1)/2);      // |NTF| on normalised axis
+      var v=Math.pow(m,2*order);
+      return isFinite(v)?v:0;
+    },
+    _integ:function(order,a,b,steps){
+      var R=SIMS.noiseshape, sum=0, hh=(b-a)/steps;
+      if(!(hh>0)) return 0;
+      for(var i=0;i<steps;i++){ var X=a+(i+0.5)*hh; sum+=R._psd(X,order)*hh; }
+      return sum;
+    },
+    init:function(s,w,h){},
+    step:function(s,dt){},
+    draw:function(ctx,w,h,s){
+      var R=SIMS.noiseshape;
+      var osr=clamp(Math.round(s.p.osr),1,256);
+      var order=clamp(Math.round(s.p.order),0,3);
+      var Xb=clamp(1/osr,0,1);                        // signal-band edge on normalised axis
+
+      var inband=Math.max(R._integ(order,0,Xb,400),1e-300);
+      var total=Math.max(R._integ(order,0,1,400),1e-300);
+      var enob=1+(-10*Math.log10(clamp(inband,1e-300,1e12)))/6.02;   // P0 = 1 (OSR1,order0 → 1 bit)
+      var inbandDb=clamp(10*Math.log10(clamp(inband/total,1e-300,1)),-99,0);
+
+      // plot frame
+      var dbMin=-80, dbMax=24;
+      var x0=34, x1=Math.max(x0+20,w-14), yTop=42, yBot=Math.max(yTop+20,h-34);
+      function xOf(X){ return clamp(x0+clamp(X,0,1)*(x1-x0),x0,x1); }
+      function yOf(db){ return clamp(yBot-((clamp(db,dbMin,dbMax)-dbMin)/(dbMax-dbMin))*(yBot-yTop),yTop,yBot); }
+
+      // shaded signal band [0, 1/OSR]
+      var bx=xOf(Xb);
+      ctx.globalAlpha=0.16; ctx.fillStyle=PAL.sky;
+      ctx.fillRect(x0,yTop,Math.max(1,bx-x0),yBot-yTop);
+      ctx.globalAlpha=1;
+
+      // frame + grid
+      ctx.strokeStyle=PAL.line; ctx.lineWidth=1;
+      ctx.strokeRect(x0,yTop,x1-x0,yBot-yTop);
+      ctx.globalAlpha=0.45;
+      var dbg; for(dbg=20;dbg>dbMin;dbg-=20){ var gy=yOf(dbg);
+        ctx.beginPath(); ctx.moveTo(x0,gy); ctx.lineTo(x1,gy); ctx.stroke(); }
+      var xg; for(xg=0.25;xg<1;xg+=0.25){ var gx=xOf(xg);
+        ctx.beginPath(); ctx.moveTo(gx,yTop); ctx.lineTo(gx,yBot); ctx.stroke(); }
+      ctx.globalAlpha=1;
+
+      // y ticks (dB) + x ticks (frequency)
+      var dt2; for(dt2=dbMax-4;dt2>=dbMin;dt2-=24){ txt(ctx,(dt2>0?'+':'')+dt2,x0-3,yOf(dt2)+3,PAL.faint,7,'right'); }
+      txt(ctx,'PSD dB',x0+2,yTop-4,PAL.muted,8,'left');
+      txt(ctx,'0',x0,yBot+12,PAL.faint,7.5,'center');
+      txt(ctx,'f_s/4',xOf(0.5),yBot+12,PAL.faint,7.5,'center');
+      txt(ctx,'f_s/2',x1,yBot+12,PAL.faint,7.5,'right');
+      txt(ctx,'frequency →',x0+2,yBot+12,PAL.faint,7.5,'left');
+
+      // baseline (un-shaped, un-oversampled) reference at 0 dB
+      ctx.strokeStyle=PAL.muted; ctx.globalAlpha=0.7; ctx.setLineDash([4,3]); ctx.lineWidth=1.2;
+      var by=yOf(0); ctx.beginPath(); ctx.moveTo(x0,by); ctx.lineTo(x1,by); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'flat baseline',clamp(x1-4,x0+40,x1-4),clamp(by-4,yTop+8,yBot-2),PAL.muted,7.5,'right');
+
+      // shaped noise curve (accent)
+      var N=240, i, started=false;
+      ctx.strokeStyle=s.accent; ctx.lineWidth=2.2;
+      ctx.beginPath();
+      for(i=0;i<=N;i++){
+        var X=i/N;
+        var psd=Math.max(R._psd(X,order),1e-12);
+        var db=10*Math.log10(psd);
+        var px=xOf(X), pyc=yOf(db);
+        if(!started){ ctx.moveTo(px,pyc); started=true; } else ctx.lineTo(px,pyc);
+      }
+      ctx.stroke();
+
+      // band edge marker
+      ctx.strokeStyle=PAL.cool; ctx.globalAlpha=0.7; ctx.setLineDash([3,3]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(bx,yTop); ctx.lineTo(bx,yBot); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      txt(ctx,'f_B',clamp(bx,x0+10,x1-10),yTop+9,PAL.cool,8,'center');
+
+      // title + hero ENOB readout
+      txt(ctx,'quantization-noise PSD',8,13,PAL.muted,10,'left');
+      txt(ctx,'ENOB ≈ '+enob.toFixed(1)+' bits',w-8,13,s.accent,10.5,'right');
+      txt(ctx,'OSR '+osr+'  ·  order '+order+'  ·  band edge 1/'+osr+'  ·  in-band '+inbandDb.toFixed(0)+' dB',
+          8,27,PAL.ink,8.5,'left');
+
+      // caption
+      txt(ctx,'spread it thin (OSR) + bend it out of band (order) → bits',w/2,h-4,PAL.faint,8,'center');
+    }
+  };
+
+  /* ---------- framework ---------- */
+  var canvases=[].slice.call(document.querySelectorAll('canvas.sim'));
+  function setup(c){
+    var name=c.dataset.sim, sim=SIMS[name]; if(!sim){return;}
+    var st={p:{}, t:0, accent:c.dataset.c||PAL.ink, broken:false};
+    c._st=st; c._sim=sim; c._ctx=c.getContext('2d');
+    var wrapEl=c.closest('.simwrap');
+    var host=(wrapEl&&wrapEl.querySelector('.ctrls[data-sim="'+name+'"]'))||document.querySelector('.ctrls[data-sim="'+name+'"]');
+    (sim.controls||[]).forEach(function(ct){
+      if(ct.btn){
+        var wrap=document.createElement('div');wrap.className='ctrl';
+        var b=document.createElement('button');b.type='button';b.textContent=ct.label;
+        b.addEventListener('click',function(){ if(sim.onbtn){try{sim.onbtn(st,ct.k);}catch(e){}} });
+        wrap.appendChild(document.createElement('span'));wrap.appendChild(b);
+        if(host)host.appendChild(wrap); return;
+      }
+      st.p[ct.k]=ct.val;
+      var wrap=document.createElement('label');wrap.className='ctrl';
+      var lab=document.createElement('span');lab.className='lbl';
+      var nm=document.createElement('span');nm.textContent=ct.label;
+      var vv=document.createElement('b');vv.textContent=(ct.fmt?ct.fmt(ct.val):ct.val)+(ct.unit||'');
+      lab.appendChild(nm);lab.appendChild(vv);
+      var inp=document.createElement('input');inp.type='range';inp.min=ct.min;inp.max=ct.max;inp.step=ct.step;inp.value=ct.val;
+      inp.addEventListener('input',function(){ st.p[ct.k]=parseFloat(inp.value); vv.textContent=(ct.fmt?ct.fmt(st.p[ct.k]):inp.value)+(ct.unit||'');
+        if(ct.regen && sim.init){ try{sim.init(st,c._w,c._h);}catch(e){} } });
+      wrap.appendChild(lab);wrap.appendChild(inp);
+      if(host)host.appendChild(wrap);
+    });
+    size(c);
+    st.canvasW=c._w; st.canvasH=c._h;
+    if(sim.init){try{sim.init(st,c._w,c._h);}catch(e){st.broken=true;}}
+    c._vis=true;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(en){en.forEach(function(e){c._vis=e.isIntersecting;});},{rootMargin:'80px'});
+      io.observe(c);
+    }
+  }
+  function size(c){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=c.clientWidth||300, h=c.clientHeight||250;
+    c._w=w;c._h=h;c._dpr=dpr;
+    c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  }
+  canvases.forEach(setup);
+  window.addEventListener('resize',function(){ canvases.forEach(function(c){ if(!c._sim)return; size(c); if(c._sim.init){try{c._sim.init(c._st,c._w,c._h);}catch(e){}} }); });
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.min(0.05,(now-last)/1000); last=now;
+    for(var i=0;i<canvases.length;i++){ var c=canvases[i]; if(!c._sim||!c._vis||c._st.broken)continue;
+      var st=c._st,ctx=c._ctx; st.t+=dt; st.canvasW=c._w; st.canvasH=c._h;
+      try{ if(c._sim.step)c._sim.step(st,dt);
+        ctx.save();ctx.scale(c._dpr,c._dpr);ctx.clearRect(0,0,c._w,c._h);
+        c._sim.draw(ctx,c._w,c._h,st); ctx.restore();
+      }catch(e){ st.broken=true; ctx.restore&&ctx.restore(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
